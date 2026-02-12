@@ -1,4 +1,4 @@
-import { ref, onUnmounted, watch } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 /**
  * Options for polling configuration
@@ -15,12 +15,9 @@ interface PollingOptions {
  * @param {PollingOptions} options - Polling configuration
  * @returns Object with control methods and state
  */
-export function usePolling(
-  callback: () => Promise<void> | void,
-  options: PollingOptions
-) {
+export function usePolling(callback: () => Promise<void> | void, options: PollingOptions) {
   const { interval: intervalOption, immediate = true, onError } = options
-  
+
   const isActive = ref(false)
   const currentInterval = ref(typeof intervalOption === 'function' ? intervalOption() : intervalOption)
   let intervalId: number | null = null
@@ -63,11 +60,9 @@ export function usePolling(
    */
   const updateInterval = (newInterval: number) => {
     currentInterval.value = newInterval
-    if (isActive.value) {
-      stop()
-      if (newInterval > 0) {
-        start()
-      }
+    stop()
+    if (newInterval > 0) {
+      start()
     }
   }
 

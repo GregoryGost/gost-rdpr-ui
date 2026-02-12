@@ -12,7 +12,7 @@ interface Props {
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   size: 'md',
 })
 

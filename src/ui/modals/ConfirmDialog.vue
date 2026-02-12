@@ -17,7 +17,7 @@ interface Props {
   isLoading?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   confirmText: 'Подтвердить',
   cancelText: 'Отмена',
   variant: 'danger',

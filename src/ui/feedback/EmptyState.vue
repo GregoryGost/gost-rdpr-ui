@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
 import { InboxIcon } from '@heroicons/vue/24/outline'
 
 /**
@@ -8,10 +9,10 @@ import { InboxIcon } from '@heroicons/vue/24/outline'
 interface Props {
   title?: string
   message?: string
-  icon?: any
+  icon?: Component
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   title: 'Нет данных',
   message: 'Данные отсутствуют или не найдены',
   icon: InboxIcon,

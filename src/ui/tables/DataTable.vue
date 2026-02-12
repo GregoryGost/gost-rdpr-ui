@@ -16,7 +16,7 @@ interface Props<T> {
   emptyMessage?: string
 }
 
-const props = withDefaults(defineProps<Props<T>>(), {
+withDefaults(defineProps<Props<T>>(), {
   isLoading: false,
   emptyMessage: 'Нет данных',
 })

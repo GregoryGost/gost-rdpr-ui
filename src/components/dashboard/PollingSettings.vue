@@ -30,9 +30,10 @@ const settingsStore = useSettingsStore()
         </label>
         <div class="w-48">
           <BaseSelect
-            v-model="settingsStore.pollingInterval"
+            :model-value="settingsStore.pollingInterval"
             :options="settingsStore.pollingIntervalOptions"
             placeholder="Выберите интервал"
+            @update:model-value="settingsStore.setPollingInterval($event as number)"
           />
         </div>
       </div>

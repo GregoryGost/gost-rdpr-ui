@@ -37,6 +37,7 @@ Syntax and Formatting
 - Use arrow functions for methods and computed properties.
 - Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
 - Use template syntax for declarative rendering.
+- Use for linting special command lint-dry-run prior. After check remove output lint html file always.
 
 UI and Styling
 

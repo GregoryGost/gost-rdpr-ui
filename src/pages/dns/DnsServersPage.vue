@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { dnsApi } from '@/api/endpoints/dns'
 import type { DnsServer, DnsServerCreateData } from '@/api/types/dns'
 import { usePagination } from '@/composables/usePagination'
@@ -10,7 +10,6 @@ import BaseModal from '@/ui/modals/BaseModal.vue'
 import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
 import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
-import EmptyState from '@/ui/feedback/EmptyState.vue'
 import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 
 /**
@@ -33,7 +32,7 @@ const serverToDelete = ref<number | null>(null)
 const formData = ref<DnsServerCreateData>({
   server: '',
   doh_server: '',
-  description: '',
+  description: ''
 })
 
 const formErrors = ref<Record<string, string>>({})
@@ -263,7 +262,7 @@ onMounted(() => {
             DNS Server (IPv4/IPv6)
           </label>
           <BaseInput
-            v-model="formData.server"
+            v-model="formData.server!"
             type="text"
             placeholder="8.8.8.8 или 2001:4860:4860::8888"
             :error="formErrors.server"
@@ -275,7 +274,7 @@ onMounted(() => {
             DoH Server (DNS over HTTPS)
           </label>
           <BaseInput
-            v-model="formData.doh_server"
+            v-model="formData.doh_server!"
             type="url"
             placeholder="https://dns.google/dns-query"
           />
@@ -283,7 +282,7 @@ onMounted(() => {
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Описание</label>
-          <BaseTextarea v-model="formData.description" placeholder="Описание DNS сервера" :rows="2" />
+          <BaseTextarea v-model="formData.description!" placeholder="Описание DNS сервера" :rows="2" />
         </div>
 
         <div class="flex gap-3 justify-end pt-4">
