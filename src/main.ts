@@ -18,6 +18,11 @@ import { useDarkModeStore } from './stores/darkMode'
 const darkModeStore = useDarkModeStore(pinia)
 darkModeStore.init()
 
+// Settings
+import { useSettingsStore } from './stores/settings'
+const settingsStore = useSettingsStore(pinia)
+settingsStore.init()
+
 // Default title tag
 router.afterEach((to) => {
   document.title = to.meta?.title ? `${to.meta.title} — ${APP_TITLE}` : APP_TITLE

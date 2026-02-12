@@ -1,10 +1,10 @@
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, watch } from 'vue'
 
 /**
  * Options for polling configuration
  */
 interface PollingOptions {
-  interval: number
+  interval: number | (() => number)
   immediate?: boolean
   onError?: (error: unknown) => void
 }
@@ -19,9 +19,10 @@ export function usePolling(
   callback: () => Promise<void> | void,
   options: PollingOptions
 ) {
-  const { interval, immediate = true, onError } = options
+  const { interval: intervalOption, immediate = true, onError } = options
   
   const isActive = ref(false)
+  const currentInterval = ref(typeof intervalOption === 'function' ? intervalOption() : intervalOption)
   let intervalId: number | null = null
 
   /**
@@ -29,6 +30,7 @@ export function usePolling(
    */
   const start = () => {
     if (isActive.value) return
+    if (currentInterval.value === 0) return
 
     isActive.value = true
     intervalId = window.setInterval(async () => {
@@ -41,7 +43,7 @@ export function usePolling(
           console.error('Polling error:', error)
         }
       }
-    }, interval)
+    }, currentInterval.value)
   }
 
   /**
@@ -56,6 +58,20 @@ export function usePolling(
   }
 
   /**
+   * Update polling interval
+   * @param {number} newInterval - New interval in milliseconds (0 to disable)
+   */
+  const updateInterval = (newInterval: number) => {
+    currentInterval.value = newInterval
+    if (isActive.value) {
+      stop()
+      if (newInterval > 0) {
+        start()
+      }
+    }
+  }
+
+  /**
    * Restart polling
    */
   const restart = () => {
@@ -63,7 +79,7 @@ export function usePolling(
     start()
   }
 
-  if (immediate) {
+  if (immediate && currentInterval.value > 0) {
     start()
   }
 
@@ -73,8 +89,10 @@ export function usePolling(
 
   return {
     isActive,
+    currentInterval,
     start,
     stop,
     restart,
+    updateInterval,
   }
 }

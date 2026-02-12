@@ -13,7 +13,7 @@ Code Style and Structure
 - Structure files: exported component, composables, helpers, static content, types.
 - Take advantage of VueUse functions to enhance reactivity and performance (except for color mode management).
 - Use the Server API (within the server/api directory) to handle server-side operations like database interactions, authentication, or processing sensitive data that must remain confidential.
-- Follow src directory structure (e.g., pages/, css/, layouts/, composables/, router/, stores/, /ui).
+- Follow src directory structure (e.g., pages/, components/, css/, layouts/, composables/, router/, stores/, /ui).
 - The Vue file must always follow a basic template, which must contain 3 parts: script, template, and style.
 - Use semantic HTML elements for use Vue components in <template> block.
 - Follow the sequence in your files, from top to bottom the <script>, then the <template>, then the <style>.
