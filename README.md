@@ -1,48 +1,162 @@
-# .
+# GOST-RDPR UI
 
-This template should help get you started developing with Vue 3 in Vite.
+Административная панель для REST API проекта [GOST-RDPR](https://github.com/GregoryGost/gost-rdpr)
 
-## Recommended IDE Setup
+## Технологический стек
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- **Frontend Framework:** Vue 3.5 (Composition API)
+- **Язык:** TypeScript
+- **Сборщик:** Vite 7
+- **Стили:** Tailwind CSS v4
+- **UI Компоненты:** Headless UI + собственные компоненты
+- **Иконки:** Heroicons
+- **Роутинг:** Vue Router 4
+- **Управление состоянием:** Pinia
+- **Линтинг:** ESLint + Prettier
 
-## Recommended Browser Setup
+## Структура проекта
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+```
+src/
+├── api/                    # API слой
+│   ├── client.ts           # HTTP клиент
+│   ├── types/              # TypeScript типы из OpenAPI
+│   └── endpoints/          # API методы по доменам
+├── composables/            # Переиспользуемая логика
+│   ├── useApi.ts           # API wrapper с состояниями
+│   └── usePagination.ts    # Логика пагинации
+├── ui/                     # UI Kit компоненты
+│   ├── buttons/            # Кнопки
+│   ├── forms/              # Формы (Input, Textarea, Select)
+│   ├── tables/             # Таблицы и пагинация
+│   ├── modals/             # Модальные окна
+│   └── feedback/           # Спиннеры, пустые состояния
+├── layouts/                
+│   └── MainLayout.vue      # Основной layout с sidebar
+├── pages/                  # Страницы приложения
+│   ├── HomePage.vue        # Dashboard с метриками
+│   ├── dns/                # DNS серверы
+│   └── commands/           # Страница команд
+├── stores/                 # Pinia хранилища
+│   └── darkMode.ts         # Темная тема
+├── css/                    # Стили
+│   ├── main.scss
+│   └── vendor/
+└── router/                 # Vue Router
+    └── index.ts
 
-## Type Support for `.vue` Imports in TS
+```
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+## Реализованные функции
 
-## Customize configuration
+### ✅ Готово
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+1. **API Слой**
+   - Базовый HTTP клиент с обработкой ошибок
+   - TypeScript типы из OpenAPI спецификации
+   - API endpoints для DNS и Commands
+   - Composables для работы с API и пагинацией
 
-## Project Setup
+2. **UI Kit (9 компонентов)**
+   - BaseButton - кнопка с вариантами стилей
+   - BaseInput, BaseTextarea, BaseSelect - формы
+   - DataTable, PaginationControl - таблицы
+   - BaseModal, ConfirmDialog - модальные окна
+   - LoadingSpinner, EmptyState - feedback компоненты
 
-```sh
+3. **Layouts**
+   - MainLayout - адаптивный layout с sidebar и темной темой
+
+4. **Страницы**
+   - HomePage - dashboard с метриками системы
+   - DnsServersPage - полный CRUD для DNS серверов
+   - CommandsPage - выполнение системных команд
+
+### 🚧 В разработке (заглушки HomePage)
+
+- Domains Lists Page
+- Domains Page
+- IPs Lists Page  
+- IPs Page
+- ROS Configurations Page
+
+## Установка и запуск
+
+### Установка зависимостей
+
+```bash
 pnpm install
 ```
 
-### Compile and Hot-Reload for Development
+### Настройка окружения
 
-```sh
+Создайте файл `.env.development`:
+
+```env
+VITE_API_BASE_URL=http://127.0.0.1:4000
+```
+
+**Примечание:** В режиме разработки используется Vite proxy для обхода CORS. Все запросы к `/api` автоматически проксируются к API серверу, указанному в `VITE_API_BASE_URL`.
+
+### Запуск в режиме разработки
+
+```bash
 pnpm dev
 ```
 
-### Type-Check, Compile and Minify for Production
+Приложение будет доступно по адресу: `http://localhost:5000`
 
-```sh
+### Сборка для продакшена
+
+```bash
 pnpm build
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+### Линтинг и форматирование
 
-```sh
+```bash
+# Линтинг
 pnpm lint
+
+# Форматирование кода
+pnpm format
 ```
+
+## Функциональность
+
+### DNS Серверы
+- Просмотр списка DNS серверов с пагинацией
+- Поиск по серверам
+- Добавление новых DNS серверов (IPv4/IPv6/DoH)
+- Удаление DNS серверов
+
+### Команды
+- Загрузка списков доменов и IP адресов
+- Разрешение доменов в IP адреса
+- Обновление конфигураций RouterOS
+
+### Темная тема
+- Автоматическое определение системной темы
+- Переключатель темы в header
+- Сохранение предпочтений в localStorage
+
+## Рекомендуемая IDE
+
+- [Cursor](https://cursor.sh/) / [VS Code](https://code.visualstudio.com/)
+- Расширение: [Vue Language Features (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.volar)
+
+## Браузерные расширения
+
+- [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
+
+## Следующие шаги
+
+1. Реализовать оставшиеся страницы (Domains, IPs, ROS)
+2. Добавить API endpoints для этих разделов
+3. Реализовать уведомления (toast notifications)
+4. Добавить обработку ошибок на уровне приложения
+5. Добавить тесты
+
+## Лицензия
+
+Частный проект

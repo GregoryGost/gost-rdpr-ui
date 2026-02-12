@@ -1,25 +1,13 @@
-<!doctype html>
-<html lang="">
+<!DOCTYPE html>
+<html lang="ru">
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GOST Resolver Domains Ui</title>
-
-    <script>
-      ;(function () {
-        try {
-          const savedTheme = localStorage.getItem('theme')
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-          const theme = savedTheme || (prefersDark ? 'dark' : 'light')
-          document.documentElement.setAttribute('data-theme', theme)
-        } catch (error) {
-          console.error('Error setting theme:', error)
-        }
-      })()
-    </script>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOST-RDPR UI</title>
+    <meta name="description" content="Административная панель для GOST-RDPR">
   </head>
-  <body class="bg-base-100">
+  <body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

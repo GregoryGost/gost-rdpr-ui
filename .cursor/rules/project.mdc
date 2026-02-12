@@ -1,0 +1,51 @@
+---
+alwaysApply: true
+---
+
+# Project Overview
+
+- Vue 3.5 project using Composition API with <script setup>
+- Do not import new libraries without approval
+- Use ES imports, not require()
+- Tailwind CSS 4.1 styles framework.
+
+# Design System
+
+- Tokens: colors, spacing, shadows, z-index, transitions, theme
+- Base: fonts, reset, typography, animations
+- Themes: light, dark
+
+## Usage Guidelines
+
+- No px units (use rem)
+- No CSS comments
+- No BEM notation
+- Use CSS nesting and semantic class names
+
+## Project description
+
+The project implements a responsive administrative panel for the REST API Python project <https://github.com/GregoryGost/gost-rdpr>
+The openapi.json description is in the file TARGET_OPENAPI.md
+
+No authorization
+
+The visual part of the project consists of:
+
+- a header displaying the logo as an image and text
+- a left menu with buttons for navigating through sections
+- a central block to the right of the left menu displaying the main content
+- a footer with standard information about the project author, the current year, and copyright symbol, as well as links to the author's blog, social media accounts, and repository.
+
+Menu items and content block contents depending on the selected menu:
+
+- Home - displays key numeric indicators
+- DNS Servers - displays information about entered DNS servers
+- Domains - displays information about domain lists and the domains themselves
+- IP Addresses - displays information about IP address lists and the IP addresses themselves
+- Configurations - displays information about entered configurations
+- Commands - allows you to send commands for configurations
+
+All sections (except the Home page) not only display information but also allow you to add or delete it.
+
+Information is displayed in a tabular format with pagination.
+You can select the number of elements to display simultaneously. When selected, the pagination changes accordingly.
