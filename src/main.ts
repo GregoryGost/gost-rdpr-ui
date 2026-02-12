@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import { APP_TITLE } from './constants'
 
 import './css/main.scss'
 
@@ -18,8 +19,6 @@ const darkModeStore = useDarkModeStore(pinia)
 darkModeStore.init()
 
 // Default title tag
-const defaultDocumentTitle = 'GOST-RDPR Ui'
-
 router.afterEach((to) => {
-  document.title = to.meta?.title ? `${to.meta.title} — ${defaultDocumentTitle}` : defaultDocumentTitle
+  document.title = to.meta?.title ? `${to.meta.title} — ${APP_TITLE}` : APP_TITLE
 })

@@ -10,6 +10,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import AppHeader from './AppHeader.vue'
 import AppFooter from './AppFooter.vue'
+import { APP_NAME } from '@/constants'
 
 /**
  * Main application layout
@@ -57,7 +58,7 @@ const closeSidebar = () => {
         class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white dark:bg-gray-800 shadow-xl lg:hidden"
       >
         <div class="flex h-16 items-center justify-between px-4 border-b dark:border-gray-700">
-          <span class="text-xl font-bold text-gray-900 dark:text-gray-100">GOST-RDPR</span>
+          <span class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ APP_NAME }}</span>
           <button @click="closeSidebar" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
             <XMarkIcon class="h-6 w-6 text-gray-600 dark:text-gray-400" />
           </button>
@@ -88,7 +89,7 @@ const closeSidebar = () => {
     <div class="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
       <div class="flex flex-col flex-grow bg-white dark:bg-gray-800 border-r dark:border-gray-700">
         <div class="flex h-16 items-center px-4 border-b dark:border-gray-700">
-          <span class="text-xl font-bold text-gray-900 dark:text-gray-100">GOST-RDPR</span>
+          <span class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ APP_NAME }}</span>
         </div>
         <nav class="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
           <router-link

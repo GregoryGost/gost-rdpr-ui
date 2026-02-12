@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { apiRequest } from '@/api/client'
 import LoadingSpinner from '@/ui/feedback/LoadingSpinner.vue'
+import { APP_NAME } from '@/constants'
 
 /**
  * Home page with dashboard metrics
@@ -54,7 +55,7 @@ onMounted(() => {
   <div>
     <div class="mb-6">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Главная</h1>
-      <p class="mt-2 text-gray-600 dark:text-gray-400">Панель управления GOST-RDPR</p>
+      <p class="mt-2 text-gray-600 dark:text-gray-400">Панель управления {{ APP_NAME }}</p>
     </div>
 
     <LoadingSpinner v-if="isLoading" message="Загрузка данных..." />

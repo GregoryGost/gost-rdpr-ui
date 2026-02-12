@@ -31,10 +31,11 @@ No authorization
 
 The visual part of the project consists of:
 
-- a header displaying the logo as an image and text
-- a left menu with buttons for navigating through sections
-- a central block to the right of the left menu displaying the main content
-- a footer with standard information about the project author, the current year, and copyright symbol, as well as links to the author's blog, social media accounts, and repository.
+- A header displaying the logo as an image and text
+- A left menu with buttons for navigating through sections
+- A central block to the right of the left menu displaying the main content
+- A footer with standard information about the project author, the current year, and copyright symbol, as well as links to the author's blog, social media accounts, and repository.
+- Repeating text values ​​should be output to variables that are recorded in the constants.ts file.
 
 Menu items and content block contents depending on the selected menu:
 
