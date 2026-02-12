@@ -28,5 +28,4 @@ const props = withDefaults(defineProps<Props>(), {
 </template>
 
 <style scoped>
-/* No styles - using Tailwind classes directly */
 </style>

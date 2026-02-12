@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch, type Ref } from 'vue'
+import { ref, type Ref } from 'vue'
 
 /**
  * Polling interval option

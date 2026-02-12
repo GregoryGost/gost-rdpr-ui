@@ -82,5 +82,4 @@ const SIZE_CLASSES = {
 </template>
 
 <style scoped>
-/* No styles - using Tailwind classes directly */
 </style>

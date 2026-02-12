@@ -17,5 +17,4 @@ const currentYear = new Date().getFullYear()
 </template>
 
 <style scoped>
-/* No styles - using Tailwind classes directly */
 </style>

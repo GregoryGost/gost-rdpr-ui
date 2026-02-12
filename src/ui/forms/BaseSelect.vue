@@ -90,5 +90,4 @@ const selectedOption = computed(() =>
 </template>
 
 <style scoped>
-/* No styles - using Tailwind classes directly */
 </style>
