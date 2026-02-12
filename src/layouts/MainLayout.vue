@@ -1,24 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { useDarkModeStore } from '@/stores/darkMode'
 import {
-  Bars3Icon,
   XMarkIcon,
-  SunIcon,
-  MoonIcon,
   HomeIcon,
   ServerIcon,
   GlobeAltIcon,
   CommandLineIcon,
 } from '@heroicons/vue/24/outline'
+import AppHeader from './AppHeader.vue'
+import AppFooter from './AppFooter.vue'
 
 /**
  * Main application layout
  * @component MainLayout
  */
 const route = useRoute()
-const darkMode = useDarkModeStore()
 const isSidebarOpen = ref(false)
 
 const NAVIGATION_ITEMS = [
@@ -117,26 +114,7 @@ const closeSidebar = () => {
     <!-- Main content -->
     <div class="lg:pl-64 flex flex-col min-h-screen">
       <!-- Header -->
-      <header
-        class="sticky top-0 z-10 flex h-16 items-center gap-x-4 border-b bg-white dark:bg-gray-800 dark:border-gray-700 px-4 shadow-sm"
-      >
-        <button
-          @click="isSidebarOpen = true"
-          class="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-        >
-          <Bars3Icon class="h-6 w-6 text-gray-600 dark:text-gray-400" />
-        </button>
-        <div class="flex flex-1 justify-end gap-x-4">
-          <button
-            @click="darkMode.set(null, true)"
-            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            title="Переключить тему"
-          >
-            <SunIcon v-if="darkMode.isEnabled" class="h-5 w-5 text-gray-600 dark:text-gray-400" />
-            <MoonIcon v-else class="h-5 w-5 text-gray-600 dark:text-gray-400" />
-          </button>
-        </div>
-      </header>
+      <AppHeader :on-menu-toggle="() => (isSidebarOpen = true)" />
 
       <!-- Page content -->
       <main class="flex-1 p-6">
@@ -144,11 +122,7 @@ const closeSidebar = () => {
       </main>
 
       <!-- Footer -->
-      <footer
-        class="border-t bg-white dark:bg-gray-800 dark:border-gray-700 px-6 py-4 text-center text-sm text-gray-600 dark:text-gray-400"
-      >
-        <p>© 2026 Gregory Gost · GOST-RDPR Admin Panel</p>
-      </footer>
+      <AppFooter />
     </div>
   </div>
 </template>
