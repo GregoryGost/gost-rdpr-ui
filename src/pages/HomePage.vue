@@ -8,7 +8,7 @@ import HealthStatusCard from '@/components/dashboard/HealthStatusCard.vue'
 import VersionInfoCard from '@/components/dashboard/VersionInfoCard.vue'
 import QuickActionsCard from '@/components/dashboard/QuickActionsCard.vue'
 import { APP_NAME } from '@/constants'
-import { usePolling } from '@/composables/usePolling'
+import { usePolling } from '@/composables'
 import { useSettingsStore } from '@/stores/settings'
 
 /**

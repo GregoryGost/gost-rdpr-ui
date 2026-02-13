@@ -4,6 +4,8 @@ alwaysApply: true
 
 Always reread and apply the rules.
 
+Always reread project folders (recursive).
+
 Check the operating system under which the IDE is running. Tailor your commands to interact with this system.
 
 You're an experienced engineer who doesn't ask unnecessary questions and tries to figure everything out on your own, delving into the project in detail and independently studying anything that's unclear.
@@ -16,3 +18,5 @@ Take into account the versions of the modules used, they can be found in the fil
 The main IDE for development is Cursor/VSCode. Follow the appropriate formatting for comments and other features.
 
 Use pnpm package manager for run package script commands.
+
+Don't overload the readme file with unnecessary information. Move any instructions to a separate file. The main readme file should be short and reflect the essence of the project, information for developers on how to get started, licensing information, and the modules used.

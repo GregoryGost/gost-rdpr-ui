@@ -1,16 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
-import {
-  XMarkIcon,
-  HomeIcon,
-  ServerIcon,
-  GlobeAltIcon,
-  CommandLineIcon,
-} from '@heroicons/vue/24/outline'
+import { XMarkIcon, HomeIcon, ServerIcon, GlobeAltIcon, CommandLineIcon } from '@heroicons/vue/24/outline'
 import AppHeader from './AppHeader.vue'
 import AppFooter from './AppFooter.vue'
-import { APP_NAME } from '@/constants'
+import AppLogo from '@/components/AppLogo.vue'
 
 /**
  * Main application layout
@@ -36,12 +30,8 @@ const closeSidebar = () => {
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- Mobile sidebar backdrop -->
-    <div
-      v-if="isSidebarOpen"
-      class="fixed inset-0 z-40 lg:hidden"
-      @click="closeSidebar"
-    >
-      <div class="fixed inset-0 bg-gray-600 bg-opacity-75" />
+    <div v-if="isSidebarOpen" class="fixed inset-0 z-40 lg:hidden" @click="closeSidebar">
+      <div class="bg-opacity-75 fixed inset-0 bg-gray-600" />
     </div>
 
     <!-- Mobile sidebar -->
@@ -55,27 +45,27 @@ const closeSidebar = () => {
     >
       <div
         v-if="isSidebarOpen"
-        class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white dark:bg-gray-800 shadow-xl lg:hidden"
+        class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white shadow-xl lg:hidden dark:bg-gray-800"
       >
-        <div class="flex h-16 items-center justify-between px-4 border-b dark:border-gray-700">
-          <span class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ APP_NAME }}</span>
-          <button @click="closeSidebar" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+        <div class="flex h-16 items-center justify-between border-b px-4 dark:border-gray-700">
+          <AppLogo />
+          <button @click="closeSidebar" class="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700">
             <XMarkIcon class="h-6 w-6 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
-        <nav class="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
+        <nav class="flex-1 space-y-1 overflow-y-auto px-2 py-4">
           <router-link
             v-for="item in NAVIGATION_ITEMS"
             :key="item.path"
             :to="item.path"
             @click="closeSidebar"
-            class="flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+            class="flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
             active-class="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
             exact-active-class="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
             :class="[
               route.path === item.path
                 ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700',
+                : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
             ]"
           >
             <component :is="item.icon" class="h-5 w-5" />
@@ -87,22 +77,22 @@ const closeSidebar = () => {
 
     <!-- Desktop sidebar -->
     <div class="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-      <div class="flex flex-col flex-grow bg-white dark:bg-gray-800 border-r dark:border-gray-700">
-        <div class="flex h-16 items-center px-4 border-b dark:border-gray-700">
-          <span class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ APP_NAME }}</span>
+      <div class="flex flex-grow flex-col border-r bg-white dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex h-16 items-center border-b px-4 dark:border-gray-700">
+          <AppLogo />
         </div>
-        <nav class="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
+        <nav class="flex-1 space-y-1 overflow-y-auto px-2 py-4">
           <router-link
             v-for="item in NAVIGATION_ITEMS"
             :key="item.path"
             :to="item.path"
-            class="flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+            class="flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
             active-class="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
             exact-active-class="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
             :class="[
               route.path === item.path
                 ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700',
+                : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
             ]"
           >
             <component :is="item.icon" class="h-5 w-5" />
@@ -113,7 +103,7 @@ const closeSidebar = () => {
     </div>
 
     <!-- Main content -->
-    <div class="lg:pl-64 flex flex-col min-h-screen">
+    <div class="flex min-h-screen flex-col lg:pl-64">
       <!-- Header -->
       <AppHeader :on-menu-toggle="() => (isSidebarOpen = true)" />
 
@@ -128,5 +118,4 @@ const closeSidebar = () => {
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

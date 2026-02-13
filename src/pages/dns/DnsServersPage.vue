@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { dnsApi } from '@/api/endpoints/dns'
 import type { DnsServer, DnsServerCreateData } from '@/api/types/dns'
-import { usePagination } from '@/composables/usePagination'
+import { usePaginatedData } from '@/composables'
 import DataTable from '@/ui/tables/DataTable.vue'
 import PaginationControl from '@/ui/tables/PaginationControl.vue'
 import BaseButton from '@/ui/buttons/BaseButton.vue'
@@ -16,12 +16,18 @@ import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outl
  * DNS Servers management page
  * @component DnsServersPage
  */
-const servers = ref<DnsServer[]>([])
-const isLoading = ref(false)
 const searchQuery = ref('')
 
-// Pagination
-const pagination = usePagination(20)
+// Paginated data management
+const {
+  data: servers,
+  isLoading,
+  pagination,
+  load: loadServers,
+  refresh: refreshServers,
+  goToPage,
+  changePageSize,
+} = usePaginatedData<DnsServer>(async (params) => dnsApi.getAll(params), 20)
 
 // Modals
 const isAddModalOpen = ref(false)
@@ -48,25 +54,6 @@ const TABLE_COLUMNS = [
   { key: 'created_at_hum', label: 'Создано' },
   { key: 'actions', label: 'Действия' },
 ]
-
-/**
- * Load DNS servers with pagination
- */
-const loadServers = async () => {
-  isLoading.value = true
-  try {
-    const response = await dnsApi.getAll({
-      limit: pagination.pageSize.value,
-      offset: pagination.offset.value,
-    })
-    servers.value = response.payload
-    pagination.totalItems.value = response.total
-  } catch (error) {
-    console.error('Failed to load DNS servers:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
 
 /**
  * Search DNS servers
@@ -125,7 +112,7 @@ const createServer = async () => {
   try {
     await dnsApi.create([formData.value])
     isAddModalOpen.value = false
-    loadServers()
+    refreshServers()
   } catch (error) {
     console.error('Failed to create DNS server:', error)
   } finally {
@@ -152,28 +139,12 @@ const deleteServer = async () => {
     await dnsApi.deleteOne(serverToDelete.value)
     isDeleteConfirmOpen.value = false
     serverToDelete.value = null
-    loadServers()
+    refreshServers()
   } catch (error) {
     console.error('Failed to delete DNS server:', error)
   } finally {
     isLoading.value = false
   }
-}
-
-/**
- * Handle page change
- */
-const onPageChange = (page: number) => {
-  pagination.goToPage(page)
-  loadServers()
-}
-
-/**
- * Handle page size change
- */
-const onPageSizeChange = (size: number) => {
-  pagination.changePageSize(size)
-  loadServers()
 }
 
 onMounted(() => {
@@ -250,8 +221,8 @@ onMounted(() => {
       :total-items="pagination.totalItems.value"
       :page-size="pagination.pageSize.value"
       :page-size-options="pagination.PAGE_SIZE_OPTIONS"
-      @update:current-page="onPageChange"
-      @update:page-size="onPageSizeChange"
+      @update:current-page="goToPage"
+      @update:page-size="changePageSize"
     />
 
     <!-- Add Modal -->

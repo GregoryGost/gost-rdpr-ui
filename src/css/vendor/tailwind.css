@@ -14,6 +14,14 @@
  */
 @variant dark (.dark &);
 
+@font-face {
+	font-family: 'GOST Type A';
+	src: url('../fonts/gost_tip_a_italic.woff2') format('woff2');
+	font-weight: normal;
+	font-style: italic;
+	font-display: swap;
+}
+
 /**
  * Overwrite the Tailwind CSS theme. Check docs for more information.
  */
@@ -22,6 +30,8 @@
 	/* --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; */
 	/* --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; */
 	/* ... */
+	
+	--color-brand-primary: #5238ff;
 }
 
 /**

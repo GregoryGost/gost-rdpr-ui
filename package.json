@@ -9,8 +9,8 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
-    "lint-dry-run": "eslint . --fix-dry-run --format json -o ./lint-result.html",
     "lint": "eslint . --fix",
+    "lint-dry-run": "eslint . --fix-dry-run --format json -o ./lint-result.html",
     "format": "prettier --write --experimental-cli src/"
   },
   "engines": {

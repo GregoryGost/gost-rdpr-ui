@@ -9,22 +9,32 @@
 - `src/api/endpoints/commands.ts` - методы для выполнения команд
 
 ### 2. Composables ✅
+- `src/composables/index.ts` - централизованный экспорт всех композаблов
 - `src/composables/useApi.ts` - wrapper для API с loading/error states
-- `src/composables/usePagination.ts` - логика пагинации таблиц
+- `src/composables/usePagination.ts` - базовое управление состоянием пагинации
+- `src/composables/usePaginatedData.ts` - автоматическая пагинация с загрузкой данных
+- `src/composables/usePolling.ts` - периодический опрос данных
+- `src/composables/README.md` - полная документация с примерами
 
-### 3. UI Kit (9 компонентов) ✅
+### 3. UI Kit (10 компонентов) ✅
 - **Buttons:** BaseButton
 - **Forms:** BaseInput, BaseTextarea, BaseSelect
 - **Tables:** DataTable, PaginationControl
 - **Modals:** BaseModal, ConfirmDialog
 - **Feedback:** LoadingSpinner, EmptyState
 
-### 4. Layout ✅
-- `src/layouts/MainLayout.vue` - основной layout с sidebar, header, footer
+### 4. Components (6 компонентов) ✅
+- **General:** AppLogo
+- **Dashboard:** HealthStatusCard, VersionInfoCard, QuickActionsCard, ConnectionAlert, PollingSettings
 
-### 5. Страницы ✅
-- `src/pages/HomePage.vue` - dashboard с метриками
-- `src/pages/dns/DnsServersPage.vue` - полный CRUD для DNS серверов (эталон)
+### 5. Layout ✅
+- `src/layouts/MainLayout.vue` - основной layout с sidebar, header, footer
+- `src/layouts/AppHeader.vue` - заголовок с логотипом и переключателем темы
+- `src/layouts/AppFooter.vue` - подвал с информацией
+
+### 6. Страницы ✅
+- `src/pages/HomePage.vue` - dashboard с метриками и автообновлением
+- `src/pages/dns/DnsServersPage.vue` - полный CRUD для DNS серверов (эталон с `usePaginatedData`)
 - `src/pages/commands/CommandsPage.vue` - выполнение системных команд
 
 ## Что нужно реализовать
@@ -32,43 +42,58 @@
 ### Приоритет 1: Domains (Домены)
 
 #### 1.1 API Endpoints
-Создать `src/api/endpoints/domains.ts`:
+Создать `src/api/endpoints/domains.ts` (использовать паттерн из `dns.ts`):
 ```typescript
 import { apiRequest } from '../client'
 import type { DomainsList, Domain, DomainsListCreateData, DomainCreateData } from '../types/domains'
 import type { PaginatedResponse, PaginationParams, OkResponse } from '../types/common'
 
+/**
+ * Convert pagination params to URLSearchParams
+ */
+function toSearchParams(params: Record<string, unknown>): URLSearchParams {
+  const searchParams = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    searchParams.append(key, String(value))
+  })
+  return searchParams
+}
+
 export const domainsListsApi = {
-  getAll: (params?: PaginationParams & { attempts?: number }) => { /* ... */ },
-  getOne: (id: number) => { /* ... */ },
-  create: (data: DomainsListCreateData[]) => { /* ... */ },
-  deleteOne: (id: number) => { /* ... */ },
-  deleteAll: () => { /* ... */ },
-  search: (text: string, params?: PaginationParams) => { /* ... */ },
+  getAll: (params?: PaginationParams & { attempts?: number }) => {
+    const queryString = params ? `?${toSearchParams(params)}` : ''
+    return apiRequest<PaginatedResponse<DomainsList>>(`/domains/lists${queryString}`)
+  },
+  // ... остальные методы
 }
 
 export const domainsApi = {
-  getAll: (params?: PaginationParams & { resolved?: boolean }) => { /* ... */ },
-  getOne: (id: number) => { /* ... */ },
-  create: (data: DomainCreateData[]) => { /* ... */ },
-  deleteOne: (id: number) => { /* ... */ },
-  deleteAll: () => { /* ... */ },
-  search: (text: string, params?: PaginationParams) => { /* ... */ },
+  getAll: (params?: PaginationParams & { resolved?: boolean }) => {
+    const queryString = params ? `?${toSearchParams(params)}` : ''
+    return apiRequest<PaginatedResponse<Domain>>(`/domains${queryString}`)
+  },
+  // ... остальные методы
 }
 ```
+
+**Важно:** Не использовать тип `any`, применять типобезопасные хелперы
 
 #### 1.2 Страницы
 - `src/pages/domains/DomainsListsPage.vue` - управление списками доменов
 - `src/pages/domains/DomainsPage.vue` - управление доменами
 
 **Копировать паттерн из DnsServersPage.vue:**
-1. Импорты API и типов
-2. Reactive состояния (servers, isLoading, searchQuery)
-3. Pagination setup
-4. Модальные окна (add, delete confirm)
-5. Table columns configuration
-6. CRUD методы (load, create, delete)
-7. Шаблон с DataTable, PaginationControl, Modals
+1. Импорты API и типов из централизованных экспортов
+2. Использовать `usePaginatedData` для автоматической пагинации
+3. Модальные окна (add, delete confirm)
+4. Table columns configuration
+5. Шаблон с DataTable, PaginationControl, Modals
+
+**Преимущества `usePaginatedData`:**
+- Автоматическая загрузка при изменении страницы/размера
+- Встроенное управление состоянием загрузки
+- Уменьшение кода на ~40 строк
+- Единообразие API для всех страниц
 
 #### 1.3 Обновить Router
 ```typescript
@@ -121,14 +146,14 @@ export const rosApi = {
 
 #### 3.3 Обновить Router
 
-## Шаблон для новой страницы
+## Шаблон для новой страницы (с usePaginatedData)
 
 ```vue
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { /* API */ } from '@/api/endpoints/...'
 import type { /* Types */ } from '@/api/types/...'
-import { usePagination } from '@/composables/usePagination'
+import { usePaginatedData } from '@/composables'
 import DataTable from '@/ui/tables/DataTable.vue'
 import PaginationControl from '@/ui/tables/PaginationControl.vue'
 import BaseButton from '@/ui/buttons/BaseButton.vue'
@@ -136,11 +161,16 @@ import BaseModal from '@/ui/modals/BaseModal.vue'
 import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
 // ... другие импорты
 
-// Состояния
-const items = ref([])
-const isLoading = ref(false)
-const searchQuery = ref('')
-const pagination = usePagination(20)
+// Paginated data management (автоматическая пагинация)
+const {
+  data: items,
+  isLoading,
+  pagination,
+  load: loadItems,
+  refresh: refreshItems,
+  goToPage,
+  changePageSize,
+} = usePaginatedData<ItemType>(async (params) => itemsApi.getAll(params), 20)
 
 // Модалки
 const isAddModalOpen = ref(false)
@@ -155,10 +185,15 @@ const formErrors = ref({})
 const TABLE_COLUMNS = [/* ... */]
 
 // CRUD методы
-const loadItems = async () => { /* ... */ }
-const createItem = async () => { /* ... */ }
-const deleteItem = async () => { /* ... */ }
-const searchItems = async () => { /* ... */ }
+const createItem = async () => {
+  // ... создание
+  refreshItems() // автоматически обновит данные
+}
+
+const deleteItem = async () => {
+  // ... удаление
+  refreshItems() // автоматически обновит данные
+}
 
 onMounted(() => {
   loadItems()
@@ -183,18 +218,36 @@ onMounted(() => {
     <DataTable :data="items" :columns="TABLE_COLUMNS" :is-loading="isLoading" />
 
     <!-- Pagination -->
-    <PaginationControl />
+    <PaginationControl
+      v-if="items.length > 0"
+      :current-page="pagination.currentPage.value"
+      :total-pages="pagination.totalPages.value"
+      :total-items="pagination.totalItems.value"
+      :page-size="pagination.pageSize.value"
+      :page-size-options="pagination.PAGE_SIZE_OPTIONS"
+      @update:current-page="goToPage"
+      @update:page-size="changePageSize"
+    />
 
-    <!-- Add Modal -->
+    <!-- Modals -->
     <BaseModal :is-open="isAddModalOpen" @close="isAddModalOpen = false">
       <!-- Form -->
     </BaseModal>
 
-    <!-- Delete Confirm -->
-    <ConfirmDialog :is-open="isDeleteConfirmOpen" @confirm="deleteItem" @cancel="isDeleteConfirmOpen = false" />
+    <ConfirmDialog 
+      :is-open="isDeleteConfirmOpen" 
+      @confirm="deleteItem" 
+      @cancel="isDeleteConfirmOpen = false" 
+    />
   </div>
 </template>
 ```
+
+**Преимущества:**
+- Меньше кода (нет ручной обработки пагинации)
+- Автоматическая перезагрузка при изменении страницы
+- Единообразный подход на всех страницах
+- Типобезопасность через generics
 
 ## Дополнительные улучшения
 
@@ -210,6 +263,13 @@ onMounted(() => {
 ### 4. Тесты
 - Unit тесты для composables
 - Component тесты для UI kit
+
+## Полезная документация
+
+- [Документация Composables](src/composables/README.md) - полное руководство по использованию композаблов
+- [Vue 3 Composition API](https://vuejs.org/api/composition-api-setup.html)
+- [TypeScript в Vue](https://vuejs.org/guide/typescript/overview.html)
+- [Tailwind CSS v4](https://tailwindcss.com/docs)
 
 ## Полезные команды
 

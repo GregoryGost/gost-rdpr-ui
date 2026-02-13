@@ -1,7 +1,19 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiRequest } from '../client'
 import type { DnsServer, DnsServerCreateData } from '../types/dns'
 import type { PaginatedResponse, PaginationParams, OkResponse } from '../types/common'
+
+/**
+ * Convert pagination params to URLSearchParams
+ * @param {PaginationParams} params - Pagination parameters
+ * @returns {URLSearchParams}
+ */
+function toSearchParams(params: PaginationParams): URLSearchParams {
+  const searchParams = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    searchParams.append(key, String(value))
+  })
+  return searchParams
+}
 
 /**
  * DNS API methods
@@ -13,7 +25,7 @@ export const dnsApi = {
    * @returns {Promise<PaginatedResponse<DnsServer>>}
    */
   getAll: (params?: PaginationParams) => {
-    const queryString = params ? `?${new URLSearchParams(params as any)}` : ''
+    const queryString = params ? `?${toSearchParams(params)}` : ''
     return apiRequest<PaginatedResponse<DnsServer>>(`/dns${queryString}`)
   },
 
@@ -56,7 +68,12 @@ export const dnsApi = {
    * @returns {Promise<PaginatedResponse<DnsServer>>}
    */
   search: (text: string, params?: PaginationParams) => {
-    const searchParams = new URLSearchParams({ text, ...(params as any) })
+    const searchParams = new URLSearchParams({ text })
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        searchParams.append(key, String(value))
+      })
+    }
     return apiRequest<PaginatedResponse<DnsServer>>(`/dns/search?${searchParams}`)
   },
 }
