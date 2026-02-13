@@ -51,8 +51,8 @@ const openConfirm = (command: 'lists' | 'domains' | 'ros') => {
         : 'Списки доменов и IP адресов будут загружены (только если изменились). Продолжить?'
       break
     case 'domains':
-      confirmTitle.value = 'Разрешить домены'
-      confirmMessage.value = 'Все домены будут разрешены в IP адреса. Это может занять время. Продолжить?'
+      confirmTitle.value = 'Определить домены'
+      confirmMessage.value = 'Все домены будут определены в IP адреса. Это может занять время. Продолжить?'
       break
     case 'ros':
       confirmTitle.value = 'Обновить RouterOS'
@@ -79,7 +79,7 @@ const executeCommand = async () => {
       case 'domains':
         isLoadingDomains.value = true
         await commandsApi.resolveDomains()
-        lastResult.value = { type: 'success', message: 'Домены успешно разрешены' }
+        lastResult.value = { type: 'success', message: 'Домены успешно определены' }
         break
       case 'ros':
         isLoadingRouterOS.value = true
@@ -170,10 +170,10 @@ const executeCommand = async () => {
           <div class="rounded-lg bg-green-100 p-3 dark:bg-green-900/20">
             <GlobeAltIcon class="h-6 w-6 text-green-600 dark:text-green-400" />
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Разрешить домены</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Определить домены</h3>
         </div>
         <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          Разрешить все домены в IP адреса используя настроенные DNS серверы
+          Определить все домены в IP адреса используя настроенные DNS серверы
         </p>
         <BaseButton
           @click="openConfirm('domains')"
@@ -181,7 +181,7 @@ const executeCommand = async () => {
           class="mt-10 w-full"
           :is-loading="isLoadingDomains"
         >
-          Разрешить
+          Определить
         </BaseButton>
       </div>
 

@@ -157,7 +157,7 @@ onMounted(() => {
     <!-- Header -->
     <div class="mb-6">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">DNS Серверы</h1>
-      <p class="mt-2 text-gray-600 dark:text-gray-400">Управление DNS серверами для разрешения доменов</p>
+      <p class="mt-2 text-gray-600 dark:text-gray-400">Управление DNS серверами для определения доменов</p>
     </div>
 
     <!-- Actions Bar -->

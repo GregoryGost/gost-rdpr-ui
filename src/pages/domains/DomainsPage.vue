@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { domainsApi } from '@/api/endpoints/domains'
 import type { Domain, DomainCreateData } from '@/api/types/domains'
+import { PAGINATION } from '@/constants'
 import DataTable from '@/ui/tables/DataTable.vue'
 import PaginationControl from '@/ui/tables/PaginationControl.vue'
 import BaseButton from '@/ui/buttons/BaseButton.vue'
@@ -27,13 +28,11 @@ const totalResolved = ref(0)
 const totalQuery = ref(0)
 
 // Pagination
-const pageSize = ref(20)
+const pageSize = ref(PAGINATION.DEFAULT_PAGE_SIZE)
 const currentPage = ref(1)
 const totalItems = ref(0)
 const totalPages = computed(() => Math.ceil(totalItems.value / pageSize.value))
 const offset = computed(() => (currentPage.value - 1) * pageSize.value)
-
-const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
 
 const pagination = {
   currentPage,
@@ -41,7 +40,7 @@ const pagination = {
   totalItems,
   totalPages,
   offset,
-  PAGE_SIZE_OPTIONS,
+  PAGE_SIZE_OPTIONS: PAGINATION.PAGE_SIZE_OPTIONS,
 }
 
 // Modals
@@ -72,7 +71,7 @@ const TABLE_COLUMNS = [
   { key: 'ips_v6', label: 'IPv6' },
   { key: 'ros_comment', label: 'Комментарий' },
   { key: 'created_at_hum', label: 'Создано' },
-  { key: 'last_resolved_at_hum', label: 'Разрешено' },
+  { key: 'last_resolved_at_hum', label: 'Определено' },
   { key: 'actions', label: 'Действия' },
 ]
 
@@ -297,7 +296,7 @@ onMounted(() => {
     <!-- Header -->
     <div class="mb-6">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Домены</h1>
-      <p class="mt-2 text-gray-600 dark:text-gray-400">Управление доменами и их разрешением в IP адреса</p>
+      <p class="mt-2 text-gray-600 dark:text-gray-400">Управление доменами и их определением в IP адреса</p>
     </div>
 
     <!-- Stats -->
@@ -552,7 +551,7 @@ onMounted(() => {
               <CheckCircleIcon v-if="selectedDomain.resolved" class="h-5 w-5 text-green-600 dark:text-green-400" />
               <XCircleIcon v-else class="h-5 w-5 text-red-600 dark:text-red-400" />
               <span class="text-sm text-gray-900 dark:text-gray-100">
-                {{ selectedDomain.resolved ? 'Разрешен' : 'Не разрешен' }}
+                {{ selectedDomain.resolved ? 'Определен' : 'Не определен' }}
               </span>
             </div>
           </div>
@@ -622,7 +621,7 @@ onMounted(() => {
               </div>
 
               <div v-if="selectedDomain.last_resolved_at_hum">
-                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Последнее разрешение</label>
+                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Последнее определение</label>
                 <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedDomain.last_resolved_at_hum }}</p>
                 <p class="text-xs font-mono text-gray-500 dark:text-gray-400">Timestamp: {{ selectedDomain.last_resolved_at }}</p>
               </div>

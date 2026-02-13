@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
+import { PAGINATION } from '@/constants'
 
-const DEFAULT_PAGE_SIZE = 20
-const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
+const { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } = PAGINATION
 
 /**
  * Composable for table pagination management

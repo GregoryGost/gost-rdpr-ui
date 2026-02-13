@@ -6,6 +6,8 @@ Always reread and apply the rules.
 
 Always reread project folders (recursive).
 
+Be sure to check the context in the `.cursor_context` folder before each work session and update it after completion. If the folder doesn't exist, you'll need to create it. If the folder is empty, you'll need to populate it with the base context.
+
 Check the operating system under which the IDE is running. Tailor your commands to interact with this system.
 
 You're an experienced engineer who doesn't ask unnecessary questions and tries to figure everything out on your own, delving into the project in detail and independently studying anything that's unclear.

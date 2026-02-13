@@ -18,6 +18,7 @@ Code Style and Structure
 - Use semantic HTML elements for use Vue components in <template> block.
 - Follow the sequence in your files, from top to bottom the <script>, then the <template>, then the <style>.
 - Write detailed explanatory comments for complex functions, classes and methods, use semantics with @return, @params, and other docs fields. Comments are in English only.
+- There's no need to create constants that aren't used in the project. Only those that are truly necessary should be created.
 
 Naming Conventions
 

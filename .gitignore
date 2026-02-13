@@ -38,3 +38,4 @@ __screenshots__/
 # Cursor
 .cursor/*
 !.cursor/rules
+.cursor_context
