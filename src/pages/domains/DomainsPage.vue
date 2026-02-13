@@ -17,9 +17,11 @@ import { PlusIcon, TrashIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon 
  */
 const searchQuery = ref('')
 const resolvedFilter = ref<boolean | undefined>(undefined)
+const listFilter = ref<'all' | 'with-list' | 'without-list'>('all')
 
 // Data management
 const domains = ref<Domain[]>([])
+const allDomains = ref<Domain[]>([]) // All loaded domains before list filter
 const isLoading = ref(false)
 const totalResolved = ref(0)
 const totalQuery = ref(0)
@@ -44,8 +46,10 @@ const pagination = {
 
 // Modals
 const isAddModalOpen = ref(false)
+const isViewModalOpen = ref(false)
 const isDeleteConfirmOpen = ref(false)
 const domainToDelete = ref<number | null>(null)
+const selectedDomain = ref<Domain | null>(null)
 
 // Form data
 const formData = ref<DomainCreateData>({
@@ -62,6 +66,7 @@ const formErrors = ref<Record<string, string>>({})
 const TABLE_COLUMNS = [
   { key: 'id', label: 'ID' },
   { key: 'name', label: 'Домен' },
+  { key: 'domains_list_id', label: 'Список' },
   { key: 'resolved', label: 'Статус' },
   { key: 'ips_v4', label: 'IPv4' },
   { key: 'ips_v6', label: 'IPv6' },
@@ -70,6 +75,18 @@ const TABLE_COLUMNS = [
   { key: 'last_resolved_at_hum', label: 'Разрешено' },
   { key: 'actions', label: 'Действия' },
 ]
+
+/**
+ * Apply list filter to domains
+ */
+const applyListFilter = (domainsToFilter: Domain[]): Domain[] => {
+  if (listFilter.value === 'with-list') {
+    return domainsToFilter.filter((d) => d.domains_list_id != null)
+  } else if (listFilter.value === 'without-list') {
+    return domainsToFilter.filter((d) => d.domains_list_id == null)
+  }
+  return domainsToFilter
+}
 
 /**
  * Load domains with stats
@@ -82,13 +99,15 @@ const loadDomainsWithStats = async () => {
       offset: offset.value,
       resolved: resolvedFilter.value,
     })
-    domains.value = response.payload
-    totalItems.value = response.total
+    allDomains.value = response.payload
+    domains.value = applyListFilter(response.payload)
+    totalItems.value = domains.value.length
     totalResolved.value = response.total_resolved
     totalQuery.value = response.total_query
   } catch (error) {
     console.error('Failed to load domains:', error)
     domains.value = []
+    allDomains.value = []
     totalItems.value = 0
     totalResolved.value = 0
     totalQuery.value = 0
@@ -143,13 +162,15 @@ const searchDomains = async () => {
         offset: offset.value,
         resolved: resolvedFilter.value,
       })
-      domains.value = response.payload
-      totalItems.value = response.total
+      allDomains.value = response.payload
+      domains.value = applyListFilter(response.payload)
+      totalItems.value = domains.value.length
       totalResolved.value = response.total_resolved
       totalQuery.value = response.total_query
     } catch (error) {
       console.error('Failed to search domains:', error)
       domains.value = []
+      allDomains.value = []
       totalItems.value = 0
       totalResolved.value = 0
       totalQuery.value = 0
@@ -166,6 +187,17 @@ const filterByResolved = (value: boolean | undefined) => {
   resolvedFilter.value = value
   currentPage.value = 1 // Reset to first page
   loadDomainsWithStats()
+}
+
+/**
+ * Filter by list presence
+ */
+const filterByList = (value: 'all' | 'with-list' | 'without-list') => {
+  listFilter.value = value
+  currentPage.value = 1 // Reset to first page
+  // Re-apply filter to already loaded domains
+  domains.value = applyListFilter(allDomains.value)
+  totalItems.value = domains.value.length
 }
 
 /**
@@ -207,6 +239,14 @@ const createDomain = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+/**
+ * Open domain view modal
+ */
+const openViewModal = (domain: Domain) => {
+  selectedDomain.value = domain
+  isViewModalOpen.value = true
 }
 
 /**
@@ -294,8 +334,8 @@ onMounted(() => {
           />
         </div>
 
-        <!-- Filter -->
-        <div class="flex gap-2">
+        <!-- Filter by Resolved Status -->
+        <div class="flex flex-wrap gap-2">
           <BaseButton
             @click="filterByResolved(undefined)"
             :variant="resolvedFilter === undefined ? 'primary' : 'ghost'"
@@ -318,6 +358,31 @@ onMounted(() => {
             Не определен
           </BaseButton>
         </div>
+
+        <!-- Filter by List -->
+        <div class="flex flex-wrap gap-2">
+          <BaseButton
+            @click="filterByList('all')"
+            :variant="listFilter === 'all' ? 'secondary' : 'ghost'"
+            size="sm"
+          >
+            Все списки
+          </BaseButton>
+          <BaseButton
+            @click="filterByList('with-list')"
+            :variant="listFilter === 'with-list' ? 'secondary' : 'ghost'"
+            size="sm"
+          >
+            Со списком
+          </BaseButton>
+          <BaseButton
+            @click="filterByList('without-list')"
+            :variant="listFilter === 'without-list' ? 'secondary' : 'ghost'"
+            size="sm"
+          >
+            Без списка
+          </BaseButton>
+        </div>
       </div>
 
       <!-- Add Button -->
@@ -328,9 +393,22 @@ onMounted(() => {
     </div>
 
     <!-- Table -->
-    <DataTable :data="domains" :columns="TABLE_COLUMNS" :is-loading="isLoading" empty-message="Домены не найдены">
+    <DataTable
+      :data="domains"
+      :columns="TABLE_COLUMNS"
+      :is-loading="isLoading"
+      empty-message="Домены не найдены"
+      @row-click="openViewModal"
+    >
       <template #cell-name="{ value }">
         <span class="font-mono text-sm font-medium">{{ value }}</span>
+      </template>
+
+      <template #cell-domains_list_id="{ value }">
+        <span v-if="value" class="inline-flex items-center rounded-md bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
+          Список #{{ value }}
+        </span>
+        <span v-else class="text-sm text-gray-400">Без списка</span>
       </template>
 
       <template #cell-resolved="{ value }">
@@ -436,6 +514,127 @@ onMounted(() => {
           <BaseButton variant="primary" type="submit" :is-loading="isLoading">Создать</BaseButton>
         </div>
       </form>
+    </BaseModal>
+
+    <!-- View/Edit Domain Modal -->
+    <BaseModal
+      :is-open="isViewModalOpen"
+      :title="`Домен: ${selectedDomain?.name || ''}`"
+      @close="isViewModalOpen = false"
+    >
+      <div v-if="selectedDomain" class="space-y-4">
+        <!-- Domain Info (Read-only) -->
+        <div class="space-y-3">
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">ID</label>
+            <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedDomain.id }}</p>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Доменное имя</label>
+            <p class="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{{ selectedDomain.name }}</p>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Список доменов</label>
+            <span
+              v-if="selectedDomain.domains_list_id"
+              class="inline-flex items-center rounded-md bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400"
+            >
+              Список #{{ selectedDomain.domains_list_id }}
+            </span>
+            <p v-else class="text-sm text-gray-500 dark:text-gray-400">Без списка</p>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Статус</label>
+            <div class="flex items-center gap-2">
+              <CheckCircleIcon v-if="selectedDomain.resolved" class="h-5 w-5 text-green-600 dark:text-green-400" />
+              <XCircleIcon v-else class="h-5 w-5 text-red-600 dark:text-red-400" />
+              <span class="text-sm text-gray-900 dark:text-gray-100">
+                {{ selectedDomain.resolved ? 'Разрешен' : 'Не разрешен' }}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+              IPv4 адреса
+              <span v-if="selectedDomain.ips_v4 && selectedDomain.ips_v4.length > 0" class="ml-1 text-gray-400">
+                ({{ selectedDomain.ips_v4.length }})
+              </span>
+            </label>
+            <div v-if="selectedDomain.ips_v4 && selectedDomain.ips_v4.length > 0" class="flex flex-wrap gap-1">
+              <span
+                v-for="ip in selectedDomain.ips_v4"
+                :key="ip"
+                class="inline-flex items-center rounded-md bg-blue-100 px-2 py-1 font-mono text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+              >
+                {{ ip }}
+              </span>
+            </div>
+            <p v-else class="text-sm text-gray-500 dark:text-gray-400">Нет адресов</p>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+              IPv6 адреса
+              <span v-if="selectedDomain.ips_v6 && selectedDomain.ips_v6.length > 0" class="ml-1 text-gray-400">
+                ({{ selectedDomain.ips_v6.length }})
+              </span>
+            </label>
+            <div v-if="selectedDomain.ips_v6 && selectedDomain.ips_v6.length > 0" class="flex flex-wrap gap-1">
+              <span
+                v-for="ip in selectedDomain.ips_v6"
+                :key="ip"
+                class="inline-flex items-center rounded-md bg-purple-100 px-2 py-1 font-mono text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+              >
+                {{ ip }}
+              </span>
+            </div>
+            <p v-else class="text-sm text-gray-500 dark:text-gray-400">Нет адресов</p>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+              Комментарий для RouterOS
+            </label>
+            <p v-if="selectedDomain.ros_comment" class="text-sm text-gray-900 dark:text-gray-100">
+              {{ selectedDomain.ros_comment }}
+            </p>
+            <p v-else class="text-sm text-gray-500 dark:text-gray-400">Не указан</p>
+          </div>
+
+          <div class="border-t pt-3 dark:border-gray-700">
+            <label class="mb-2 block text-xs font-semibold text-gray-700 uppercase dark:text-gray-300">Временные метки</label>
+            
+            <div class="space-y-2">
+              <div>
+                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Создано</label>
+                <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedDomain.created_at_hum }}</p>
+                <p class="text-xs font-mono text-gray-500 dark:text-gray-400">Timestamp: {{ selectedDomain.created_at }}</p>
+              </div>
+
+              <div v-if="selectedDomain.updated_at_hum">
+                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Обновлено</label>
+                <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedDomain.updated_at_hum }}</p>
+                <p class="text-xs font-mono text-gray-500 dark:text-gray-400">Timestamp: {{ selectedDomain.updated_at }}</p>
+              </div>
+
+              <div v-if="selectedDomain.last_resolved_at_hum">
+                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Последнее разрешение</label>
+                <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedDomain.last_resolved_at_hum }}</p>
+                <p class="text-xs font-mono text-gray-500 dark:text-gray-400">Timestamp: {{ selectedDomain.last_resolved_at }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Close Button -->
+        <div class="flex justify-end border-t pt-4 dark:border-gray-700">
+          <BaseButton variant="primary" @click="isViewModalOpen = false">Закрыть</BaseButton>
+        </div>
+      </div>
     </BaseModal>
 
     <!-- Delete Confirmation Dialog -->
