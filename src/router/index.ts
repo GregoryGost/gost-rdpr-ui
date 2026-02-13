@@ -21,7 +21,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'domains',
         name: 'domains',
-        component: () => import('@/pages/HomePage.vue'), // Временно HomePage
+        component: () => import('@/pages/domains/DomainsPage.vue'),
         meta: { title: 'Домены' },
       },
       {

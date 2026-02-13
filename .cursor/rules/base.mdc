@@ -20,3 +20,5 @@ The main IDE for development is Cursor/VSCode. Follow the appropriate formatting
 Use pnpm package manager for run package script commands.
 
 Don't overload the readme file with unnecessary information. Move any instructions to a separate file. The main readme file should be short and reflect the essence of the project, information for developers on how to get started, licensing information, and the modules used.
+
+After creating or making changes to any file, be sure to double-check it several times.

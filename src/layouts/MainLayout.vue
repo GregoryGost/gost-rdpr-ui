@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { XMarkIcon, HomeIcon, ServerIcon, GlobeAltIcon, CommandLineIcon } from '@heroicons/vue/24/outline'
+import {
+  XMarkIcon,
+  HomeIcon,
+  ServerIcon,
+  AtSymbolIcon,
+  MapPinIcon,
+  Cog6ToothIcon,
+  CommandLineIcon,
+} from '@heroicons/vue/24/outline'
 import AppHeader from './AppHeader.vue'
 import AppFooter from './AppFooter.vue'
 import AppLogo from '@/components/AppLogo.vue'
@@ -16,9 +24,9 @@ const isSidebarOpen = ref(false)
 const NAVIGATION_ITEMS = [
   { name: 'Главная', path: '/', icon: HomeIcon },
   { name: 'DNS Серверы', path: '/dns', icon: ServerIcon },
-  { name: 'Домены', path: '/domains', icon: GlobeAltIcon },
-  { name: 'IP Адреса', path: '/ips', icon: GlobeAltIcon },
-  { name: 'Конфигурации', path: '/ros', icon: ServerIcon },
+  { name: 'Домены', path: '/domains', icon: AtSymbolIcon },
+  { name: 'IP Адреса', path: '/ips', icon: MapPinIcon },
+  { name: 'Конфигурации RoS', path: '/ros', icon: Cog6ToothIcon },
   { name: 'Команды', path: '/commands', icon: CommandLineIcon },
 ]
 

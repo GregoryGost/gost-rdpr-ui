@@ -4,4 +4,5 @@
  */
 
 export { dnsApi } from './dns'
+export { domainsApi } from './domains'
 export { commandsApi } from './commands'
