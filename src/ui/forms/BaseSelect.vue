@@ -29,9 +29,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string | number | null]
 }>()
 
-const selectedOption = computed(() => 
-  props.options.find(opt => opt.value === props.modelValue) || null
-)
+const selectedOption = computed(() => props.options.find((opt) => opt.value === props.modelValue) || null)
 </script>
 
 <template>
@@ -39,7 +37,7 @@ const selectedOption = computed(() =>
     <Listbox :model-value="modelValue" :disabled="isDisabled" @update:model-value="emit('update:modelValue', $event)">
       <div class="relative">
         <ListboxButton
-          class="relative w-full cursor-pointer rounded-lg bg-white dark:bg-gray-800 py-2 pl-3 pr-10 text-left border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+          class="relative w-full cursor-pointer rounded-lg border border-gray-300 bg-white py-2 pr-10 pl-3 text-left focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800"
         >
           <span class="block truncate text-gray-900 dark:text-gray-100">
             {{ selectedOption?.label || placeholder }}
@@ -55,7 +53,7 @@ const selectedOption = computed(() =>
           leave-to-class="opacity-0"
         >
           <ListboxOptions
-            class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+            class="ring-opacity-5 absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-black focus:outline-none dark:bg-gray-800"
           >
             <ListboxOption
               v-for="option in options"
@@ -67,7 +65,7 @@ const selectedOption = computed(() =>
               <li
                 :class="[
                   active ? 'bg-blue-100 dark:bg-blue-900/20' : '',
-                  'relative cursor-pointer select-none py-2 pl-10 pr-4 text-gray-900 dark:text-gray-100',
+                  'relative cursor-pointer py-2 pr-4 pl-10 text-gray-900 select-none dark:text-gray-100',
                 ]"
               >
                 <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">
@@ -89,5 +87,4 @@ const selectedOption = computed(() =>
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

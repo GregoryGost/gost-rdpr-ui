@@ -6,7 +6,7 @@
  *
  * Docs: https://tailwindcss.com/docs/theme
  */
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /**
  * Dark mode configuration for Tailwind CSS v4
@@ -15,23 +15,23 @@
 @variant dark (.dark &);
 
 @font-face {
-	font-family: 'GOST Type A';
-	src: url('../fonts/gost_tip_a_italic.woff2') format('woff2');
-	font-weight: normal;
-	font-style: italic;
-	font-display: swap;
+  font-family: 'GOST Type A';
+  src: url('../fonts/gost_tip_a_italic.woff2') format('woff2');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
 }
 
 /**
  * Overwrite the Tailwind CSS theme. Check docs for more information.
  */
 @theme {
-	/* --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; */
-	/* --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; */
-	/* --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; */
-	/* ... */
-	
-	--color-brand-primary: #5238ff;
+  /* --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; */
+  /* --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; */
+  /* --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; */
+  /* ... */
+
+  --color-brand-primary: #5238ff;
 }
 
 /**
@@ -40,20 +40,20 @@
  * Docs: https://tailwindcss.com/docs/preflight
  */
 @layer base {
-	*,
-	::after,
-	::before,
-	::backdrop,
-	::file-selector-button {
-		/* ... */
-	}
-	body {
-		/* ... */
-	}
-	hr {
-		/* ... */
-	}
-	/* ... */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    /* ... */
+  }
+  body {
+    /* ... */
+  }
+  hr {
+    /* ... */
+  }
+  /* ... */
 }
 
 /**
@@ -61,24 +61,28 @@
  * Useful for defining styles for common components like headings, links, etc.
  */
 @layer components {
-	h1, .heading-1 {
-		@apply text-3xl mt-1 mb-4;
-	}
-	h2, .heading-2 {
-		@apply text-2xl mt-0.5 mb-4;
-	}
-	h3, .heading-3 {
-		@apply text-xl mt-0.5 mb-2;
-	}
-	h4, .heading-4 {
-		@apply text-lg mb-1;
-	}
-	a.link:hover {
-		@apply no-underline;
-	}
-	code {
-		@apply font-mono text-sm bg-gray-100 dark:bg-gray-800 p-1 rounded;
-	}
+  h1,
+  .heading-1 {
+    @apply mt-1 mb-4 text-3xl;
+  }
+  h2,
+  .heading-2 {
+    @apply mt-0.5 mb-4 text-2xl;
+  }
+  h3,
+  .heading-3 {
+    @apply mt-0.5 mb-2 text-xl;
+  }
+  h4,
+  .heading-4 {
+    @apply mb-1 text-lg;
+  }
+  a.link:hover {
+    @apply no-underline;
+  }
+  code {
+    @apply rounded bg-gray-100 p-1 font-mono text-sm dark:bg-gray-800;
+  }
 }
 
 /**
@@ -86,5 +90,5 @@
  * Useful for defining custom utilities like `text-underline`, `text-italic`, etc.
  */
 @layer utilities {
-	/* Custom utilities can be added here */
+  /* Custom utilities can be added here */
 }

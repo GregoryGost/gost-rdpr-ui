@@ -39,5 +39,4 @@ const SIZE_CLASSES = {
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

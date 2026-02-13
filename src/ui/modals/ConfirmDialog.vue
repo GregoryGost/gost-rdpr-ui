@@ -57,7 +57,7 @@ const emit = defineEmits<{
             leave-to="opacity-0 scale-95"
           >
             <DialogPanel
-              class="w-full max-w-md transform rounded-xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all"
+              class="w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all dark:bg-gray-800"
             >
               <div class="flex items-start gap-4">
                 <div
@@ -74,7 +74,7 @@ const emit = defineEmits<{
                   />
                 </div>
                 <div class="flex-1">
-                  <DialogTitle class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  <DialogTitle class="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {{ title }}
                   </DialogTitle>
                   <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -83,7 +83,7 @@ const emit = defineEmits<{
                 </div>
               </div>
 
-              <div class="mt-6 flex gap-3 justify-end">
+              <div class="mt-6 flex justify-end gap-3">
                 <BaseButton variant="ghost" @click="emit('cancel')" :is-disabled="isLoading">
                   {{ cancelText }}
                 </BaseButton>
@@ -99,5 +99,4 @@ const emit = defineEmits<{
   </TransitionRoot>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

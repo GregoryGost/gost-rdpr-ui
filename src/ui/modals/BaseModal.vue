@@ -58,16 +58,16 @@ const SIZE_CLASSES = {
             <DialogPanel
               :class="[
                 SIZE_CLASSES[size],
-                'w-full transform rounded-xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all',
+                'w-full transform rounded-xl bg-white p-6 shadow-xl transition-all dark:bg-gray-800',
               ]"
             >
-              <div class="flex items-center justify-between mb-4">
+              <div class="mb-4 flex items-center justify-between">
                 <DialogTitle v-if="title" class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {{ title }}
                 </DialogTitle>
                 <button
                   @click="emit('close')"
-                  class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  class="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                 >
                   <XMarkIcon class="h-6 w-6" />
                 </button>
@@ -81,5 +81,4 @@ const SIZE_CLASSES = {
   </TransitionRoot>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

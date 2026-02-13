@@ -20,7 +20,7 @@ export function useApi<T>(apiCall: () => Promise<T>) {
     isLoading.value = true
     hasError.value = false
     errorMessage.value = null
-    
+
     try {
       data.value = await apiCall()
     } catch (error) {
@@ -35,11 +35,11 @@ export function useApi<T>(apiCall: () => Promise<T>) {
     }
   }
 
-  return { 
-    data, 
-    isLoading, 
-    hasError, 
-    errorMessage, 
-    execute 
+  return {
+    data,
+    isLoading,
+    hasError,
+    errorMessage,
+    execute,
   }
 }

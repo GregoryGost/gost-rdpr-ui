@@ -3,9 +3,7 @@
  * In development mode, uses Vite proxy (/api)
  * In production, uses environment variable or fallback URL
  */
-const API_BASE_URL = import.meta.env.DEV
-  ? '/api'
-  : import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:4000'
+const API_BASE_URL = import.meta.env.DEV ? '/api' : import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:4000'
 
 /**
  * API Error class
@@ -13,7 +11,10 @@ const API_BASE_URL = import.meta.env.DEV
  * @extends Error
  */
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
     super(message)
     this.name = 'ApiError'
   }
@@ -27,10 +28,7 @@ export class ApiError extends Error {
  * @returns {Promise<T>} Response data promise
  * @throws {ApiError} On request error
  */
-export async function apiRequest<T>(
-  endpoint: string,
-  options?: RequestInit
-): Promise<T> {
+export async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {

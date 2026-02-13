@@ -43,7 +43,7 @@ export const useSettingsStore = defineStore('settings', () => {
       const stored = localStorage.getItem(POLLING_INTERVAL_KEY)
       if (stored !== null) {
         const parsed = parseInt(stored, 10)
-        if (!isNaN(parsed) && POLLING_INTERVALS.some(opt => opt.value === parsed)) {
+        if (!isNaN(parsed) && POLLING_INTERVALS.some((opt) => opt.value === parsed)) {
           pollingInterval.value = parsed
         }
       }
@@ -57,7 +57,7 @@ export const useSettingsStore = defineStore('settings', () => {
    * @param {number} value - New interval value in milliseconds
    */
   function setPollingInterval(value: number): void {
-    if (!POLLING_INTERVALS.some(opt => opt.value === value)) {
+    if (!POLLING_INTERVALS.some((opt) => opt.value === value)) {
       console.warn(`Invalid polling interval: ${value}`)
       return
     }

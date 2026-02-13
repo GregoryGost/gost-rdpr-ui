@@ -52,8 +52,7 @@ export const dnsApi = {
    * @param {number} id - DNS server ID
    * @returns {Promise<OkResponse>}
    */
-  deleteOne: (id: number) =>
-    apiRequest<OkResponse>(`/dns/${id}`, { method: 'DELETE' }),
+  deleteOne: (id: number) => apiRequest<OkResponse>(`/dns/${id}`, { method: 'DELETE' }),
 
   /**
    * Delete all DNS servers

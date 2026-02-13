@@ -37,7 +37,8 @@ Syntax and Formatting
 - Use arrow functions for methods and computed properties.
 - Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
 - Use template syntax for declarative rendering.
-- Always use for linting special command `pnpm lint-dry-run` prior. After check remove output lint html file always.
+- Always use for linting special command `pnpm lint-dry-run` prior. Check output html file for get linting result. After check, remove output lint html file always.
+- Always use for formatting special command `pnpm format` prior.
 
 UI and Styling
 

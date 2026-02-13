@@ -32,7 +32,7 @@ const {
   changePageSize,
 } = usePaginatedData<DnsServer>(
   async (params) => dnsApi.getAll(params),
-  20 // начальный размер страницы (опционально, по умолчанию 20)
+  20, // начальный размер страницы (опционально, по умолчанию 20)
 )
 
 // Начальная загрузка
@@ -43,11 +43,7 @@ onMounted(() => load())
 
 ```vue
 <template>
-  <DataTable
-    :data="servers"
-    :columns="TABLE_COLUMNS"
-    :is-loading="isLoading"
-  />
+  <DataTable :data="servers" :columns="TABLE_COLUMNS" :is-loading="isLoading" />
 
   <PaginationControl
     v-if="servers.length > 0"
@@ -66,31 +62,31 @@ onMounted(() => load())
 
 #### Возвращаемые значения
 
-| Свойство | Тип | Описание |
-|----------|-----|----------|
-| `data` | `Ref<T[]>` | Массив загруженных данных |
-| `isLoading` | `Ref<boolean>` | Состояние загрузки |
-| `pagination` | `UsePagination` | Объект с параметрами пагинации |
-| `load()` | `() => Promise<void>` | Загрузить данные с текущими параметрами |
-| `refresh()` | `() => Promise<void>` | Перезагрузить текущую страницу |
-| `reset()` | `() => void` | Сбросить пагинацию и перезагрузить |
-| `goToPage(page)` | `(page: number) => void` | Перейти на страницу и загрузить данные |
+| Свойство               | Тип                      | Описание                                 |
+| ---------------------- | ------------------------ | ---------------------------------------- |
+| `data`                 | `Ref<T[]>`               | Массив загруженных данных                |
+| `isLoading`            | `Ref<boolean>`           | Состояние загрузки                       |
+| `pagination`           | `UsePagination`          | Объект с параметрами пагинации           |
+| `load()`               | `() => Promise<void>`    | Загрузить данные с текущими параметрами  |
+| `refresh()`            | `() => Promise<void>`    | Перезагрузить текущую страницу           |
+| `reset()`              | `() => void`             | Сбросить пагинацию и перезагрузить       |
+| `goToPage(page)`       | `(page: number) => void` | Перейти на страницу и загрузить данные   |
 | `changePageSize(size)` | `(size: number) => void` | Изменить размер страницы и перезагрузить |
-| `nextPage()` | `() => void` | Следующая страница с загрузкой |
-| `prevPage()` | `() => void` | Предыдущая страница с загрузкой |
+| `nextPage()`           | `() => void`             | Следующая страница с загрузкой           |
+| `prevPage()`           | `() => void`             | Предыдущая страница с загрузкой          |
 
 #### Параметры pagination
 
-| Свойство | Тип | Описание |
-|----------|-----|----------|
-| `currentPage` | `Ref<number>` | Текущая страница |
-| `pageSize` | `Ref<number>` | Размер страницы |
-| `totalItems` | `Ref<number>` | Общее количество элементов |
-| `totalPages` | `ComputedRef<number>` | Общее количество страниц |
-| `offset` | `ComputedRef<number>` | Смещение для API запроса |
-| `hasNextPage` | `ComputedRef<boolean>` | Есть ли следующая страница |
-| `hasPrevPage` | `ComputedRef<boolean>` | Есть ли предыдущая страница |
-| `PAGE_SIZE_OPTIONS` | `number[]` | Доступные размеры страницы [10, 20, 50, 100] |
+| Свойство            | Тип                    | Описание                                     |
+| ------------------- | ---------------------- | -------------------------------------------- |
+| `currentPage`       | `Ref<number>`          | Текущая страница                             |
+| `pageSize`          | `Ref<number>`          | Размер страницы                              |
+| `totalItems`        | `Ref<number>`          | Общее количество элементов                   |
+| `totalPages`        | `ComputedRef<number>`  | Общее количество страниц                     |
+| `offset`            | `ComputedRef<number>`  | Смещение для API запроса                     |
+| `hasNextPage`       | `ComputedRef<boolean>` | Есть ли следующая страница                   |
+| `hasPrevPage`       | `ComputedRef<boolean>` | Есть ли предыдущая страница                  |
+| `PAGE_SIZE_OPTIONS` | `number[]`             | Доступные размеры страницы [10, 20, 50, 100] |
 
 ### Примеры использования
 
@@ -99,8 +95,9 @@ onMounted(() => load())
 ```typescript
 const searchQuery = ref('')
 
-const { data, isLoading, pagination, load, goToPage, changePageSize } = 
-  usePaginatedData<DnsServer>(async (params) => dnsApi.getAll(params))
+const { data, isLoading, pagination, load, goToPage, changePageSize } = usePaginatedData<DnsServer>(async (params) =>
+  dnsApi.getAll(params),
+)
 
 const searchServers = async () => {
   if (!searchQuery.value || searchQuery.value.length < 3) {
@@ -127,9 +124,7 @@ const searchServers = async () => {
 #### После создания/удаления элемента
 
 ```typescript
-const { refresh } = usePaginatedData<DnsServer>(
-  async (params) => dnsApi.getAll(params)
-)
+const { refresh } = usePaginatedData<DnsServer>(async (params) => dnsApi.getAll(params))
 
 const createServer = async (formData: DnsServerCreateData) => {
   await dnsApi.create([formData])
@@ -185,8 +180,8 @@ const { start, stop, isActive } = usePolling(
     immediate: true, // запустить сразу при создании
     onError: (error) => {
       console.error('Polling error:', error)
-    }
-  }
+    },
+  },
 )
 
 // Запустить опрос
@@ -205,9 +200,7 @@ stop()
 ```typescript
 import { useApi } from '@/composables'
 
-const { data, isLoading, hasError, errorMessage, execute } = useApi(
-  async () => await dnsApi.getAll()
-)
+const { data, isLoading, hasError, errorMessage, execute } = useApi(async () => await dnsApi.getAll())
 
 // Выполнить запрос
 await execute()

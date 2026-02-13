@@ -34,17 +34,17 @@ const emit = defineEmits<{
           <th
             v-for="column in columns"
             :key="String(column.key)"
-            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+            class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400"
           >
             {{ column.label }}
           </th>
         </tr>
       </thead>
-      <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+      <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
         <tr v-if="isLoading">
           <td :colspan="columns.length" class="px-6 py-4 text-center text-gray-500">
             <div class="flex items-center justify-center">
-              <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+              <svg class="mr-3 h-5 w-5 animate-spin" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
                 <path
                   class="opacity-75"
@@ -66,12 +66,12 @@ const emit = defineEmits<{
           v-for="(row, index) in data"
           :key="index"
           @click="emit('rowClick', row)"
-          class="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+          class="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
         >
           <td
             v-for="column in columns"
             :key="String(column.key)"
-            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
+            class="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-gray-100"
           >
             <slot :name="`cell-${String(column.key)}`" :row="row" :value="row[column.key as keyof T]">
               {{ row[column.key as keyof T] }}
@@ -83,5 +83,4 @@ const emit = defineEmits<{
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

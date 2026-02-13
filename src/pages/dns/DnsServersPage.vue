@@ -38,7 +38,7 @@ const serverToDelete = ref<number | null>(null)
 const formData = ref<DnsServerCreateData>({
   server: '',
   doh_server: '',
-  description: ''
+  description: '',
 })
 
 const formErrors = ref<Record<string, string>>({})
@@ -161,10 +161,10 @@ onMounted(() => {
     </div>
 
     <!-- Actions Bar -->
-    <div class="mb-6 flex flex-col sm:flex-row gap-4 justify-between">
+    <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row">
       <!-- Search -->
-      <div class="relative flex-1 max-w-md">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <div class="relative max-w-md flex-1">
+        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
           <MagnifyingGlassIcon class="h-5 w-5 text-gray-400" />
         </div>
         <input
@@ -172,30 +172,25 @@ onMounted(() => {
           @input="searchServers"
           type="search"
           placeholder="Поиск по серверу..."
-          class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          class="block w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-10 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
         />
       </div>
 
       <!-- Add Button -->
       <BaseButton @click="openAddModal" variant="primary">
-        <PlusIcon class="h-5 w-5 mr-2" />
+        <PlusIcon class="mr-2 h-5 w-5" />
         Добавить DNS Сервер
       </BaseButton>
     </div>
 
     <!-- Table -->
-    <DataTable
-      :data="servers"
-      :columns="TABLE_COLUMNS"
-      :is-loading="isLoading"
-      empty-message="DNS серверы не найдены"
-    >
+    <DataTable :data="servers" :columns="TABLE_COLUMNS" :is-loading="isLoading" empty-message="DNS серверы не найдены">
       <template #cell-server="{ value }">
         <span class="font-mono text-sm">{{ value || '-' }}</span>
       </template>
 
       <template #cell-doh_server="{ value }">
-        <span class="font-mono text-sm truncate max-w-xs block">{{ value || '-' }}</span>
+        <span class="block max-w-xs truncate font-mono text-sm">{{ value || '-' }}</span>
       </template>
 
       <template #cell-description="{ value }">
@@ -203,11 +198,7 @@ onMounted(() => {
       </template>
 
       <template #cell-actions="{ row }">
-        <BaseButton
-          variant="danger"
-          size="sm"
-          @click.stop="openDeleteConfirm(row.id)"
-        >
+        <BaseButton variant="danger" size="sm" @click.stop="openDeleteConfirm(row.id)">
           <TrashIcon class="h-4 w-4" />
         </BaseButton>
       </template>
@@ -229,7 +220,7 @@ onMounted(() => {
     <BaseModal :is-open="isAddModalOpen" title="Добавить DNS Сервер" @close="isAddModalOpen = false">
       <form @submit.prevent="createServer" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
             DNS Server (IPv4/IPv6)
           </label>
           <BaseInput
@@ -241,22 +232,18 @@ onMounted(() => {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
             DoH Server (DNS over HTTPS)
           </label>
-          <BaseInput
-            v-model="formData.doh_server!"
-            type="url"
-            placeholder="https://dns.google/dns-query"
-          />
+          <BaseInput v-model="formData.doh_server!" type="url" placeholder="https://dns.google/dns-query" />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Описание</label>
+          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Описание</label>
           <BaseTextarea v-model="formData.description!" placeholder="Описание DNS сервера" :rows="2" />
         </div>
 
-        <div class="flex gap-3 justify-end pt-4">
+        <div class="flex justify-end gap-3 pt-4">
           <BaseButton variant="ghost" type="button" @click="isAddModalOpen = false">Отмена</BaseButton>
           <BaseButton variant="primary" type="submit" :is-loading="isLoading">Создать</BaseButton>
         </div>
@@ -278,5 +265,4 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

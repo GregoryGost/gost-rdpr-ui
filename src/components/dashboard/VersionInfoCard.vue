@@ -18,14 +18,14 @@ defineProps<Props>()
 </script>
 
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Информация о версии</h3>
+  <div class="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Информация о версии</h3>
     <div class="space-y-3">
-      <div class="flex justify-between items-center">
+      <div class="flex items-center justify-between">
         <span class="text-sm text-gray-600 dark:text-gray-400">Название:</span>
         <span class="font-medium text-gray-900 dark:text-gray-100">{{ config?.static.app_title }}</span>
       </div>
-      <div class="flex justify-between items-center">
+      <div class="flex items-center justify-between">
         <span class="text-sm text-gray-600 dark:text-gray-400">Версия:</span>
         <span class="font-medium text-gray-900 dark:text-gray-100">{{ config?.static.app_version }}</span>
       </div>
@@ -33,5 +33,4 @@ defineProps<Props>()
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>
