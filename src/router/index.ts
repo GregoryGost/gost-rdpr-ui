@@ -45,7 +45,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'ros',
         name: 'ros',
-        component: () => import('@/pages/HomePage.vue'), // Временно HomePage
+        component: () => import('@/pages/ros/RosConfigsPage.vue'),
         meta: { title: 'Конфигурации' },
       },
       {
