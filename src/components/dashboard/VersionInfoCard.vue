@@ -1,17 +1,12 @@
 <script setup lang="ts">
+import type { ConfigResponse } from '@/api/types/config'
+
 /**
  * Version info card component
  * @component VersionInfoCard
  */
-interface ConfigData {
-  static: {
-    app_version: string
-    app_title: string
-  }
-}
-
 interface Props {
-  config: ConfigData | null
+  config: ConfigResponse | null
 }
 
 defineProps<Props>()

@@ -7,28 +7,19 @@ import ConnectionAlert from '@/components/dashboard/ConnectionAlert.vue'
 import HealthStatusCard from '@/components/dashboard/HealthStatusCard.vue'
 import VersionInfoCard from '@/components/dashboard/VersionInfoCard.vue'
 import QuickActionsCard from '@/components/dashboard/QuickActionsCard.vue'
+import ConfigurationCard from '@/components/dashboard/ConfigurationCard.vue'
 import { APP_NAME } from '@/constants'
 import { usePolling } from '@/composables'
 import { useSettingsStore } from '@/stores/settings'
 import { useHealthStore } from '@/stores/health'
 import { errorHandler } from '@/utils/errorHandler'
 import type { HealthData } from '@/stores/health'
+import type { ConfigResponse } from '@/api/types/config'
 
 /**
  * Home page with dashboard metrics
  * @component HomePage
  */
-interface ConfigResponse {
-  static: {
-    app_version: string
-    app_title: string
-    [key: string]: unknown
-  }
-  dynamic: {
-    [key: string]: unknown
-  }
-}
-
 const config = ref<ConfigResponse | null>(null)
 const isManualRefreshing = ref(false)
 
@@ -153,6 +144,12 @@ onMounted(() => {
       <HealthStatusCard :health="cachedHealth" :has-error="hasError" />
       <VersionInfoCard :config="config" />
       <QuickActionsCard />
+    </div>
+
+    <!-- Full Configuration Display -->
+    <div class="mt-8">
+      <h2 class="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">Конфигурация приложения</h2>
+      <ConfigurationCard :config="config" />
     </div>
   </div>
 </template>
