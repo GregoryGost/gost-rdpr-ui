@@ -11,6 +11,8 @@ import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
 import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
 import { PlusIcon, TrashIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/outline'
+import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
+import { errorHandler } from '@/utils/errorHandler'
 
 /**
  * Domains management page
@@ -104,7 +106,10 @@ const loadDomainsWithStats = async () => {
     totalResolved.value = response.total_resolved
     totalQuery.value = response.total_query
   } catch (error) {
-    console.error('Failed to load domains:', error)
+    errorHandler.handleError(error, {
+      action: 'loadDomainsWithStats',
+      component: 'DomainsPage',
+    })
     domains.value = []
     allDomains.value = []
     totalItems.value = 0
@@ -166,8 +171,19 @@ const searchDomains = async () => {
       totalItems.value = domains.value.length
       totalResolved.value = response.total_resolved
       totalQuery.value = response.total_query
+
+      // Show search results notification
+      if (domains.value.length === 0) {
+        showInfo(`По запросу "${searchQuery.value}" ничего не найдено`, 'Результаты поиска')
+      } else {
+        showInfo(`Найдено доменов: ${domains.value.length}`, 'Результаты поиска')
+      }
     } catch (error) {
-      console.error('Failed to search domains:', error)
+      errorHandler.handleError(error, {
+        action: 'searchDomains',
+        component: 'DomainsPage',
+        query: searchQuery.value,
+      })
       domains.value = []
       allDomains.value = []
       totalItems.value = 0
@@ -197,6 +213,16 @@ const filterByList = (value: 'all' | 'with-list' | 'without-list') => {
   // Re-apply filter to already loaded domains
   domains.value = applyListFilter(allDomains.value)
   totalItems.value = domains.value.length
+
+  // Show filter notification
+  const filterLabels = {
+    all: 'все списки',
+    'with-list': 'домены со списком',
+    'without-list': 'домены без списка',
+  }
+  if (domains.value.length === 0) {
+    showInfo(`Нет доменов для фильтра: ${filterLabels[value]}`, 'Фильтрация')
+  }
 }
 
 /**
@@ -207,6 +233,15 @@ const validateForm = (): boolean => {
 
   if (!formData.value.domain || formData.value.domain.trim().length < 3) {
     formErrors.value.domain = 'Укажите доменное имя (минимум 3 символа)'
+    showWarning('Укажите доменное имя (минимум 3 символа)', 'Ошибка валидации')
+    return false
+  }
+
+  // Validate domain format
+  const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+  if (!domainRegex.test(formData.value.domain.trim())) {
+    formErrors.value.domain = 'Некорректный формат доменного имени'
+    showWarning('Некорректный формат доменного имени', 'Ошибка валидации')
     return false
   }
 
@@ -223,6 +258,15 @@ const openAddModal = () => {
 }
 
 /**
+ * Close add modal and reset form
+ */
+const closeAddModal = () => {
+  formData.value = { domain: '', list_id: undefined, ros_comment: '' }
+  formErrors.value = {}
+  isAddModalOpen.value = false
+}
+
+/**
  * Create new domain
  */
 const createDomain = async () => {
@@ -231,10 +275,15 @@ const createDomain = async () => {
   isLoading.value = true
   try {
     await domainsApi.create([formData.value])
-    isAddModalOpen.value = false
-    refreshDomains()
+    closeAddModal()
+    showSuccess(`Домен "${formData.value.domain}" успешно добавлен`)
+    await refreshDomains()
   } catch (error) {
-    console.error('Failed to create domain:', error)
+    errorHandler.handleError(error, {
+      action: 'createDomain',
+      component: 'DomainsPage',
+      domain: formData.value.domain,
+    })
   } finally {
     isLoading.value = false
   }
@@ -262,14 +311,30 @@ const openDeleteConfirm = (id: number) => {
 const deleteDomain = async () => {
   if (!domainToDelete.value) return
 
+  const domainId = domainToDelete.value
   isLoading.value = true
   try {
-    await domainsApi.deleteOne(domainToDelete.value)
+    await domainsApi.deleteOne(domainId)
     isDeleteConfirmOpen.value = false
     domainToDelete.value = null
-    refreshDomains()
+    showSuccess(`Домен #${domainId} успешно удален`)
+
+    // Reload data after deletion
+    await refreshDomains()
+
+    // Check if we need to go to previous page (if current page is now empty)
+    if (domains.value.length === 0 && currentPage.value > 1) {
+      currentPage.value -= 1
+      await loadDomainsWithStats()
+    }
   } catch (error) {
-    console.error('Failed to delete domain:', error)
+    errorHandler.handleError(error, {
+      action: 'deleteDomain',
+      component: 'DomainsPage',
+      domainId,
+    })
+    isDeleteConfirmOpen.value = false
+    domainToDelete.value = null
   } finally {
     isLoading.value = false
   }
@@ -360,11 +425,7 @@ onMounted(() => {
 
         <!-- Filter by List -->
         <div class="flex flex-wrap gap-2">
-          <BaseButton
-            @click="filterByList('all')"
-            :variant="listFilter === 'all' ? 'secondary' : 'ghost'"
-            size="sm"
-          >
+          <BaseButton @click="filterByList('all')" :variant="listFilter === 'all' ? 'secondary' : 'ghost'" size="sm">
             Все списки
           </BaseButton>
           <BaseButton
@@ -404,7 +465,10 @@ onMounted(() => {
       </template>
 
       <template #cell-domains_list_id="{ value }">
-        <span v-if="value" class="inline-flex items-center rounded-md bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
+        <span
+          v-if="value"
+          class="inline-flex items-center rounded-md bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400"
+        >
           Список #{{ value }}
         </span>
         <span v-else class="text-sm text-gray-400">Без списка</span>
@@ -488,7 +552,7 @@ onMounted(() => {
     />
 
     <!-- Add Modal -->
-    <BaseModal :is-open="isAddModalOpen" title="Добавить Домен" @close="isAddModalOpen = false">
+    <BaseModal :is-open="isAddModalOpen" title="Добавить Домен" @close="closeAddModal">
       <form @submit.prevent="createDomain" class="space-y-4">
         <div>
           <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"> Доменное имя * </label>
@@ -509,7 +573,7 @@ onMounted(() => {
         </div>
 
         <div class="flex justify-end gap-3 pt-4">
-          <BaseButton variant="ghost" type="button" @click="isAddModalOpen = false">Отмена</BaseButton>
+          <BaseButton variant="ghost" type="button" @click="closeAddModal">Отмена</BaseButton>
           <BaseButton variant="primary" type="submit" :is-loading="isLoading">Создать</BaseButton>
         </div>
       </form>
@@ -605,25 +669,35 @@ onMounted(() => {
           </div>
 
           <div class="border-t pt-3 dark:border-gray-700">
-            <label class="mb-2 block text-xs font-semibold text-gray-700 uppercase dark:text-gray-300">Временные метки</label>
-            
+            <label class="mb-2 block text-xs font-semibold text-gray-700 uppercase dark:text-gray-300"
+              >Временные метки</label
+            >
+
             <div class="space-y-2">
               <div>
                 <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Создано</label>
                 <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedDomain.created_at_hum }}</p>
-                <p class="text-xs font-mono text-gray-500 dark:text-gray-400">Timestamp: {{ selectedDomain.created_at }}</p>
+                <p class="font-mono text-xs text-gray-500 dark:text-gray-400">
+                  Timestamp: {{ selectedDomain.created_at }}
+                </p>
               </div>
 
               <div v-if="selectedDomain.updated_at_hum">
                 <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Обновлено</label>
                 <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedDomain.updated_at_hum }}</p>
-                <p class="text-xs font-mono text-gray-500 dark:text-gray-400">Timestamp: {{ selectedDomain.updated_at }}</p>
+                <p class="font-mono text-xs text-gray-500 dark:text-gray-400">
+                  Timestamp: {{ selectedDomain.updated_at }}
+                </p>
               </div>
 
               <div v-if="selectedDomain.last_resolved_at_hum">
-                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Последнее определение</label>
+                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400"
+                  >Последнее определение</label
+                >
                 <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedDomain.last_resolved_at_hum }}</p>
-                <p class="text-xs font-mono text-gray-500 dark:text-gray-400">Timestamp: {{ selectedDomain.last_resolved_at }}</p>
+                <p class="font-mono text-xs text-gray-500 dark:text-gray-400">
+                  Timestamp: {{ selectedDomain.last_resolved_at }}
+                </p>
               </div>
             </div>
           </div>

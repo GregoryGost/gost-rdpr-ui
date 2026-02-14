@@ -6,7 +6,9 @@ import {
   HomeIcon,
   ServerIcon,
   AtSymbolIcon,
+  DocumentTextIcon,
   MapPinIcon,
+  ListBulletIcon,
   Cog6ToothIcon,
   CommandLineIcon,
 } from '@heroicons/vue/24/outline'
@@ -24,7 +26,9 @@ const isSidebarOpen = ref(false)
 const NAVIGATION_ITEMS = [
   { name: 'Главная', path: '/', icon: HomeIcon },
   { name: 'DNS Серверы', path: '/dns', icon: ServerIcon },
+  { name: 'Списки Доменов', path: '/domains/lists', icon: DocumentTextIcon },
   { name: 'Домены', path: '/domains', icon: AtSymbolIcon },
+  { name: 'Списки IP Адресов', path: '/ips/lists', icon: ListBulletIcon },
   { name: 'IP Адреса', path: '/ips', icon: MapPinIcon },
   { name: 'Конфигурации RoS', path: '/ros', icon: Cog6ToothIcon },
   { name: 'Команды', path: '/commands', icon: CommandLineIcon },

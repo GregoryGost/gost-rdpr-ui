@@ -11,6 +11,8 @@ import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
 import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
 import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
+import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
+import { errorHandler } from '@/utils/errorHandler'
 
 /**
  * DNS Servers management page
@@ -72,8 +74,19 @@ const searchServers = async () => {
     })
     servers.value = response.payload
     pagination.totalItems.value = response.total
+
+    // Show search results notification
+    if (servers.value.length === 0) {
+      showInfo(`По запросу "${searchQuery.value}" ничего не найдено`, 'Результаты поиска')
+    } else {
+      showInfo(`Найдено серверов: ${servers.value.length}`, 'Результаты поиска')
+    }
   } catch (error) {
-    console.error('Failed to search DNS servers:', error)
+    errorHandler.handleError(error, {
+      action: 'searchServers',
+      component: 'DnsServersPage',
+      query: searchQuery.value,
+    })
   } finally {
     isLoading.value = false
   }
@@ -87,7 +100,32 @@ const validateForm = (): boolean => {
 
   if (!formData.value.server && !formData.value.doh_server) {
     formErrors.value.server = 'Укажите DNS сервер или DoH сервер'
+    showWarning('Укажите DNS сервер или DoH сервер', 'Ошибка валидации')
     return false
+  }
+
+  // Validate IP format if server is provided
+  if (formData.value.server) {
+    const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+    const ipv6Regex =
+      /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}$|^[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:){0,5}[0-9a-fA-F]{1,4}$/
+
+    if (!ipv4Regex.test(formData.value.server) && !ipv6Regex.test(formData.value.server)) {
+      formErrors.value.server = 'Некорректный формат IP адреса'
+      showWarning('Некорректный формат IP адреса', 'Ошибка валидации')
+      return false
+    }
+  }
+
+  // Validate DoH URL format if provided
+  if (formData.value.doh_server) {
+    try {
+      new URL(formData.value.doh_server)
+    } catch {
+      formErrors.value.doh_server = 'Некорректный формат URL'
+      showWarning('Некорректный формат DoH URL', 'Ошибка валидации')
+      return false
+    }
   }
 
   return true
@@ -103,6 +141,15 @@ const openAddModal = () => {
 }
 
 /**
+ * Close add modal and reset form
+ */
+const closeAddModal = () => {
+  formData.value = { server: '', doh_server: '', description: '' }
+  formErrors.value = {}
+  isAddModalOpen.value = false
+}
+
+/**
  * Create new DNS server
  */
 const createServer = async () => {
@@ -111,10 +158,16 @@ const createServer = async () => {
   isLoading.value = true
   try {
     await dnsApi.create([formData.value])
-    isAddModalOpen.value = false
-    refreshServers()
+    closeAddModal()
+    const serverName = formData.value.server || formData.value.doh_server
+    showSuccess(`DNS сервер "${serverName}" успешно добавлен`)
+    await refreshServers()
   } catch (error) {
-    console.error('Failed to create DNS server:', error)
+    errorHandler.handleError(error, {
+      action: 'createServer',
+      component: 'DnsServersPage',
+      server: formData.value.server || formData.value.doh_server,
+    })
   } finally {
     isLoading.value = false
   }
@@ -134,14 +187,29 @@ const openDeleteConfirm = (id: number) => {
 const deleteServer = async () => {
   if (!serverToDelete.value) return
 
+  const serverId = serverToDelete.value
   isLoading.value = true
   try {
-    await dnsApi.deleteOne(serverToDelete.value)
+    await dnsApi.deleteOne(serverId)
     isDeleteConfirmOpen.value = false
     serverToDelete.value = null
-    refreshServers()
+    showSuccess(`DNS сервер #${serverId} успешно удален`)
+
+    // Reload data after deletion
+    await refreshServers()
+
+    // Check if we need to go to previous page (if current page is now empty)
+    if (servers.value.length === 0 && pagination.currentPage.value > 1) {
+      goToPage(pagination.currentPage.value - 1)
+    }
   } catch (error) {
-    console.error('Failed to delete DNS server:', error)
+    errorHandler.handleError(error, {
+      action: 'deleteServer',
+      component: 'DnsServersPage',
+      serverId,
+    })
+    isDeleteConfirmOpen.value = false
+    serverToDelete.value = null
   } finally {
     isLoading.value = false
   }
@@ -217,7 +285,7 @@ onMounted(() => {
     />
 
     <!-- Add Modal -->
-    <BaseModal :is-open="isAddModalOpen" title="Добавить DNS Сервер" @close="isAddModalOpen = false">
+    <BaseModal :is-open="isAddModalOpen" title="Добавить DNS Сервер" @close="closeAddModal">
       <form @submit.prevent="createServer" class="space-y-4">
         <div>
           <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -244,7 +312,7 @@ onMounted(() => {
         </div>
 
         <div class="flex justify-end gap-3 pt-4">
-          <BaseButton variant="ghost" type="button" @click="isAddModalOpen = false">Отмена</BaseButton>
+          <BaseButton variant="ghost" type="button" @click="closeAddModal">Отмена</BaseButton>
           <BaseButton variant="primary" type="submit" :is-loading="isLoading">Создать</BaseButton>
         </div>
       </form>

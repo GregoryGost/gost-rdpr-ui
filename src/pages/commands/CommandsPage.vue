@@ -11,6 +11,8 @@ import {
   CheckCircleIcon,
   ExclamationCircleIcon,
 } from '@heroicons/vue/24/outline'
+import { showSuccess, showInfo } from '@/utils/notifications'
+import { errorHandler } from '@/utils/errorHandler'
 
 /**
  * Commands execution page
@@ -69,22 +71,34 @@ const openConfirm = (command: 'lists' | 'domains' | 'ros') => {
 const executeCommand = async () => {
   if (!confirmCommand.value) return
 
+  const command = confirmCommand.value
+
   try {
-    switch (confirmCommand.value) {
+    switch (command) {
       case 'lists':
         isLoadingLists.value = true
+        showInfo('Загрузка списков...', 'Выполнение команды')
         await commandsApi.loadLists(forcedReload.value)
         lastResult.value = { type: 'success', message: 'Списки успешно загружены' }
+        showSuccess(
+          forcedReload.value ? 'Списки принудительно перезагружены' : 'Списки успешно загружены',
+          'Команда выполнена',
+        )
         break
       case 'domains':
         isLoadingDomains.value = true
+        showInfo('Определение доменов... Это может занять время.', 'Выполнение команды')
         await commandsApi.resolveDomains()
         lastResult.value = { type: 'success', message: 'Домены успешно определены' }
+        showSuccess('Все домены успешно определены в IP адреса', 'Команда выполнена')
         break
       case 'ros':
         isLoadingRouterOS.value = true
+        const ipTypeText = rosIpType.value ? ` (IPv${rosIpType.value})` : ''
+        showInfo(`Обновление RouterOS${ipTypeText}...`, 'Выполнение команды')
         await commandsApi.updateRouterOS(rosIpType.value || undefined)
         lastResult.value = { type: 'success', message: 'RouterOS успешно обновлен' }
+        showSuccess(`RouterOS успешно обновлен${ipTypeText}`, 'Команда выполнена')
         break
     }
   } catch (error) {
@@ -92,6 +106,13 @@ const executeCommand = async () => {
       type: 'error',
       message: error instanceof Error ? error.message : 'Произошла ошибка при выполнении команды',
     }
+    errorHandler.handleError(error, {
+      action: 'executeCommand',
+      component: 'CommandsPage',
+      command,
+      forcedReload: command === 'lists' ? forcedReload.value : undefined,
+      rosIpType: command === 'ros' ? rosIpType.value : undefined,
+    })
   } finally {
     isLoadingLists.value = false
     isLoadingDomains.value = false

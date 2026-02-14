@@ -23,11 +23,15 @@ defineProps<Props>()
     <div class="space-y-3">
       <div class="flex items-center justify-between">
         <span class="text-sm text-gray-600 dark:text-gray-400">Название:</span>
-        <span class="font-medium text-gray-900 dark:text-gray-100">{{ config?.static.app_title }}</span>
+        <span class="font-medium text-gray-900 dark:text-gray-100">
+          {{ config?.static.app_title || '—' }}
+        </span>
       </div>
       <div class="flex items-center justify-between">
         <span class="text-sm text-gray-600 dark:text-gray-400">Версия:</span>
-        <span class="font-medium text-gray-900 dark:text-gray-100">{{ config?.static.app_version }}</span>
+        <span class="font-medium text-gray-900 dark:text-gray-100">
+          {{ config?.static.app_version || '—' }}
+        </span>
       </div>
     </div>
   </div>

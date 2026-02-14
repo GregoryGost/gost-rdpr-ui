@@ -32,6 +32,13 @@
   /* ... */
 
   --color-brand-primary: #5238ff;
+
+  --color-info: #3b82f6;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-success: #10b981;
+
+  --z-notification: 9999;
 }
 
 /**

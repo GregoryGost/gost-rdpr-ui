@@ -6,6 +6,11 @@
 const API_BASE_URL = import.meta.env.DEV ? '/api' : import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:4000'
 
 /**
+ * Default timeout for API requests (in milliseconds)
+ */
+const DEFAULT_TIMEOUT = 5000
+
+/**
  * API Error class
  * @class ApiError
  * @extends Error
@@ -21,26 +26,72 @@ export class ApiError extends Error {
 }
 
 /**
- * Make API request
+ * Network Error class for connection failures
+ * @class NetworkError
+ * @extends Error
+ */
+export class NetworkError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'NetworkError'
+  }
+}
+
+/**
+ * Make API request with timeout
  * @template T - Response data type
  * @param {string} endpoint - API endpoint path
  * @param {RequestInit} [options] - Fetch options
+ * @param {number} [timeout] - Request timeout in milliseconds
  * @returns {Promise<T>} Response data promise
  * @throws {ApiError} On request error
+ * @throws {NetworkError} On network/connection error
  */
-export async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  })
+export async function apiRequest<T>(
+  endpoint: string,
+  options?: RequestInit,
+  timeout: number = DEFAULT_TIMEOUT,
+): Promise<T> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeout)
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }))
-    throw new ApiError(response.status, error.error || error.message || 'Request failed')
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Unknown error' }))
+      throw new ApiError(response.status, error.error || error.message || 'Request failed')
+    }
+
+    return response.json()
+  } catch (error) {
+    clearTimeout(timeoutId)
+
+    // Handle abort/timeout
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new NetworkError('Превышено время ожидания ответа от сервера')
+    }
+
+    // Handle network errors (server unavailable, connection refused, etc.)
+    if (error instanceof TypeError) {
+      throw new NetworkError('Сервер недоступен. Проверьте подключение к сети')
+    }
+
+    // Re-throw ApiError as is
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    // Unknown error
+    throw new NetworkError('Неизвестная ошибка подключения')
   }
-
-  return response.json()
 }

@@ -25,6 +25,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Домены' },
       },
       {
+        path: 'domains/lists',
+        name: 'domains-lists',
+        component: () => import('@/pages/domains/DomainsListsPage.vue'),
+        meta: { title: 'Списки Доменов' },
+      },
+      {
+        path: 'ips/lists',
+        name: 'ips-lists',
+        component: () => import('@/pages/HomePage.vue'), // Временно HomePage
+        meta: { title: 'Списки IP Адресов' },
+      },
+      {
         path: 'ips',
         name: 'ips',
         component: () => import('@/pages/HomePage.vue'), // Временно HomePage

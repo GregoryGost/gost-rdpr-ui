@@ -38,8 +38,11 @@ Syntax and Formatting
 - Use arrow functions for methods and computed properties.
 - Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
 - Use template syntax for declarative rendering.
+- The `pnpm run lint` command is not available in the project and cannot be called. Use `pnpm lint-dry-run`.
 - Always use for linting special command `pnpm lint-dry-run` prior. Check output html file for get linting result. After check, remove output lint html file always.
+- Фдцфны сheck IDE for errors for files that are being created or modified
 - Always use for formatting special command `pnpm format` prior.
+- Unauthorized changes to file `package.json` are prohibited.
 
 UI and Styling
 

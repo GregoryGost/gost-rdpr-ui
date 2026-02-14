@@ -37,5 +37,7 @@ __screenshots__/
 
 # Cursor
 .cursor/*
-!.cursor/rules
-.cursor_context
+!.cursor/rules/base.mdc
+!.cursor/rules/mark.mdc
+!.cursor/rules/project.mdc
+!.cursor/rules/vue.mdc

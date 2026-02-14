@@ -7,11 +7,31 @@ import { APP_TITLE } from './constants'
 
 import './css/main.scss'
 
+// Error handler
+import { errorHandler } from './utils/errorHandler'
+import { useNotificationsStore } from './stores/notifications'
+
 // Init Pinia
 const pinia = createPinia()
 
 // Create Vue app
-createApp(App).use(router).use(pinia).mount('#app')
+const app = createApp(App)
+app.use(router)
+app.use(pinia)
+
+// Setup error handlers
+errorHandler.setupVueErrorHandler(app)
+errorHandler.setupGlobalErrorHandlers()
+errorHandler.setupRouterErrorHandler(router)
+
+// Connect error handler to notifications store
+const notificationsStore = useNotificationsStore(pinia)
+errorHandler.onError((errorInfo) => {
+  notificationsStore.addErrorNotification(errorInfo)
+})
+
+// Mount app
+app.mount('#app')
 
 // Dark mode
 import { useDarkModeStore } from './stores/darkMode'
