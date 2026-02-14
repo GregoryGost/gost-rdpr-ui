@@ -223,6 +223,7 @@ pnpm format
 - [Статус проекта](PROJECT_STATUS.md)
 - [Документация Composables](src/composables/README.md)
 - [OpenAPI спецификация](TARGET_OPENAPI.md)
+- [Setting up Cursor + Playwright MCP for a Next.js Project](https://gist.github.com/weber-stephen/e27c4f6abde0b89a21e8569f22fd7a8c#file-setting-up-cursor-playwright-mcp-for-a-next-js-project-md)
 
 ## Лицензия
 

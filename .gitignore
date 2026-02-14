@@ -41,3 +41,8 @@ __screenshots__/
 !.cursor/rules/mark.mdc
 !.cursor/rules/project.mdc
 !.cursor/rules/vue.mdc
+
+# Env
+.env
+.env.*
+!.env.development
