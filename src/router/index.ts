@@ -33,7 +33,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'ips/lists',
         name: 'ips-lists',
-        component: () => import('@/pages/HomePage.vue'), // Временно HomePage
+        component: () => import('@/pages/ips/IpsListsPage.vue'),
         meta: { title: 'Списки IP Адресов' },
       },
       {

@@ -6,4 +6,5 @@
 export { dnsApi } from './dns'
 export { domainsApi } from './domains'
 export { domainsListsApi } from './domains-lists'
+export { ipsListsApi } from './ips-lists'
 export { commandsApi } from './commands'
