@@ -54,6 +54,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/commands/CommandsPage.vue'),
         meta: { title: 'Команды' },
       },
+      {
+        path: ':pathMatch(.*)*',
+        name: 'not-found',
+        component: () => import('@/pages/NotFoundPage.vue'),
+        meta: { title: '404 - Страница не найдена' },
+      },
     ],
   },
 ]
