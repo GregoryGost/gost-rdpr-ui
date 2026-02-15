@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import ErrorNotification from '@/components/ErrorNotification.vue'
 </script>
 
 <template>
-  <RouterView />
+  <router-view />
+  <error-notification />
 </template>
-
-<style scoped></style>

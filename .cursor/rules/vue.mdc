@@ -1,0 +1,78 @@
+---
+globs: **/*.{vue,js,ts}
+alwaysApply: false
+---
+
+You are an expert in TypeScript, Node.js, Vue 3, Vue Router, Pinia store, VueUse, and Tailwind CSS.
+
+Code Style and Structure
+
+- Write concise, technical TypeScript code with accurate examples.
+- Prefer iteration and modularization over code duplication.
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Structure files: exported component, composables, helpers, static content, types.
+- Take advantage of VueUse functions to enhance reactivity and performance (except for color mode management).
+- Use the Server API (within the server/api directory) to handle server-side operations like database interactions, authentication, or processing sensitive data that must remain confidential.
+- Follow src directory structure (e.g., pages/, components/, css/, layouts/, composables/, router/, stores/, /ui).
+- The Vue file must always follow a basic template, which must contain 3 parts: script, template, and style.
+- Use semantic HTML elements for use Vue components in <template> block.
+- Follow the sequence in your files, from top to bottom the <script>, then the <template>, then the <style>.
+- Write detailed explanatory comments for complex functions, classes and methods, use semantics with @return, @params, and other docs fields. Comments are in English only.
+- There's no need to create constants that aren't used in the project. Only those that are truly necessary should be created.
+
+Naming Conventions
+
+- Use lowercase with dashes for directories (e.g., pages/auth-wizard).
+- Use PascalCase for component names (e.g., AuthWizard.vue). The component name must consist of at least two words. For example, if the file is located in the page folder, the name must end with the folder name according to the style. Example: folder src/pages then component name in this directory ExamplePage.vue. This rule should apply to all files with the extension .vue
+- Use camelCase for composables (e.g., useAuthState.ts).
+- Constant variable names must be all uppercase and separated only by underscores. Example: MY_CUSTOM_VARIABLE
+
+TypeScript Usage
+
+- Use TypeScript throughout; prefer interfaces over types for better extendability and merging.
+- Avoid enums, opting for maps for improved type safety and flexibility.
+- Use Vue 3 with TypeScript, leveraging defineComponent and PropType.
+
+Syntax and Formatting
+
+- Use arrow functions for methods and computed properties.
+- Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+- Use template syntax for declarative rendering.
+- The `pnpm run lint` command is not available in the project and cannot be called. Use `pnpm lint-dry-run`.
+- Always use for linting special command `pnpm lint-dry-run` prior. Check output html file for get linting result. After check, remove output lint html file always.
+- Фдцфны сheck IDE for errors for files that are being created or modified
+- Always use for formatting special command `pnpm format` prior.
+- Unauthorized changes to file `package.json` are prohibited.
+
+UI and Styling
+
+- Create reusable Vue components like buttons, modals, forms, fields, and other parts to build a modular ui-kit framework.
+- Ui-kit components should be arranged in folders according to the component category in the src/ui folder. Example: src/ui/buttons/SuccessButton.vue
+- Use sass/scss preprocessor and Tailwind CSS for components and styling.
+- Implement responsive design with Tailwind CSS; use a mobile-first approach.
+- Use scoped style block <style scoped> for Vue files
+- Avoid specifying styles in Vue files in <style scoped>, instead create reusable styles in the main styles folder src/css.
+- Use Tailwind CSS responsive design utilities (sm:, md:, lg:, etc.).
+- Utilize Tailwind's color palette and spacing scale for consistency.
+- Implement custom theme extensions in tailwind.config.cjs when necessary.
+- Check the Tailwind documentation for the version you are using in your project. Prefer direct utility classes in HTML.
+- Tailwind CSS v4 does not require a JS/TS file configuration anymore but it's still useful for advanced configuration and IntelliSense support in IDEs.
+
+Performance Optimization
+
+- Implement lazy loading for routes and components.
+
+Key Conventions
+
+- Use Pinia for state management.
+- Optimize Web Vitals (LCP, CLS, FID).
+- Use meta and title in vue router
+
+Vue 3.5 and Composition API Best Practices
+
+- Use composition API <script setup lang="ts"> and declarative programming patterns; avoid options API.
+- Leverage ref, reactive, and computed for reactive state management.
+- Use provide/inject for dependency injection when appropriate.
+- Implement custom composables for reusable logic.
+
+Follow the official Vue.js and Vue Router and Pinia documentation for up-to-date best practices on Data Fetching, Rendering, and Routing.
