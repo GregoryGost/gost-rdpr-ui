@@ -36,13 +36,10 @@ coverage
 __screenshots__/
 
 # Cursor
-.cursor/*
-!.cursor/rules/base.mdc
-!.cursor/rules/mark.mdc
-!.cursor/rules/project.mdc
-!.cursor/rules/vue.mdc
-!.cursor/rules/favicon_image.mdc
-!.cursor/rules/playwright.mdc
+.cursor/mcp.json
+.cursor/agent_context/
+.cursor/*.md
+.cursor/*.txt
 
 # Env
 .env

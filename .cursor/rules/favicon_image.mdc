@@ -1,0 +1,213 @@
+---
+alwaysApply: true
+---
+
+# Image Generation Rules — Favicon
+
+## Scope
+
+These rules apply to ALL favicon generation tasks.
+You MUST strictly follow these constraints.
+Priority should be given to creating images through the `openai-gpt-image` MCP server.
+
+Goal: generate production-ready favicon assets for modern browsers, mobile devices, and PWA usage.
+
+---
+
+# Core Design Constraints
+
+## Visual style
+
+- Minimalistic flat design.
+- No decorative elements.
+- No gradients.
+- No shadows.
+- No glow.
+- No 3D effects.
+- No texture.
+- No noise.
+- No extra symbols.
+
+Design must remain readable at very small sizes.
+
+## Canvas
+
+- Aspect ratio: 1:1 (square only).
+- Base canvas: 512x512 px.
+- Pixel perfect edges.
+- No cropping.
+- No transparency unless explicitly requested.
+- PNG output required.
+
+## Color specification
+
+### Background
+
+- Solid color: `#5238ff`
+- No gradient.
+- No pattern.
+- No texture.
+
+### Foreground
+
+- Color: `#ffffff`
+- Single color only.
+- High contrast with background.
+
+Contrast ratio must remain readable at small sizes.
+
+## Logo content
+
+- Only one character: `G`.
+- Font: `GOST Type A`.
+- Weight: bold.
+- Style: italic.
+- No outline.
+- No border.
+- No stylization.
+- No geometry modification.
+- No additional text.
+
+If the exact font is unavailable → generation MUST fail (no substitution).
+You need to find the required font if it is not available.
+
+# Favicon Best Practices (Browser + Platform Compatibility)
+
+## Required output sizes
+
+You MUST generate full favicon set:
+
+- 512x512 — master source.
+- 256x256
+- 192x192 (PWA requirement)
+- 180x180 (Apple touch icon compatibility)
+- 128x128
+- 64x64
+- 48x48 (Windows compatibility)
+- 32x32 (browser tab)
+- 16x16 (legacy browser tab)
+
+Downscaling must use high quality resampling.
+The 512x512 master file should be thoroughly tested first. If it doesn't meet the requirements, it must be reworked until a valid version is achieved.
+No further files can be generated until the master file is valid.
+
+## ICO compatibility
+
+You MUST generate:
+
+- `favicon.ico` containing:
+- 16x16
+- 32x32
+- 48x48
+
+PNG compression inside ICO allowed.
+
+## Mask and platform compatibility
+
+Icon must remain identifiable when:
+
+- masked as circle
+- masked as rounded rectangle
+- displayed on dark UI
+- displayed on light UI
+
+If readability fails → regenerate with adjusted scale.
+
+## Safe area requirement
+
+Important visual elements must fit inside:
+
+- 70–80% of canvas width.
+- Prevent clipping in browser UI masking.
+- Prevent OS icon rounding issues.
+
+## Mask and platform compatibility
+
+Icon must remain identifiable when:
+
+- masked as circle
+- masked as rounded rectangle
+- displayed on dark UI
+- displayed on light UI
+
+## Accessibility
+
+- High foreground/background contrast.
+- Clear silhouette.
+- No ambiguous shapes.
+
+# Generation Pipeline
+
+System MUST execute in this order:
+
+1. Generate base favicon 512x512.
+2. Validate design constraints.
+3. Validate color values.
+4. Validate layout and margins.
+5. Test readability at 16x16.
+6. If any validation fails → regenerate.
+7. Downscale to required sizes.
+8. Generate favicon.ico.
+9. Export PNG set.
+10. Implementation into the project.
+
+# Validation Rules
+
+Generation is valid only if ALL checks pass.
+
+## Geometry
+
+- image is square
+- centered composition
+- safe margin respected
+
+## Color
+
+- background exactly `#5238ff`
+- foreground exactly `#ffffff`
+
+## Content
+
+- exactly one letter
+- letter is "G"
+- font matches GOST Type A bold italic
+
+## Effects
+
+- no shadow
+- no gradient
+- no border
+- no decoration
+- no extra elements
+
+## Rendering
+
+- crisp edges
+- no artifacts
+- readable at 16x16
+
+Failure → regenerate.
+
+# Output Structure
+
+System should return:
+
+/favicon/
+favicon.png (512x512)
+favicon-256.png
+favicon-192.png
+favicon-180.png
+favicon-128.png
+favicon-64.png
+favicon-48.png
+favicon-32.png
+favicon-16.png
+favicon.ico
+
+# Error Handling
+
+If any constraint cannot be satisfied:
+
+- generation MUST stop
+- explain which constraint failed
+- request regeneration
