@@ -106,7 +106,7 @@ const formatServerTime = (timestamp: number): string => {
       <XCircleIcon v-else-if="shouldShowError" class="h-6 w-6 text-red-500 dark:text-red-400" />
     </div>
     <div class="space-y-3">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col gap-1 md:flex-row md:items-center md:justify-between md:gap-4">
         <span
           :class="['text-sm', shouldShowError ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-400']"
         >
@@ -121,13 +121,13 @@ const formatServerTime = (timestamp: number): string => {
                 : health
                   ? 'text-red-600 dark:text-red-400'
                   : 'text-gray-900 dark:text-gray-100',
-            'font-medium',
+            'font-medium md:text-right',
           ]"
         >
           {{ health?.status || '—' }}
         </span>
       </div>
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col gap-1 md:flex-row md:items-center md:justify-between md:gap-4">
         <span
           :class="['text-sm', shouldShowError ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-400']"
         >
@@ -135,14 +135,14 @@ const formatServerTime = (timestamp: number): string => {
         </span>
         <span
           :class="[
-            'font-medium',
+            'font-medium md:text-right',
             shouldShowError ? 'text-red-800 dark:text-red-200' : 'text-gray-900 dark:text-gray-100',
           ]"
         >
           {{ health?.db_pool || '—' }}
         </span>
       </div>
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col gap-1 md:flex-row md:items-center md:justify-between md:gap-4">
         <span
           :class="['text-sm', shouldShowError ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-400']"
         >
@@ -150,14 +150,14 @@ const formatServerTime = (timestamp: number): string => {
         </span>
         <span
           :class="[
-            'font-medium',
+            'font-medium md:text-right',
             shouldShowError ? 'text-red-800 dark:text-red-200' : 'text-gray-900 dark:text-gray-100',
           ]"
         >
           {{ health?.uptime ? formatUptime(health.uptime) : '—' }}
         </span>
       </div>
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col gap-1 md:flex-row md:items-center md:justify-between md:gap-4">
         <span
           :class="['text-sm', shouldShowError ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-400']"
         >
@@ -165,7 +165,7 @@ const formatServerTime = (timestamp: number): string => {
         </span>
         <span
           :class="[
-            'font-medium',
+            'break-words font-medium md:text-right',
             shouldShowError ? 'text-red-800 dark:text-red-200' : 'text-gray-900 dark:text-gray-100',
           ]"
         >
