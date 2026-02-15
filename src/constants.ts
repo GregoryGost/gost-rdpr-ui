@@ -49,7 +49,8 @@ export const VALIDATION = {
  */
 export const API = {
   TIMEOUT: 5000, // milliseconds
-  FALLBACK_BASE_URL: 'http://127.0.0.1:4000',
+  // Use relative path to avoid CORS issues in production (nginx proxy)
+  FALLBACK_BASE_URL: '/api',
   HEADERS: {
     CONTENT_TYPE: 'application/json',
   },
