@@ -308,6 +308,83 @@ pnpm build
 3. Обрабатывать ошибки через try/catch
 4. Показывать loading состояния
 
+## Централизация констант
+
+Все константы проекта находятся в `src/constants.ts` и организованы по группам:
+
+### Конфигурационные группы
+
+```typescript
+// Идентификация приложения
+APP_NAME, APP_TITLE, APP_DESCRIPTION, APP_AUTHOR
+
+// Ключи localStorage
+STORAGE_KEYS {
+  DARK_MODE: 'darkMode',
+  POLLING_INTERVAL: 'polling-interval'
+}
+
+// API конфигурация
+API {
+  TIMEOUT: 5000,
+  FALLBACK_BASE_URL: 'http://127.0.0.1:4000',
+  HEADERS: { CONTENT_TYPE: 'application/json' }
+}
+
+// Конфигурация Store
+STORES {
+  HEALTH_CACHE_TTL: 10000,
+  DEFAULT_POLLING_INTERVAL: 3000
+}
+
+// Пагинация
+PAGINATION {
+  DEFAULT_PAGE_SIZE: 20,
+  PAGE_SIZE_OPTIONS: [10, 20, 50, 100]
+}
+
+// Поиск
+SEARCH {
+  MIN_LENGTH: 3
+}
+
+// Валидация
+VALIDATION {
+  MIN_NAME_LENGTH: 3,
+  MIN_URL_LENGTH: 5
+}
+```
+
+### UI тексты
+
+Все UI тексты централизованы по доменам:
+- `UI_TEXTS` - общие тексты (кнопки, статусы, действия)
+- `PAGE_TITLES`, `PAGE_DESCRIPTIONS` - заголовки и описания страниц
+- `DOMAIN_TEXTS`, `DOMAINS_LISTS_TEXTS` - терминология доменов
+- `DNS_TEXTS` - терминология DNS
+- `IPS_TEXTS`, `IPS_LISTS_TEXTS` - терминология IP адресов
+- `ROS_TEXTS` - терминология RouterOS
+- `COMMANDS_TEXTS` - терминология команд
+- `ERROR_MESSAGES` - сообщения об ошибках
+
+### Правила использования
+
+1. **Всегда импортируйте константы**, не используйте hardcoded значения:
+   ```typescript
+   // ✅ Правильно
+   import { API, STORAGE_KEYS, UI_TEXTS } from '@/constants'
+   timeout: API.TIMEOUT
+   
+   // ❌ Неправильно
+   timeout: 5000
+   ```
+
+2. **Для новых констант** добавляйте их в соответствующую группу в `constants.ts`
+
+3. **Для UI текстов** используйте существующие группы или создайте новую
+
+4. **Для ключей localStorage** добавляйте в `STORAGE_KEYS`
+
 ## Архитектурные решения
 
 - **Composables** для переиспользуемой логики (не дублировать код)

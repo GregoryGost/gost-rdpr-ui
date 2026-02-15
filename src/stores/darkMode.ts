@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, type Ref } from 'vue'
-import { DARK_MODE_KEY } from '@/constants'
+import { STORAGE_KEYS } from '@/constants'
 
 export const useDarkModeStore = defineStore('darkMode', () => {
   const isEnabled: Ref<boolean, boolean> = ref(false)
@@ -11,7 +11,7 @@ export const useDarkModeStore = defineStore('darkMode', () => {
       return
     }
 
-    const stored = localStorage[DARK_MODE_KEY]
+    const stored = localStorage[STORAGE_KEYS.DARK_MODE]
 
     // If stored preference exists, use it
     if (stored === '1') {
@@ -27,7 +27,7 @@ export const useDarkModeStore = defineStore('darkMode', () => {
   }
 
   function reset(): void {
-    localStorage.removeItem(DARK_MODE_KEY)
+    localStorage.removeItem(STORAGE_KEYS.DARK_MODE)
     init()
   }
 
@@ -52,7 +52,7 @@ export const useDarkModeStore = defineStore('darkMode', () => {
     }, 200)
 
     if (persist && typeof localStorage !== 'undefined') {
-      localStorage.setItem(DARK_MODE_KEY, setIsEnabled ? '1' : '0')
+      localStorage.setItem(STORAGE_KEYS.DARK_MODE, setIsEnabled ? '1' : '0')
     }
   }
 

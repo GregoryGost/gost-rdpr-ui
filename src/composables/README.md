@@ -220,14 +220,27 @@ import type { PaginationParams, PaginatedResponse } from '@/composables'
 
 Это упрощает импорты и делает код более чистым и поддерживаемым.
 
-## Константы пагинации
+## Использование централизованных констант
 
-Композабл `usePaginatedData` использует централизованные константы из `src/constants.ts`:
+Все композаблы используют централизованные константы из `src/constants.ts`:
 
+### Константы пагинации (usePaginatedData)
 - **`PAGINATION.DEFAULT_PAGE_SIZE`** - размер страницы по умолчанию (20)
 - **`PAGINATION.PAGE_SIZE_OPTIONS`** - доступные размеры страниц `[10, 20, 50, 100]`
 
-Эти константы обеспечивают единообразие пагинации во всем приложении и упрощают глобальное изменение настроек.
+### Константы поиска (используются в страницах с поиском)
+- **`SEARCH.MIN_LENGTH`** - минимальная длина поискового запроса (3)
+
+### Константы API (useApi, usePaginatedData)
+- **`API.TIMEOUT`** - timeout для API запросов (5000 мс)
+- **`API.FALLBACK_BASE_URL`** - fallback URL для production
+- **`API.HEADERS.CONTENT_TYPE`** - Content-Type заголовок
+
+### Константы Store (usePolling)
+- **`STORES.DEFAULT_POLLING_INTERVAL`** - интервал polling по умолчанию (3000 мс)
+- **`STORES.HEALTH_CACHE_TTL`** - TTL кеша health data (10000 мс)
+
+Эти константы обеспечивают единообразие во всем приложении и упрощают глобальное изменение настроек.
 
 ```typescript
 // Пример: изменить размер страницы по умолчанию

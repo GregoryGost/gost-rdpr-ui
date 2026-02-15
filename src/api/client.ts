@@ -1,14 +1,11 @@
+import { API, ERROR_MESSAGES } from '@/constants'
+
 /**
  * API base URL
  * In development mode, uses Vite proxy (/api)
  * In production, uses environment variable or fallback URL
  */
-const API_BASE_URL = import.meta.env.DEV ? '/api' : import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:4000'
-
-/**
- * Default timeout for API requests (in milliseconds)
- */
-const DEFAULT_TIMEOUT = 5000
+const API_BASE_URL = import.meta.env.DEV ? '/api' : import.meta.env.VITE_API_BASE_URL || API.FALLBACK_BASE_URL
 
 /**
  * API Error class
@@ -50,7 +47,7 @@ export class NetworkError extends Error {
 export async function apiRequest<T>(
   endpoint: string,
   options?: RequestInit,
-  timeout: number = DEFAULT_TIMEOUT,
+  timeout: number = API.TIMEOUT,
 ): Promise<T> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeout)
@@ -59,7 +56,7 @@ export async function apiRequest<T>(
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': API.HEADERS.CONTENT_TYPE,
         ...options?.headers,
       },
       signal: controller.signal,
@@ -78,12 +75,12 @@ export async function apiRequest<T>(
 
     // Handle abort/timeout
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new NetworkError('Превышено время ожидания ответа от сервера')
+      throw new NetworkError(ERROR_MESSAGES.API_TIMEOUT)
     }
 
     // Handle network errors (server unavailable, connection refused, etc.)
     if (error instanceof TypeError) {
-      throw new NetworkError('Сервер недоступен. Проверьте подключение к сети')
+      throw new NetworkError(ERROR_MESSAGES.SERVER_UNAVAILABLE)
     }
 
     // Re-throw ApiError as is
@@ -92,6 +89,6 @@ export async function apiRequest<T>(
     }
 
     // Unknown error
-    throw new NetworkError('Неизвестная ошибка подключения')
+    throw new NetworkError(ERROR_MESSAGES.UNKNOWN_CONNECTION_ERROR)
   }
 }

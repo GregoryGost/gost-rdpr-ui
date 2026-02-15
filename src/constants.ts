@@ -9,7 +9,10 @@ export const APP_AUTHOR = 'GregoryGost'
 /**
  * Storage keys
  */
-export const DARK_MODE_KEY = 'darkMode'
+export const STORAGE_KEYS = {
+  DARK_MODE: 'darkMode',
+  POLLING_INTERVAL: 'polling-interval',
+}
 
 /**
  * Author links
@@ -42,6 +45,43 @@ export const VALIDATION = {
 }
 
 /**
+ * API configuration
+ */
+export const API = {
+  TIMEOUT: 5000, // milliseconds
+  FALLBACK_BASE_URL: 'http://127.0.0.1:4000',
+  HEADERS: {
+    CONTENT_TYPE: 'application/json',
+  },
+}
+
+/**
+ * Store configuration
+ */
+export const STORES = {
+  HEALTH_CACHE_TTL: 10000, // milliseconds (10 seconds)
+  DEFAULT_POLLING_INTERVAL: 3000, // milliseconds (3 seconds)
+}
+
+/**
+ * Polling intervals configuration
+ */
+export interface PollingIntervalOption {
+  value: number
+  label: string
+}
+
+export const POLLING_INTERVALS: PollingIntervalOption[] = [
+  { value: 0, label: 'Отключено' },
+  { value: 1000, label: '1 секунда' },
+  { value: 3000, label: '3 секунды' },
+  { value: 5000, label: '5 секунд' },
+  { value: 10000, label: '10 секунд' },
+  { value: 30000, label: '30 секунд' },
+  { value: 60000, label: '1 минута' },
+]
+
+/**
  * Error handling settings
  */
 export const ERROR_MESSAGES = {
@@ -49,6 +89,9 @@ export const ERROR_MESSAGES = {
   UNKNOWN_ERROR: 'Произошла непредвиденная ошибка',
   API_ERROR: 'Ошибка при выполнении запроса',
   VALIDATION_ERROR: 'Ошибка валидации данных',
+  API_TIMEOUT: 'Превышено время ожидания ответа от сервера',
+  SERVER_UNAVAILABLE: 'Сервер недоступен. Проверьте подключение к сети',
+  UNKNOWN_CONNECTION_ERROR: 'Неизвестная ошибка подключения',
 }
 
 /**

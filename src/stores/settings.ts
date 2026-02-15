@@ -1,35 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, type Ref } from 'vue'
-
-/**
- * Polling interval option
- */
-export interface PollingIntervalOption {
-  value: number
-  label: string
-}
-
-/**
- * Available polling intervals
- */
-export const POLLING_INTERVALS: PollingIntervalOption[] = [
-  { value: 0, label: 'Отключено' },
-  { value: 1000, label: '1 секунда' },
-  { value: 3000, label: '3 секунды' },
-  { value: 5000, label: '5 секунд' },
-  { value: 10000, label: '10 секунд' },
-  { value: 30000, label: '30 секунд' },
-  { value: 60000, label: '1 минута' },
-]
-
-const POLLING_INTERVAL_KEY = 'polling-interval'
-const DEFAULT_POLLING_INTERVAL = 3000
+import { STORAGE_KEYS, STORES, POLLING_INTERVALS } from '@/constants'
 
 /**
  * Settings store for application-wide settings
  */
 export const useSettingsStore = defineStore('settings', () => {
-  const pollingInterval: Ref<number> = ref(DEFAULT_POLLING_INTERVAL)
+  const pollingInterval: Ref<number> = ref(STORES.DEFAULT_POLLING_INTERVAL)
 
   /**
    * Initialize settings from localStorage
@@ -40,7 +17,7 @@ export const useSettingsStore = defineStore('settings', () => {
     }
 
     try {
-      const stored = localStorage.getItem(POLLING_INTERVAL_KEY)
+      const stored = localStorage.getItem(STORAGE_KEYS.POLLING_INTERVAL)
       if (stored !== null) {
         const parsed = parseInt(stored, 10)
         if (!isNaN(parsed) && POLLING_INTERVALS.some((opt) => opt.value === parsed)) {
@@ -66,7 +43,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
     if (typeof localStorage !== 'undefined') {
       try {
-        localStorage.setItem(POLLING_INTERVAL_KEY, value.toString())
+        localStorage.setItem(STORAGE_KEYS.POLLING_INTERVAL, value.toString())
       } catch (error) {
         console.error('Failed to save polling interval to localStorage:', error)
       }
@@ -77,7 +54,7 @@ export const useSettingsStore = defineStore('settings', () => {
    * Reset polling interval to default
    */
   function resetPollingInterval(): void {
-    setPollingInterval(DEFAULT_POLLING_INTERVAL)
+    setPollingInterval(STORES.DEFAULT_POLLING_INTERVAL)
   }
 
   return {

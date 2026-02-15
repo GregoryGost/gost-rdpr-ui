@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { STORES } from '@/constants'
 
 /**
  * Health data interface
@@ -10,11 +11,6 @@ export interface HealthData {
   uptime: number
   db_pool: string
 }
-
-/**
- * Cache TTL in milliseconds (10 seconds)
- */
-const CACHE_TTL = 10000
 
 /**
  * Health store for caching server health data between page navigations
@@ -65,7 +61,7 @@ export const useHealthStore = defineStore('health', () => {
     }
     const now = new Date().getTime()
     const cacheAge = now - lastUpdateTime.value.getTime()
-    return cacheAge < CACHE_TTL
+    return cacheAge < STORES.HEALTH_CACHE_TTL
   }
 
   return {
