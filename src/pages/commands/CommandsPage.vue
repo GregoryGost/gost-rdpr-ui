@@ -165,10 +165,11 @@ const executeCommand = async () => {
           <div class="rounded-lg bg-blue-100 p-3 dark:bg-blue-900/20">
             <ArrowPathIcon class="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Загрузить списки</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Загрузка списков</h3>
         </div>
         <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          Загрузить списки доменов и IP адресов из настроенных источников
+          Загрузить списки содержащие домены и/или IP адреса. Загружает файлы, проверяет есть ли изменения через хеш.
+          Если нет, то ничего не делает.
         </p>
         <div class="mb-4">
           <label class="flex cursor-pointer items-center gap-2">
@@ -181,7 +182,7 @@ const executeCommand = async () => {
           </label>
         </div>
         <BaseButton @click="openConfirm('lists')" variant="primary" class="w-full" :is-loading="isLoadingLists">
-          Загрузить
+          Отправить команду
         </BaseButton>
       </div>
 
@@ -191,10 +192,12 @@ const executeCommand = async () => {
           <div class="rounded-lg bg-green-100 p-3 dark:bg-green-900/20">
             <GlobeAltIcon class="h-6 w-6 text-green-600 dark:text-green-400" />
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Определить домены</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Определение доменов</h3>
         </div>
         <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          Определить все домены в IP адреса используя настроенные DNS серверы
+          Определяет IP адреса доменов через DNS инструменты через указанные DNS сервера. Используются все DNS сервера
+          по очереди. Дополнительно для доменов определяются CNAME и они тоже попадают в базу и по ним определяются IP
+          адреса.
         </p>
         <BaseButton
           @click="openConfirm('domains')"
@@ -202,7 +205,7 @@ const executeCommand = async () => {
           class="mt-10 w-full"
           :is-loading="isLoadingDomains"
         >
-          Определить
+          Отправить команду
         </BaseButton>
       </div>
 
@@ -212,17 +215,27 @@ const executeCommand = async () => {
           <div class="rounded-lg bg-purple-100 p-3 dark:bg-purple-900/20">
             <ServerIcon class="h-6 w-6 text-purple-600 dark:text-purple-400" />
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Обновить RouterOS</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Актуализация в RouterOS</h3>
         </div>
         <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          Обновить firewall и маршрутизацию на всех устройствах RouterOS
+          Обновить
+          <span
+            class="inline-flex items-center rounded-md bg-purple-100 px-2 py-1 font-mono text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+            >/ip/firewall/address-list/</span
+          >
+          и
+          <span
+            class="inline-flex items-center rounded-md bg-purple-100 px-2 py-1 font-mono text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+            >/ip/route/</span
+          >
+          на всех устройствах RouterOS внесенных в конфигурации
         </p>
         <div class="mb-4">
           <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Тип IP адресов</label>
           <BaseSelect v-model="rosIpType" :options="IP_TYPE_OPTIONS" />
         </div>
         <BaseButton @click="openConfirm('ros')" variant="primary" class="w-full" :is-loading="isLoadingRouterOS">
-          Обновить
+          Отправить команду
         </BaseButton>
       </div>
     </div>
@@ -230,8 +243,8 @@ const executeCommand = async () => {
     <!-- Info Box -->
     <div class="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
       <p class="text-sm text-blue-800 dark:text-blue-300">
-        <strong>Примечание:</strong> Команды выполняются в фоновом режиме. Результат будет отображен после завершения
-        выполнения.
+        <strong>Примечание:</strong> Команды выполняются в фоновом режиме. Ответ всегда OK. Результат будет заметен
+        через некоторое время.
       </p>
     </div>
 
