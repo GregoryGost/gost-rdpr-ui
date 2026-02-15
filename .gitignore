@@ -41,6 +41,8 @@ __screenshots__/
 !.cursor/rules/mark.mdc
 !.cursor/rules/project.mdc
 !.cursor/rules/vue.mdc
+!.cursor/rules/favicon_image.mdc
+!.cursor/rules/playwright.mdc
 
 # Env
 .env
