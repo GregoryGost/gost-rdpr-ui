@@ -1,0 +1,256 @@
+---
+alwaysApply: true
+---
+
+# SVG Image Generation Rules
+
+To create SVG graphics, strictly use the external MCP server `openai-gpt-image`.
+It is important to take into account light and dark themes.
+There should be no duplication for SVG files; it is necessary to apply CSS styles to SVG file components.
+All SVGs must be created as .VUE components. This means the SVG is embedded in accordance with all the rules for working with .VUE files.
+
+Sequence of actions:
+
+1. Create a base image
+2. Based on the base image, you need to distribute it into layers and create the necessary SVG elements.
+
+There shouldn't be a large number of elements, only the number strictly necessary to implement the required layers.
+
+## 1. General Requirements
+
+### 1.1 Image Format
+
+- All images MUST be generated strictly in **SVG format**.
+- SVG must be:
+  - valid XML
+  - scalable
+  - optimized (no unnecessary metadata)
+  - resolution-independent
+  - defined with `viewBox`
+
+- SVG must NOT include:
+  - raster graphics
+  - embedded bitmap images
+  - base64 images
+  - fixed dimensions without `viewBox`
+
+### 1.2 File Location
+
+All generated images must be stored strictly in:
+
+- /components/images
+
+Directory structure:
+
+- /components/images/backgrounds/
+- /components/images/elements/
+
+### 1.3 File Naming
+
+- Use kebab-case naming.
+- Names must be descriptive and semantic.
+- Examples:
+  - meadow-background.svg
+  - mountain-layer.svg
+  - tree-oak.svg
+  - sun-element.svg
+
+## 2. Background Image Generation Rules
+
+### 2.1 Background Definition
+
+A background is a compositional scene that may contain multiple visual layers forming a coherent environment.
+
+Backgrounds must:
+
+- be visually consistent
+- support layered composition
+- allow layer reuse
+- support responsive layouts
+- represent logical scene depth
+
+### 2.2 Layered Composition (Required)
+
+Backgrounds may consist of multiple layers representing scene depth.
+
+Example composition:
+
+- sky
+- sun
+- mountains
+- trees
+- meadow
+- foreground
+
+Each layer must:
+
+- be separated logically
+- be wrapped in a `<g>` element
+- include a unique `id`
+- support independent styling
+
+Example structure:
+
+```xml
+<svg viewBox="0 0 1024 768">
+  <g id="sky-layer"></g>
+  <g id="sun-layer"></g>
+  <g id="mountain-layer"></g>
+  <g id="tree-layer"></g>
+  <g id="foreground-layer"></g>
+</svg>
+```
+
+### 2.3 Visual Consistency
+
+All scene elements must:
+
+- use a consistent color system
+- follow consistent lighting direction
+- maintain a single visual style (e.g., flat, minimal, outline)
+- be visually related
+
+Mixing incompatible artistic styles is not allowed.
+
+### 2.4 Responsive Variants
+
+Backgrounds must support multiple layout variants:
+
+- mobile (first)
+- tablet
+- desktop
+
+Allowed adaptations:
+
+- separate SVG files
+- modified composition
+- simplified details
+- hidden layers
+
+Naming examples:
+
+- hero-background-desktop.svg
+- hero-background-mobile.svg
+
+## 3. Individual Element Generation Rules
+
+### 3.1 Element Definition
+
+An element is an independent reusable SVG object such as:
+
+- icon
+- tree
+- sun
+- cloud
+- mountain
+- decorative object
+- UI graphic
+
+### 3.2 Element Requirements
+
+Elements must:
+
+- be fully self-contained
+- not depend on a specific scene
+- use a minimal viewBox
+- be easily scalable
+- support reuse across contexts
+
+### 3.3 Element Structure
+
+- one primary `<g>` container
+- clean geometry
+- minimal grouping
+- clear semantic IDs
+
+Example:
+
+```xml
+<svg viewBox="0 0 256 256">
+  <g id="tree-element"></g>
+</svg>
+```
+
+## 4. Customization and Styling
+
+### 4.1 Tailwind CSS Integration
+
+SVG styling must support Tailwind CSS version 4.1 or higher.
+
+SVG must be compatible with:
+
+- class attributes
+- CSS variables
+- `currentColor`
+
+Example:
+
+```xml
+<path class="fill-primary stroke-primary-foreground" />
+```
+
+### 4.2 Color System
+
+Colors should:
+
+- support theme switching
+- use CSS variables or currentColor when possible
+- avoid hardcoded values unless necessary
+
+Allowed:
+
+- fill="currentColor"
+- class="text-primary"
+
+### 4.3 Theme Compatibility
+
+SVG must work correctly with:
+
+- light theme
+- dark theme
+- custom themes
+
+## 5. Performance and Optimization
+
+### 5.1 Minimization
+
+- minimize number of paths
+- avoid complex filters
+- avoid heavy gradients
+- keep SVG DOM small
+- remove unnecessary attributes and metadata
+
+### 5.2 Reusability
+
+Allowed for optimization:
+
+- `<symbol>`
+- `<defs>`
+- `<use>`
+
+Use when it reduces file size or improves reuse.
+
+## 6. Disallowed Practices
+
+The following are prohibited:
+
+- raster graphics inside SVG
+- base64 images
+- unnecessary inline styles
+- fixed pixel sizing without `viewBox`
+- complex SVG filters
+- random or non-semantic IDs
+- inconsistent colors
+- visually unrelated layers
+- mixed visual styles
+
+## 7. Generation Priorities
+
+When generating images via MCP, follow this priority order:
+
+- SVG validity
+- Scalability
+- Reusability
+- Responsiveness
+- Visual consistency
+- Performance
