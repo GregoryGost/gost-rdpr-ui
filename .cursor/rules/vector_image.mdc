@@ -4,14 +4,14 @@ alwaysApply: true
 
 # SVG Image Generation Rules
 
-To create SVG graphics, strictly use the external MCP server `openai-gpt-image`.
+To create PNG graphics, strictly use the external MCP server `openai-gpt-image`.
 It is important to take into account light and dark themes.
 There should be no duplication for SVG files; it is necessary to apply CSS styles to SVG file components.
 All SVGs must be created as .VUE components. This means the SVG is embedded in accordance with all the rules for working with .VUE files.
 
 Sequence of actions:
 
-1. Create a base image
+1. Create a base images with PNG format.
 2. Based on the base image, you need to distribute it into layers and create the necessary SVG elements.
 
 There shouldn't be a large number of elements, only the number strictly necessary to implement the required layers.

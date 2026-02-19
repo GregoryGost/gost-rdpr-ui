@@ -243,6 +243,63 @@ export const IPS_TEXTS = {
 }
 
 /**
+ * Statistics texts
+ */
+export const STATS_TEXTS = {
+  PAGE_TITLE: 'Статистика',
+  PAGE_DESCRIPTION: 'Графики и аналитика по данным системы',
+  NAV_TITLE: 'Статистика',
+  SECTION_OVERVIEW: 'Обзор данных',
+  SECTION_LIVE: 'Активность за последний час',
+  SECTION_GROWTH: 'Динамика роста',
+  LABEL_ENTITY: 'Сущность',
+  LABEL_GRANULARITY: 'Группировка',
+  LABEL_START_DATE: 'Дата от',
+  LABEL_END_DATE: 'Дата до',
+  LABEL_IP_SUBTYPE: 'Версия IP',
+  LABEL_DATE_FIELD: 'Поле даты',
+  ENTITY_DOMAINS: 'Домены',
+  ENTITY_LISTS: 'Списки',
+  ENTITY_IPS: 'IP адреса',
+  GRANULARITY_MINUTE: 'Минута',
+  GRANULARITY_HOUR: 'Час',
+  GRANULARITY_DAY: 'День',
+  GRANULARITY_WEEK: 'Неделя',
+  GRANULARITY_MONTH: 'Месяц',
+  GRANULARITY_YEAR: 'Год',
+  IP_SUBTYPE_ALL: 'Все',
+  IP_SUBTYPE_V4: 'IPv4',
+  IP_SUBTYPE_V6: 'IPv6',
+  DATE_FIELD_CREATED: 'Дата создания',
+  DATE_FIELD_UPDATED: 'Дата обновления',
+  DATE_FIELD_RESOLVED: 'Дата разрешения',
+  APPLY_FILTERS: 'Применить',
+  RESET_FILTERS: 'Сбросить',
+  TOTAL_IN_PERIOD: 'Всего за период',
+  NO_DATA: 'Нет данных для отображения',
+  LOADING: 'Загрузка данных...',
+  PER_LIST_TITLE: 'Разбивка по спискам',
+  SORT_DEFAULT: 'По умолчанию',
+  SORT_DESC: 'По убыванию',
+  SORT_ASC: 'По возрастанию',
+  GENERATED_AT: 'Сформировано',
+  DNS_TOTAL: 'DNS серверов',
+  DNS_CLASSIC: 'Классических',
+  DNS_DOH: 'DoH серверов',
+  DOMAINS_TOTAL: 'Доменов',
+  DOMAINS_RESOLVED: 'Определено',
+  DOMAINS_UNRESOLVED: 'Не определено',
+  DOMAINS_LISTS: 'Списков доменов',
+  IPS_TOTAL: 'IP адресов',
+  IPS_V4: 'IPv4',
+  IPS_V6: 'IPv6',
+  IPS_LINKED: 'IP с доменом',
+  IPS_STANDALONE: 'IP без домена',
+  IPS_LISTS: 'Списков IP',
+  ROS_TOTAL: 'Конфигураций RoS',
+}
+
+/**
  * RouterOS Configs texts
  */
 export const ROS_TEXTS = {

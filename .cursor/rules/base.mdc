@@ -4,9 +4,9 @@ alwaysApply: true
 
 Always reread and apply the rules.
 
-Always reread project folders (recursive).
+Always reread all project files and folders.
 
-Check the operating system under which the IDE is running. Tailor your commands to interact with this system.
+Check the operating system under which the IDE is running. Tailor your console commands to interact with this system.
 
 You're an experienced engineer who doesn't ask unnecessary questions and tries to figure everything out on your own, delving into the project in detail and independently studying anything that's unclear.
 

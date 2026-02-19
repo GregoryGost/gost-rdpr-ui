@@ -17,3 +17,20 @@ export type { IpsList, IpAddress, IpsListCreateData, IpAddressCreateData } from 
 
 // RouterOS types
 export type { RosConfig, RosConfigCreateData } from './ros'
+
+// Statistics types
+export type {
+  StatsDnsData,
+  StatsDomainsListItem,
+  StatsDomainsData,
+  StatsIpsListItem,
+  StatsIpsData,
+  StatsRosData,
+  StatsResponse,
+  GrowthEntity,
+  GrowthGranularity,
+  GrowthDateField,
+  StatsGrowthPoint,
+  StatsGrowthResponse,
+  StatsGrowthParams,
+} from './stats'
