@@ -71,11 +71,16 @@ const xLabels = computed(() => {
 
 
 const labelY = (i: number): number => {
-  const y = toY(props.points[i].count)
+  const y = toY(props.points[i]?.count ?? 0)
   return y < PADDING.top + 22 ? y + 18 : y - 10
 }
 
+const singlePoint = computed(() => props.points[0] ?? { date: '', count: 0 })
+
 const hoveredIndex = ref<number | null>(null)
+const hoveredPoint = computed(() =>
+  hoveredIndex.value !== null ? (props.points[hoveredIndex.value] ?? null) : null,
+)
 const axisBottom = computed(() => PADDING.top + chartHeight.value)
 </script>
 
@@ -141,19 +146,19 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
         <g v-if="isSinglePoint">
           <circle
             :cx="toX(0)"
-            :cy="toY(points[0].count)"
+            :cy="toY(singlePoint.count)"
             r="6"
             :fill="color"
           />
           <text
             :x="toX(0)"
-            :y="toY(points[0].count) - 14"
+            :y="toY(singlePoint.count) - 14"
             text-anchor="middle"
             class="fill-gray-700 dark:fill-gray-300"
             font-size="13"
             font-weight="600"
           >
-            {{ points[0].count }}
+            {{ singlePoint.count }}
           </text>
           <text
             :x="toX(0)"
@@ -162,7 +167,7 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
             class="fill-gray-500 dark:fill-gray-400"
             font-size="10"
           >
-            {{ points[0].date }}
+            {{ singlePoint.date }}
           </text>
         </g>
 
@@ -183,9 +188,9 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
 
           <!-- Hover guide line -->
           <line
-            v-if="hoveredIndex !== null"
+            v-if="hoveredIndex !== null && hoveredPoint !== null"
             :x1="toX(hoveredIndex)"
-            :y1="toY(points[hoveredIndex].count)"
+            :y1="toY(hoveredPoint.count)"
             :x2="toX(hoveredIndex)"
             :y2="axisBottom"
             :stroke="color"

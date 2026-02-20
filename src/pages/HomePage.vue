@@ -7,7 +7,6 @@ import PollingSettings from '@/components/dashboard/PollingSettings.vue'
 import ConnectionAlert from '@/components/dashboard/ConnectionAlert.vue'
 import HealthStatusCard from '@/components/dashboard/HealthStatusCard.vue'
 import VersionInfoCard from '@/components/dashboard/VersionInfoCard.vue'
-import QuickActionsCard from '@/components/dashboard/QuickActionsCard.vue'
 import ConfigurationCard from '@/components/dashboard/ConfigurationCard.vue'
 import StatsMetricCard from '@/components/dashboard/StatsMetricCard.vue'
 import StatsPieCard from '@/components/dashboard/StatsPieCard.vue'
@@ -131,10 +130,9 @@ onMounted(() => {
 
     <ConnectionAlert v-if="hasError" />
 
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
       <HealthStatusCard :health="cachedHealth" :has-error="hasError" />
       <VersionInfoCard :config="config" />
-      <QuickActionsCard />
     </div>
 
     <!-- Key Metrics -->

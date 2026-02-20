@@ -13,3 +13,5 @@ alwaysApply: true
   4. browser_take_screenshot to .cursor/artifacts
 - Summarize console errors and network requests after each run.
 - If there are errors, we make corrections until we correct the errors.
+
+Always check the result in your browser.

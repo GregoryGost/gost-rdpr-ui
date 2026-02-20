@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { statsApi } from '@/api/endpoints/stats'
 import { usePolling } from '@/composables/usePolling'
 import type { GrowthEntity, GrowthDateField, StatsGrowthPoint } from '@/api/types/stats'
@@ -32,7 +32,9 @@ const PAD = { top: 4, right: 4, bottom: 4, left: 4 }
 
 const points = ref<StatsGrowthPoint[]>([])
 const total = ref(0)
+const duration = ref<number | null>(null)
 const loading = ref(true)
+const hasError = ref(false)
 const lastUpdated = ref<Date | null>(null)
 const selectedInterval = ref(props.refreshInterval)
 
@@ -54,9 +56,11 @@ const load = async () => {
     })
     points.value = res.payload
     total.value = res.total_in_period
+    duration.value = res.duration ?? null
     lastUpdated.value = new Date()
+    hasError.value = false
   } catch {
-    /* silent — card shows last known data */
+    hasError.value = true
   } finally {
     loading.value = false
   }
@@ -71,26 +75,41 @@ const trend = computed<number>(() => {
   return Math.round(((second - first) / first) * 100)
 })
 
+// Reactive clock — ticks every minute so visiblePoints recomputes even when offline
+const nowTs = ref(Date.now())
+const clockId = setInterval(() => { nowTs.value = Date.now() }, 60_000)
+onUnmounted(() => clearInterval(clockId))
+
+// Sliding window: keep only points within the last hour from *now*
+const visiblePoints = computed<StatsGrowthPoint[]>(() => {
+  if (!points.value.length) return []
+  const cutoff = nowTs.value - 60 * 60 * 1000
+  return points.value.filter((p) => {
+    const t = new Date(p.date.replace(' ', 'T')).getTime()
+    return !isNaN(t) && t >= cutoff
+  })
+})
+
 const chartW = W - PAD.left - PAD.right
 const chartH = H - PAD.top - PAD.bottom
 
-const maxVal = computed(() => Math.max(...points.value.map((p) => p.count), 1))
+const maxVal = computed(() => Math.max(...visiblePoints.value.map((p) => p.count), 1))
 
 const toX = (i: number) => {
-  if (points.value.length <= 1) return PAD.left + chartW / 2
-  return PAD.left + (i / (points.value.length - 1)) * chartW
+  if (visiblePoints.value.length <= 1) return PAD.left + chartW / 2
+  return PAD.left + (i / (visiblePoints.value.length - 1)) * chartW
 }
 const toY = (v: number) => PAD.top + chartH - (v / maxVal.value) * chartH
 
 const polyline = computed(() =>
-  points.value.map((p, i) => `${toX(i)},${toY(p.count)}`).join(' '),
+  visiblePoints.value.map((p, i) => `${toX(i)},${toY(p.count)}`).join(' '),
 )
 
 const area = computed(() => {
-  if (!points.value.length) return ''
+  if (!visiblePoints.value.length) return ''
   const bottom = PAD.top + chartH
-  const line = points.value.map((p, i) => `${toX(i)},${toY(p.count)}`).join(' ')
-  return `${line} ${toX(points.value.length - 1)},${bottom} ${PAD.left},${bottom}`
+  const line = visiblePoints.value.map((p, i) => `${toX(i)},${toY(p.count)}`).join(' ')
+  return `${line} ${toX(visiblePoints.value.length - 1)},${bottom} ${PAD.left},${bottom}`
 })
 
 const gradId = computed(() => `spark-grad-${props.entity}`)
@@ -102,9 +121,20 @@ const updatedLabel = computed(() => {
   return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
 })
 
+const durationLabel = computed(() => {
+  if (duration.value === null) return null
+  const ms = duration.value * 1000
+  if (ms < 1) return `${(ms * 1000).toFixed(0)} мкс`
+  if (ms < 1000) return `${ms.toFixed(1)} мс`
+  return `${(ms / 1000).toFixed(2)} с`
+})
+
 const isLive = computed(() => selectedInterval.value > 0)
 
-const { updateInterval } = usePolling(load, { interval: props.refreshInterval, immediate: false })
+// immediate: true — polling starts on mount automatically;
+// initial data is fetched separately via onMounted to avoid the first
+// interval tick being the only load.
+const { updateInterval } = usePolling(load, { interval: props.refreshInterval, immediate: true })
 
 const onIntervalChange = () => {
   updateInterval(selectedInterval.value)
@@ -114,16 +144,35 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
+  <div
+    :class="[
+      'rounded-lg border p-3 transition-colors',
+      hasError
+        ? 'border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/30'
+        : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
+    ]"
+  >
     <!-- Header -->
     <div class="mb-1 flex items-center justify-between">
-      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <p
+        :class="[
+          'text-xs font-semibold uppercase tracking-wide',
+          hasError ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400',
+        ]"
+      >
         {{ label }}
       </p>
       <div class="flex items-center gap-1.5">
+        <!-- Error badge -->
+        <span
+          v-if="hasError"
+          class="rounded bg-orange-100 px-1.5 py-0.5 text-xs font-semibold text-orange-600 dark:bg-orange-900/50 dark:text-orange-400"
+        >
+          ⚠ offline
+        </span>
         <!-- Trend badge -->
         <span
-          v-if="!loading && points.length"
+          v-else-if="!loading && points.length"
           :class="[
             'rounded px-1.5 py-0.5 text-xs font-semibold',
             trend > 0
@@ -135,16 +184,16 @@ onMounted(load)
         >
           {{ trend > 0 ? '↑' : trend < 0 ? '↓' : '—' }}{{ trend !== 0 ? Math.abs(trend) + '%' : '' }}
         </span>
-        <!-- Live / paused indicator -->
+        <!-- Live / paused indicator dot -->
         <span class="relative flex size-2">
           <span
-            v-if="isLive"
+            v-if="isLive && !hasError"
             class="absolute inline-flex size-full animate-ping rounded-full opacity-75"
             :style="{ backgroundColor: color }"
           />
           <span
             class="relative inline-flex size-2 rounded-full"
-            :style="{ backgroundColor: isLive ? color : '#6b7280' }"
+            :style="{ backgroundColor: hasError ? '#f97316' : isLive ? color : '#6b7280' }"
           />
         </span>
       </div>
@@ -152,15 +201,26 @@ onMounted(load)
 
     <!-- Total -->
     <div v-if="loading" class="mb-2 h-6 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-    <p v-else class="mb-1 text-2xl font-bold" :style="{ color }">
+    <p
+      v-else
+      :class="['mb-1 text-2xl font-bold', hasError ? 'text-orange-500 dark:text-orange-400' : '']"
+      :style="hasError ? undefined : { color }"
+    >
       {{ total.toLocaleString() }}
     </p>
 
     <!-- Sparkline -->
     <div class="h-16 w-full overflow-hidden rounded">
       <div v-if="loading" class="h-full animate-pulse rounded bg-gray-100 dark:bg-gray-700" />
+      <div
+        v-else-if="hasError && !visiblePoints.length"
+        class="flex h-full flex-col items-center justify-center gap-1 rounded border border-orange-200 text-xs text-orange-500 dark:border-orange-800 dark:text-orange-400"
+      >
+        <span class="text-base">⚡</span>
+        <span>сервер недоступен</span>
+      </div>
       <svg
-        v-else-if="points.length"
+        v-else-if="visiblePoints.length"
         :viewBox="`0 0 ${W} ${H}`"
         class="h-full w-full"
         preserveAspectRatio="none"
@@ -192,10 +252,22 @@ onMounted(load)
     <!-- Footer -->
     <div class="mt-2 flex items-center justify-between gap-2">
       <div class="flex items-center gap-1.5">
-        <p class="text-xs text-gray-400 dark:text-gray-500">обновление:</p>
+        <p
+          :class="[
+            'text-xs',
+            hasError ? 'text-orange-500 dark:text-orange-400' : 'text-gray-400 dark:text-gray-500',
+          ]"
+        >
+          {{ hasError ? 'повтор через:' : 'обновление:' }}
+        </p>
         <select
           v-model.number="selectedInterval"
-          class="rounded border border-gray-200 bg-transparent py-0 pl-1 pr-5 text-xs text-gray-500 focus:border-gray-400 focus:outline-none dark:border-gray-600 dark:text-gray-400"
+          :class="[
+            'rounded border py-0 pl-1 pr-5 text-xs focus:outline-none',
+            hasError
+              ? 'border-orange-300 bg-transparent text-orange-500 focus:border-orange-400 dark:border-orange-700 dark:text-orange-400'
+              : 'border-gray-200 bg-transparent text-gray-500 focus:border-gray-400 dark:border-gray-600 dark:text-gray-400',
+          ]"
           @change="onIntervalChange"
         >
           <option v-for="opt in INTERVAL_OPTIONS" :key="opt.value" :value="opt.value">
@@ -203,9 +275,16 @@ onMounted(load)
           </option>
         </select>
       </div>
-      <p v-if="updatedLabel" class="shrink-0 text-xs text-gray-400 dark:text-gray-500">
-        {{ updatedLabel }}
-      </p>
+      <div v-if="updatedLabel && !hasError" class="flex shrink-0 items-center gap-1.5">
+        <span
+          v-if="durationLabel"
+          class="rounded bg-gray-100 px-1 py-0.5 text-xs tabular-nums text-gray-400 dark:bg-gray-700 dark:text-gray-500"
+          :title="'Время вычисления ответа'"
+        >
+          {{ durationLabel }}
+        </span>
+        <p class="text-xs text-gray-400 dark:text-gray-500">{{ updatedLabel }}</p>
+      </div>
     </div>
   </div>
 </template>
