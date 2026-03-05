@@ -49,11 +49,11 @@ const formErrors = ref<Record<string, string>>({})
  * Table columns configuration
  */
 const TABLE_COLUMNS = [
-  { key: 'id', label: 'ID' },
-  { key: 'server', label: 'DNS Server' },
-  { key: 'doh_server', label: 'DoH Server' },
-  { key: 'description', label: 'Описание' },
-  { key: 'created_at_hum', label: 'Создано' },
+  { key: 'id', label: 'ID', sortable: true },
+  { key: 'server', label: 'DNS Server', sortable: true },
+  { key: 'doh_server', label: 'DoH Server', sortable: true },
+  { key: 'description', label: 'Описание', sortable: true },
+  { key: 'created_at_hum', label: 'Создано', sortable: true },
   { key: 'actions', label: 'Действия' },
 ]
 

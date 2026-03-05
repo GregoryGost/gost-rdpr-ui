@@ -56,12 +56,12 @@ const formErrors = ref<Record<string, string>>({})
  * Table columns configuration
  */
 const TABLE_COLUMNS = [
-  { key: 'id', label: UI_TEXTS.ID },
-  { key: 'host', label: ROS_TEXTS.COLUMN_HOST },
-  { key: 'user', label: ROS_TEXTS.COLUMN_USER },
-  { key: 'bgp_list_name', label: ROS_TEXTS.COLUMN_BGP_LIST_NAME },
-  { key: 'description', label: ROS_TEXTS.COLUMN_DESCRIPTION },
-  { key: 'created_at_hum', label: UI_TEXTS.CREATED },
+  { key: 'id', label: UI_TEXTS.ID, sortable: true },
+  { key: 'host', label: ROS_TEXTS.COLUMN_HOST, sortable: true },
+  { key: 'user', label: ROS_TEXTS.COLUMN_USER, sortable: true },
+  { key: 'bgp_list_name', label: ROS_TEXTS.COLUMN_BGP_LIST_NAME, sortable: true },
+  { key: 'description', label: ROS_TEXTS.COLUMN_DESCRIPTION, sortable: true },
+  { key: 'created_at_hum', label: UI_TEXTS.CREATED, sortable: true },
   { key: 'actions', label: UI_TEXTS.ACTIONS },
 ]
 

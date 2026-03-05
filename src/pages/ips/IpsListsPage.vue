@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ipsListsApi } from '@/api/endpoints/ips-lists'
+import { statsApi } from '@/api/endpoints/stats'
 import type { IpsList, IpsListCreateData } from '@/api/types/ips'
 import { usePaginatedData } from '@/composables'
 import { IPS_LISTS_TEXTS, UI_TEXTS, SEARCH, VALIDATION, ERROR_MESSAGES } from '@/constants'
@@ -39,11 +40,6 @@ const {
 } = usePaginatedData<IpsList>(async (params) => {
   const response = await ipsListsApi.getAll(params)
 
-  // Update statistics
-  totalLists.value = response.total
-  totalWithErrors.value = response.payload.filter((item) => item.attempts > 0 && item.attempts < 3).length
-  totalCritical.value = response.payload.filter((item) => item.attempts >= 3).length
-
   // Apply client-side filtering by attempts
   let filtered = response.payload
   if (attemptsFilter.value === 'success') {
@@ -76,15 +72,15 @@ const formErrors = ref<Record<string, string>>({})
  * Table columns configuration
  */
 const TABLE_COLUMNS = [
-  { key: 'id', label: UI_TEXTS.ID },
-  { key: 'name', label: UI_TEXTS.NAME },
-  { key: 'url', label: UI_TEXTS.URL },
-  { key: 'description', label: UI_TEXTS.DESCRIPTION },
-  { key: 'elements_count', label: IPS_LISTS_TEXTS.COLUMN_IPS_COUNT },
-  { key: 'ip_v4_count', label: IPS_LISTS_TEXTS.COLUMN_IPV4_COUNT },
-  { key: 'ip_v6_count', label: IPS_LISTS_TEXTS.COLUMN_IPV6_COUNT },
-  { key: 'attempts', label: IPS_LISTS_TEXTS.COLUMN_ATTEMPTS },
-  { key: 'created_at_hum', label: UI_TEXTS.CREATED },
+  { key: 'id', label: UI_TEXTS.ID, sortable: true },
+  { key: 'name', label: UI_TEXTS.NAME, sortable: true },
+  { key: 'url', label: UI_TEXTS.URL, sortable: true },
+  { key: 'description', label: UI_TEXTS.DESCRIPTION, sortable: true },
+  { key: 'elements_count', label: IPS_LISTS_TEXTS.COLUMN_IPS_COUNT, sortable: true },
+  { key: 'ip_v4_count', label: IPS_LISTS_TEXTS.COLUMN_IPV4_COUNT, sortable: true },
+  { key: 'ip_v6_count', label: IPS_LISTS_TEXTS.COLUMN_IPV6_COUNT, sortable: true },
+  { key: 'attempts', label: IPS_LISTS_TEXTS.COLUMN_ATTEMPTS, sortable: true },
+  { key: 'created_at_hum', label: UI_TEXTS.CREATED, sortable: true },
   { key: 'actions', label: UI_TEXTS.ACTIONS },
 ]
 
@@ -111,11 +107,6 @@ const searchLists = async () => {
         limit: pagination.pageSize.value,
         offset: pagination.offset.value,
       })
-
-      // Update statistics
-      totalLists.value = response.total
-      totalWithErrors.value = response.payload.filter((item) => item.attempts > 0 && item.attempts < 3).length
-      totalCritical.value = response.payload.filter((item) => item.attempts >= 3).length
 
       // Apply client-side filtering by attempts
       let filtered = response.payload
@@ -149,6 +140,20 @@ const searchLists = async () => {
       isLoading.value = false
     }
   }, 300) // Debounce 300ms
+}
+
+/**
+ * Load global statistics from the dedicated statistics API endpoint
+ */
+const loadGlobalStats = async () => {
+  try {
+    const stats = await statsApi.getStats()
+    totalLists.value = stats.ips.lists_total
+    totalWithErrors.value = stats.ips.per_list.filter((l) => l.attempts > 0 && l.attempts < 3).length
+    totalCritical.value = stats.ips.per_list.filter((l) => l.attempts >= 3).length
+  } catch (error) {
+    errorHandler.handleError(error, { action: 'loadGlobalStats', component: 'IpsListsPage' })
+  }
 }
 
 /**
@@ -234,6 +239,7 @@ const createList = async () => {
     closeAddModal()
     showSuccess(`${IPS_LISTS_TEXTS.LIST_PREFIX} "${formData.value.name}" ${IPS_LISTS_TEXTS.SUCCESS_CREATED}`)
     await refreshLists()
+    await loadGlobalStats()
   } catch (error) {
     errorHandler.handleError(error, {
       action: 'createList',
@@ -269,6 +275,7 @@ const deleteList = async () => {
 
     // Reload data after deletion
     await refreshLists()
+    await loadGlobalStats()
 
     // Check if we need to go to previous page (if current page is now empty)
     if (lists.value.length === 0 && pagination.currentPage.value > 1) {
@@ -288,6 +295,7 @@ const deleteList = async () => {
 }
 
 onMounted(() => {
+  loadGlobalStats()
   loadLists()
 })
 </script>
