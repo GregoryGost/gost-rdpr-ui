@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 interface DataPoint {
   date: string
@@ -23,6 +23,43 @@ const PADDING = { top: 32, right: 20, bottom: 48, left: 52 }
 
 const chartWidth = computed(() => WIDTH - PADDING.left - PADDING.right)
 const chartHeight = computed(() => HEIGHT.value - PADDING.top - PADDING.bottom)
+
+// ResizeObserver: measure actual container width to compensate SVG viewBox scaling.
+// Formula: s(px) converts a desired CSS-pixel size into SVG user units so it
+// renders at exactly `px` CSS pixels regardless of container width.
+const containerRef = ref<HTMLDivElement | null>(null)
+const containerWidth = ref(WIDTH)
+let ro: ResizeObserver | null = null
+let mounted = false
+
+onMounted(() => {
+  mounted = true
+  if (containerRef.value) {
+    containerWidth.value = containerRef.value.clientWidth || WIDTH
+    ro = new ResizeObserver((entries) => {
+      window.requestAnimationFrame(() => {
+        if (mounted) containerWidth.value = entries[0]?.contentRect.width ?? WIDTH
+      })
+    })
+    ro.observe(containerRef.value)
+  }
+})
+onUnmounted(() => {
+  mounted = false
+  ro?.disconnect()
+})
+
+const FONT_PX = 13
+
+const sc = computed(() => WIDTH / Math.max(containerWidth.value, 1))
+
+// Partially compensates for SVG viewBox scaling.
+// On wide screens (>800px) elements grow up to 1.4×; on narrow — shrink no lower than 0.85×.
+// rendered_px = px × clamp(containerWidth / WIDTH, 0.85, 1.4)
+const s = (px: number) => {
+  const ratio = containerWidth.value / WIDTH
+  return px * Math.min(Math.max(ratio, 0.85), 1.4) * sc.value
+}
 
 const maxCount = computed(() => {
   if (!props.points.length) return 10
@@ -69,10 +106,9 @@ const xLabels = computed(() => {
     .filter((_, i) => i % step === 0 || i === props.points.length - 1)
 })
 
-
 const labelY = (i: number): number => {
   const y = toY(props.points[i]?.count ?? 0)
-  return y < PADDING.top + 22 ? y + 18 : y - 10
+  return y < PADDING.top + s(24) ? y + s(20) : y - s(12)
 }
 
 const singlePoint = computed(() => props.points[0] ?? { date: '', count: 0 })
@@ -82,10 +118,28 @@ const hoveredPoint = computed(() =>
   hoveredIndex.value !== null ? (props.points[hoveredIndex.value] ?? null) : null,
 )
 const axisBottom = computed(() => PADDING.top + chartHeight.value)
+
+const baseDotPx = computed(() => {
+  const n = props.points.length
+  if (n > 60) return 2.5
+  if (n > 30) return 3.5
+  return 5
+})
+
+const dotRadius = computed(() => {
+  const ratio = containerWidth.value / WIDTH
+  return baseDotPx.value * Math.min(Math.max(ratio, 0.85), 1.4) * sc.value
+})
+const hitRadius = computed(() => Math.max(baseDotPx.value * 2, 8) * sc.value)
+const lineStrokeWidth = computed(() => {
+  const base = props.points.length > 60 ? 1.5 : 2.5
+  const ratio = containerWidth.value / WIDTH
+  return base * Math.min(Math.max(ratio, 0.85), 1.4) * sc.value
+})
 </script>
 
 <template>
-  <div class="w-full overflow-x-auto">
+  <div ref="containerRef" class="w-full">
     <svg
       :viewBox="`0 0 ${WIDTH} ${HEIGHT}`"
       class="w-full"
@@ -109,17 +163,17 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
           :x2="PADDING.left + chartWidth"
           :y2="toY(tick)"
           class="stroke-gray-200 dark:stroke-gray-700"
-          stroke-width="1"
+          :stroke-width="s(1)"
           stroke-dasharray="4 4"
         />
         <text
           v-for="tick in yTicks"
           :key="`y-${tick}`"
-          :x="PADDING.left - 8"
-          :y="toY(tick) + 4"
+          :x="PADDING.left - s(8)"
+          :y="toY(tick) + s(4)"
           text-anchor="end"
           class="fill-gray-500 dark:fill-gray-400"
-          font-size="11"
+          :font-size="s(FONT_PX)"
         >
           {{ tick }}
         </text>
@@ -131,7 +185,7 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
           :x2="PADDING.left"
           :y2="axisBottom"
           class="stroke-gray-300 dark:stroke-gray-600"
-          stroke-width="1"
+          :stroke-width="s(1)"
         />
         <line
           :x1="PADDING.left"
@@ -139,7 +193,7 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
           :x2="PADDING.left + chartWidth"
           :y2="axisBottom"
           class="stroke-gray-300 dark:stroke-gray-600"
-          stroke-width="1"
+          :stroke-width="s(1)"
         />
 
         <!-- Single point -->
@@ -147,25 +201,25 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
           <circle
             :cx="toX(0)"
             :cy="toY(singlePoint.count)"
-            r="6"
+            :r="s(7)"
             :fill="color"
           />
           <text
             :x="toX(0)"
-            :y="toY(singlePoint.count) - 14"
+            :y="toY(singlePoint.count) - s(16)"
             text-anchor="middle"
             class="fill-gray-700 dark:fill-gray-300"
-            font-size="13"
+            :font-size="s(15)"
             font-weight="600"
           >
             {{ singlePoint.count }}
           </text>
           <text
             :x="toX(0)"
-            :y="axisBottom + 16"
+            :y="axisBottom + s(18)"
             text-anchor="middle"
             class="fill-gray-500 dark:fill-gray-400"
-            font-size="10"
+            :font-size="s(FONT_PX)"
           >
             {{ singlePoint.date }}
           </text>
@@ -181,7 +235,7 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
             :points="polylinePoints"
             fill="none"
             :stroke="color"
-            stroke-width="2"
+            :stroke-width="lineStrokeWidth"
             stroke-linejoin="round"
             stroke-linecap="round"
           />
@@ -194,7 +248,7 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
             :x2="toX(hoveredIndex)"
             :y2="axisBottom"
             :stroke="color"
-            stroke-width="1"
+            :stroke-width="s(1)"
             stroke-dasharray="4 3"
             opacity="0.5"
           />
@@ -207,13 +261,22 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
             @mouseenter="hoveredIndex = i"
             @mouseleave="hoveredIndex = null"
           >
+            <!-- Invisible hit area for hover -->
+            <circle
+              :cx="toX(i)"
+              :cy="toY(p.count)"
+              :r="hitRadius"
+              fill="transparent"
+              pointer-events="all"
+            />
+
             <!-- Value label -->
             <text
               :x="toX(i)"
               :y="labelY(i)"
               text-anchor="middle"
-              font-size="10"
-              font-weight="700"
+              :font-size="s(FONT_PX)"
+              font-weight="600"
               class="point-label fill-gray-900 dark:fill-gray-100"
               :class="{ 'point-label--visible': hoveredIndex === i }"
               pointer-events="none"
@@ -225,10 +288,11 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
             <circle
               :cx="toX(i)"
               :cy="toY(p.count)"
-              r="4"
+              :r="dotRadius"
               :fill="color"
               class="point-dot"
               :class="{ 'point-dot--active': hoveredIndex === i }"
+              pointer-events="none"
             />
           </g>
 
@@ -237,10 +301,10 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
             v-for="label in xLabels"
             :key="label.index"
             :x="label.x"
-            :y="axisBottom + 16"
+            :y="axisBottom + s(18)"
             text-anchor="middle"
             class="fill-gray-500 dark:fill-gray-400"
-            font-size="10"
+            :font-size="s(FONT_PX)"
           >
             {{ label.label }}
           </text>
@@ -253,7 +317,7 @@ const axisBottom = computed(() => PADDING.top + chartHeight.value)
         :y="HEIGHT / 2"
         text-anchor="middle"
         class="fill-gray-400 dark:fill-gray-500"
-        font-size="14"
+        :font-size="s(16)"
       >
         Нет данных
       </text>
