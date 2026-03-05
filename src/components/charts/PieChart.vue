@@ -57,13 +57,18 @@ const sliceData = computed(() => {
       const ie = polarToCart(props.innerRadius, endAngle)
       const is_ = polarToCart(props.innerRadius, startAngle)
 
+      // When one slice covers nearly the full circle, use two-semicircle technique
+      // to avoid SVG arc degeneration with near-identical start/end points.
+      // Uses evenodd fill rule: outer CW + inner CW → hole punched by alternating regions.
       const path =
         sweep >= 2 * Math.PI - 0.001
           ? [
-              `M ${os.x} ${os.y}`,
-              `A ${props.outerRadius} ${props.outerRadius} 0 1 1 ${os.x - 0.001} ${os.y}`,
-              `L ${is_.x} ${is_.y}`,
-              `A ${props.innerRadius} ${props.innerRadius} 0 1 0 ${is_.x - 0.001} ${is_.y}`,
+              `M ${cx.value - props.outerRadius} ${cy.value}`,
+              `A ${props.outerRadius} ${props.outerRadius} 0 1 1 ${cx.value + props.outerRadius} ${cy.value}`,
+              `A ${props.outerRadius} ${props.outerRadius} 0 1 1 ${cx.value - props.outerRadius} ${cy.value}`,
+              `M ${cx.value - props.innerRadius} ${cy.value}`,
+              `A ${props.innerRadius} ${props.innerRadius} 0 1 1 ${cx.value + props.innerRadius} ${cy.value}`,
+              `A ${props.innerRadius} ${props.innerRadius} 0 1 1 ${cx.value - props.innerRadius} ${cy.value}`,
               'Z',
             ].join(' ')
           : [
@@ -92,11 +97,12 @@ const sliceData = computed(() => {
     class="overflow-visible"
   >
     <g v-if="sliceData.length">
-      <path
+        <path
         v-for="(sl, i) in sliceData"
         :key="i"
         :d="sl.path"
         :fill="sl.color"
+        fill-rule="evenodd"
         class="pie-slice cursor-pointer"
         :class="{ 'pie-slice--active': hoveredIndex === i }"
         @mouseenter="hoveredIndex = i"

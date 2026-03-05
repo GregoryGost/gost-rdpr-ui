@@ -53,7 +53,7 @@ const {
   } else if (attemptsFilter.value === 'critical') {
     filtered = filtered.filter((item) => item.attempts >= 3)
   }
-  return { ...response, payload: filtered, total: filtered.length }
+  return { ...response, payload: filtered }
 }, 20)
 
 // Modals
@@ -128,16 +128,16 @@ const searchLists = async () => {
       }
 
       lists.value = filtered
-      pagination.totalItems.value = filtered.length
+      pagination.totalItems.value = response.total
 
       // Show search results notification
-      if (lists.value.length === 0) {
+      if (response.total === 0) {
         showInfo(
           `${IPS_LISTS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
           UI_TEXTS.SEARCH_RESULTS,
         )
       } else {
-        showInfo(`${IPS_LISTS_TEXTS.SEARCH_FOUND_PREFIX} ${lists.value.length}`, UI_TEXTS.SEARCH_RESULTS)
+        showInfo(`${IPS_LISTS_TEXTS.SEARCH_FOUND_PREFIX} ${response.total}`, UI_TEXTS.SEARCH_RESULTS)
       }
     } catch (error) {
       errorHandler.handleError(error, {

@@ -102,9 +102,9 @@ const loadDomainsWithStats = async () => {
     })
     allDomains.value = response.payload
     domains.value = applyListFilter(response.payload)
-    totalItems.value = domains.value.length
     totalResolved.value = response.total_resolved
     totalQuery.value = response.total_query
+    totalItems.value = response.total_query
   } catch (error) {
     errorHandler.handleError(error, {
       action: 'loadDomainsWithStats',
@@ -168,15 +168,15 @@ const searchDomains = async () => {
       })
       allDomains.value = response.payload
       domains.value = applyListFilter(response.payload)
-      totalItems.value = domains.value.length
       totalResolved.value = response.total_resolved
       totalQuery.value = response.total_query
+      totalItems.value = response.total_query
 
       // Show search results notification
-      if (domains.value.length === 0) {
+      if (response.total_query === 0) {
         showInfo(`По запросу "${searchQuery.value}" ничего не найдено`, 'Результаты поиска')
       } else {
-        showInfo(`Найдено доменов: ${domains.value.length}`, 'Результаты поиска')
+        showInfo(`Найдено доменов: ${response.total_query}`, 'Результаты поиска')
       }
     } catch (error) {
       errorHandler.handleError(error, {
