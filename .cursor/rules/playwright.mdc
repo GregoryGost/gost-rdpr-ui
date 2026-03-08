@@ -15,3 +15,7 @@ alwaysApply: true
 - If there are errors, we make corrections until we correct the errors.
 
 Always check the result in your browser.
+
+After navigating to a page, don't wait too long; 1 second is enough. If the page doesn't open, refresh it three times.
+
+If the page is completely unavailable, ensure that all necessary components are available (API servers, MCP servers, and the web application itself is running in development mode).

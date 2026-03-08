@@ -16,16 +16,32 @@ import type {
   GrowthDateField,
 } from '@/api/types/stats'
 
+function padTwo(n: number): string {
+  return String(n).padStart(2, '0')
+}
+
+function todayRange(): { start: string; end: string } {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = padTwo(now.getMonth() + 1)
+  const d = padTwo(now.getDate())
+  return {
+    start: `${y}-${m}-${d}T00:00`,
+    end: `${y}-${m}-${d}T23:59`,
+  }
+}
+
 const stats = ref<StatsResponse | null>(null)
 const growth = ref<StatsGrowthResponse | null>(null)
 const isStatsLoading = ref(false)
 const isGrowthLoading = ref(false)
 
 const selectedEntity = ref<GrowthEntity>('domains')
-const selectedGranularity = ref<GrowthGranularity>('day')
+const selectedGranularity = ref<GrowthGranularity>('hour')
 const selectedDateField = ref<GrowthDateField>('created_at')
-const startDate = ref('')
-const endDate = ref('')
+const { start: todayStart, end: todayEnd } = todayRange()
+const startDate = ref(todayStart)
+const endDate = ref(todayEnd)
 const ipSubtype = ref<'' | '4' | '6'>('')
 
 const ENTITIES: { value: GrowthEntity; label: string }[] = [
@@ -119,8 +135,7 @@ const loadStats = async () => {
 }
 
 function formatApiDate(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  return `${d.getFullYear()}-${padTwo(d.getMonth() + 1)}-${padTwo(d.getDate())} ${padTwo(d.getHours())}:${padTwo(d.getMinutes())}:${padTwo(d.getSeconds())}`
 }
 
 function defaultStartDate(granularity: GrowthGranularity): string {
@@ -168,10 +183,11 @@ const loadGrowth = async () => {
 const applyFilters = () => loadGrowth()
 
 const resetFilters = () => {
-  selectedGranularity.value = 'day'
+  selectedGranularity.value = 'hour'
   selectedDateField.value = 'created_at'
-  startDate.value = ''
-  endDate.value = ''
+  const { start, end } = todayRange()
+  startDate.value = start
+  endDate.value = end
   ipSubtype.value = ''
   loadGrowth()
 }
