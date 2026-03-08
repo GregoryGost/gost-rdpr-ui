@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { domainsApi } from '@/api/endpoints/domains'
+import { statsApi } from '@/api/endpoints/stats'
 import type { Domain, DomainCreateData } from '@/api/types/domains'
 import { PAGINATION } from '@/constants'
 import DataTable from '@/ui/tables/DataTable.vue'
@@ -26,13 +27,15 @@ const listFilter = ref<'all' | 'with-list' | 'without-list'>('all')
 const domains = ref<Domain[]>([])
 const allDomains = ref<Domain[]>([]) // All loaded domains before list filter
 const isLoading = ref(false)
-const totalResolved = ref(0)
-const totalQuery = ref(0)
 
-// Pagination
+// Global stats (always unfiltered — used for stat cards)
+const globalTotalResolved = ref(0)
+const globalTotalQuery = ref(0)
+
+// Pagination counters (change with active filter)
+const totalItems = ref(0)
 const pageSize = ref(PAGINATION.DEFAULT_PAGE_SIZE)
 const currentPage = ref(1)
-const totalItems = ref(0)
 const totalPages = computed(() => Math.ceil(totalItems.value / pageSize.value))
 const offset = computed(() => (currentPage.value - 1) * pageSize.value)
 
@@ -65,15 +68,15 @@ const formErrors = ref<Record<string, string>>({})
  * Table columns configuration
  */
 const TABLE_COLUMNS = [
-  { key: 'id', label: 'ID' },
-  { key: 'name', label: 'Домен' },
-  { key: 'domains_list_id', label: 'Список' },
-  { key: 'resolved', label: 'Статус' },
+  { key: 'id', label: 'ID', sortable: true },
+  { key: 'name', label: 'Домен', sortable: true },
+  { key: 'domains_list_id', label: 'Список', sortable: true },
+  { key: 'resolved', label: 'Статус', sortable: true },
   { key: 'ips_v4', label: 'IPv4' },
   { key: 'ips_v6', label: 'IPv6' },
-  { key: 'ros_comment', label: 'Комментарий' },
-  { key: 'created_at_hum', label: 'Создано' },
-  { key: 'last_resolved_at_hum', label: 'Определено' },
+  { key: 'ros_comment', label: 'Комментарий', sortable: true },
+  { key: 'created_at_hum', label: 'Создано', sortable: true },
+  { key: 'last_resolved_at_hum', label: 'Определено', sortable: true },
   { key: 'actions', label: 'Действия' },
 ]
 
@@ -90,7 +93,23 @@ const applyListFilter = (domainsToFilter: Domain[]): Domain[] => {
 }
 
 /**
- * Load domains with stats
+ * Load global stats from the dedicated statistics API endpoint
+ */
+const loadGlobalStats = async () => {
+  try {
+    const stats = await statsApi.getStats()
+    globalTotalResolved.value = stats.domains.resolved
+    globalTotalQuery.value = stats.domains.total
+  } catch (error) {
+    errorHandler.handleError(error, {
+      action: 'loadGlobalStats',
+      component: 'DomainsPage',
+    })
+  }
+}
+
+/**
+ * Load domains (paginated, with active filters)
  */
 const loadDomainsWithStats = async () => {
   isLoading.value = true
@@ -102,9 +121,7 @@ const loadDomainsWithStats = async () => {
     })
     allDomains.value = response.payload
     domains.value = applyListFilter(response.payload)
-    totalItems.value = domains.value.length
-    totalResolved.value = response.total_resolved
-    totalQuery.value = response.total_query
+    totalItems.value = response.total_query
   } catch (error) {
     errorHandler.handleError(error, {
       action: 'loadDomainsWithStats',
@@ -113,17 +130,18 @@ const loadDomainsWithStats = async () => {
     domains.value = []
     allDomains.value = []
     totalItems.value = 0
-    totalResolved.value = 0
-    totalQuery.value = 0
   } finally {
     isLoading.value = false
   }
 }
 
 /**
- * Refresh domains (reload current page)
+ * Refresh domains and global stats (after create/delete)
  */
-const refreshDomains = () => loadDomainsWithStats()
+const refreshDomains = () => {
+  loadGlobalStats()
+  return loadDomainsWithStats()
+}
 
 /**
  * Go to specific page and load data
@@ -168,15 +186,13 @@ const searchDomains = async () => {
       })
       allDomains.value = response.payload
       domains.value = applyListFilter(response.payload)
-      totalItems.value = domains.value.length
-      totalResolved.value = response.total_resolved
-      totalQuery.value = response.total_query
+      totalItems.value = response.total_query
 
       // Show search results notification
-      if (domains.value.length === 0) {
+      if (response.total_query === 0) {
         showInfo(`По запросу "${searchQuery.value}" ничего не найдено`, 'Результаты поиска')
       } else {
-        showInfo(`Найдено доменов: ${domains.value.length}`, 'Результаты поиска')
+        showInfo(`Найдено доменов: ${response.total_query}`, 'Результаты поиска')
       }
     } catch (error) {
       errorHandler.handleError(error, {
@@ -187,8 +203,6 @@ const searchDomains = async () => {
       domains.value = []
       allDomains.value = []
       totalItems.value = 0
-      totalResolved.value = 0
-      totalQuery.value = 0
     } finally {
       isLoading.value = false
     }
@@ -352,6 +366,7 @@ const getLimitedIps = (ips?: string[], maxDisplay: number = 3) => {
 }
 
 onMounted(() => {
+  loadGlobalStats()
   loadDomainsWithStats()
 })
 </script>
@@ -368,15 +383,15 @@ onMounted(() => {
     <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">Всего доменов</div>
-        <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ totalQuery }}</div>
+        <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ globalTotalQuery }}</div>
       </div>
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">Определено</div>
-        <div class="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">{{ totalResolved }}</div>
+        <div class="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">{{ globalTotalResolved }}</div>
       </div>
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">Не определено</div>
-        <div class="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">{{ totalQuery - totalResolved }}</div>
+        <div class="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">{{ globalTotalQuery - globalTotalResolved }}</div>
       </div>
     </div>
 

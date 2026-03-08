@@ -2,14 +2,14 @@
 
 For project: <https://github.com/GregoryGost/gost-rdpr>
 
-```json
+````json
 {
   "openapi": "3.1.0",
   "info": {
     "title": "GOST-RDPR (Resolve Domains Per Records)",
     "summary": "A utility for working with Mikrotik RouterOS and BGP protocol for announcing IP addresses",
     "description": "The utility provides parsing of domain names into IP addresses, processing of domain lists and their \n    subsequent parsing, processing of individual IP addresses and summarized IP groups. Updates firewall address list \n    and routing table",
-    "version": "2.0.8"
+    "version": "2.0.9"
   },
   "paths": {
     "/metrics": {
@@ -21,11 +21,23 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "text/plain": { "schema": { "type": "string" } } }
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "500": {
             "description": "Internal Server Error",
-            "content": { "text/plain": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } }
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            }
           }
         }
       }
@@ -39,7 +51,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WelcomeResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomeResp"
+                }
+              }
+            }
           }
         }
       }
@@ -53,7 +71,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResp"
+                }
+              }
+            }
           }
         }
       }
@@ -67,7 +91,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigResp"
+                }
+              }
+            }
           }
         }
       }
@@ -113,7 +143,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start date",
               "description": "Date from which you want to start sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -125,7 +164,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "End date",
               "description": "Date from which you want to end sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -137,7 +185,14 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "View default DNS",
               "description": "Whether or not to include the default DNS server in the result",
               "examples": [true, false]
@@ -148,15 +203,33 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DnsPayloadResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DnsPayloadResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -171,11 +244,18 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "application/json": {
               "schema": {
                 "type": "array",
-                "items": { "$ref": "#/components/schemas/DnsPostElementReq" },
+                "items": {
+                  "$ref": "#/components/schemas/DnsPostElementReq"
+                },
                 "examples": [
                   [
-                    { "server": "9.9.9.9" },
-                    { "server": "1.1.1.1", "description": "Simple IPv4 DNS server" },
+                    {
+                      "server": "9.9.9.9"
+                    },
+                    {
+                      "server": "1.1.1.1",
+                      "description": "Simple IPv4 DNS server"
+                    },
                     {
                       "doh_server": "https://dns.adguard-dns.com/dns-query",
                       "description": "DNS over HTTPS server URL"
@@ -190,19 +270,43 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "400": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NoDataResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoDataResp"
+                }
+              }
+            },
             "description": "Bad Request"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -214,10 +318,22 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           }
         }
@@ -264,7 +380,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start date",
               "description": "Date from which you want to start sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -276,7 +401,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "End date",
               "description": "Date from which you want to end sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -299,15 +433,33 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DnsPayloadResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DnsPayloadResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -323,25 +475,53 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "minimum": -1, "title": "DNS record ID" }
+            "schema": {
+              "type": "integer",
+              "minimum": -1,
+              "title": "DNS record ID"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DnsElementResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DnsElementResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "404": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotFoundResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResp"
+                }
+              }
+            },
             "description": "Not Found"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -355,21 +535,43 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "exclusiveMinimum": -1, "title": "DNS record ID" }
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": -1,
+              "title": "DNS record ID"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -415,7 +617,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start date",
               "description": "Date from which you want to start sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -427,7 +638,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "End date",
               "description": "Date from which you want to end sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -439,7 +659,14 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Attempts count",
               "description": "Attempts count for ips list"
             },
@@ -449,15 +676,33 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainsListsPayloadResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainsListsPayloadResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -472,10 +717,15 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "application/json": {
               "schema": {
                 "type": "array",
-                "items": { "$ref": "#/components/schemas/DomainsListsPostElementReq" },
+                "items": {
+                  "$ref": "#/components/schemas/DomainsListsPostElementReq"
+                },
                 "examples": [
                   [
-                    { "name": "voice-domains-list", "url": "https://somedomain.som/path/path/path/voice.txt" },
+                    {
+                      "name": "voice-domains-list",
+                      "url": "https://somedomain.som/path/path/path/voice.txt"
+                    },
                     {
                       "name": "voice-domains-list-2",
                       "url": "https://somedomain.som/path/path/path/voice-2.txt",
@@ -491,19 +741,43 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "400": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NoDataResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoDataResp"
+                }
+              }
+            },
             "description": "Bad Request"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -515,10 +789,22 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           }
         }
@@ -565,7 +851,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start date",
               "description": "Date from which you want to start sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -577,7 +872,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "End date",
               "description": "Date from which you want to end sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -601,7 +905,14 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Attempts count",
               "description": "Attempts count for domains list"
             },
@@ -611,15 +922,33 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainsListsPayloadResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainsListsPayloadResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -635,25 +964,53 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "exclusiveMinimum": 0, "title": "Domains list record ID" }
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Domains list record ID"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainsListElementResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainsListElementResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "404": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotFoundResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResp"
+                }
+              }
+            },
             "description": "Not Found"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -667,21 +1024,43 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "exclusiveMinimum": 0, "title": "Domains list record ID" }
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Domains list record ID"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -727,7 +1106,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start date",
               "description": "Date from which you want to start sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -739,7 +1127,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "End date",
               "description": "Date from which you want to end sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -750,21 +1147,49 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "resolved",
             "in": "query",
             "required": false,
-            "schema": { "anyOf": [{ "type": "boolean" }, { "type": "null" }], "title": "View resolved domains" }
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "View resolved domains"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainsPayloadResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainsPayloadResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -779,11 +1204,18 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "application/json": {
               "schema": {
                 "type": "array",
-                "items": { "$ref": "#/components/schemas/DomainsPostElementReq" },
+                "items": {
+                  "$ref": "#/components/schemas/DomainsPostElementReq"
+                },
                 "examples": [
                   [
-                    { "domain": "google.com" },
-                    { "domain": "rotterdam1192.discord.gg", "ros_comment": "discord domain" }
+                    {
+                      "domain": "google.com"
+                    },
+                    {
+                      "domain": "rotterdam1192.discord.gg",
+                      "ros_comment": "discord domain"
+                    }
                   ]
                 ],
                 "title": "Data"
@@ -794,19 +1226,43 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "400": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NoDataResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoDataResp"
+                }
+              }
+            },
             "description": "Bad Request"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -818,10 +1274,22 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           }
         }
@@ -868,7 +1336,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start date",
               "description": "Date from which you want to start sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -880,7 +1357,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "End date",
               "description": "Date from which you want to end sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -891,7 +1377,17 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "resolved",
             "in": "query",
             "required": false,
-            "schema": { "anyOf": [{ "type": "boolean" }, { "type": "null" }], "title": "View resolved domains" }
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "View resolved domains"
+            }
           },
           {
             "name": "text",
@@ -909,15 +1405,33 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainsPayloadResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainsPayloadResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -933,25 +1447,53 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "minimum": 0, "title": "Domain record ID" }
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "title": "Domain record ID"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DomainElementResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainElementResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "404": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotFoundResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResp"
+                }
+              }
+            },
             "description": "Not Found"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -965,21 +1507,43 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "minimum": -1, "title": "Domain record ID" }
+            "schema": {
+              "type": "integer",
+              "minimum": -1,
+              "title": "Domain record ID"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -1025,7 +1589,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start date",
               "description": "Date from which you want to start sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -1037,7 +1610,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "End date",
               "description": "Date from which you want to end sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -1049,7 +1631,14 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Attempts count",
               "description": "Attempts count for ips list"
             },
@@ -1059,15 +1648,33 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IpsListsPayloadResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IpsListsPayloadResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -1082,10 +1689,15 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "application/json": {
               "schema": {
                 "type": "array",
-                "items": { "$ref": "#/components/schemas/IpsListsPostElementReq" },
+                "items": {
+                  "$ref": "#/components/schemas/IpsListsPostElementReq"
+                },
                 "examples": [
                   [
-                    { "name": "ips-list", "url": "https://somedomain.som/path/path/path/some-ips-list" },
+                    {
+                      "name": "ips-list",
+                      "url": "https://somedomain.som/path/path/path/some-ips-list"
+                    },
                     {
                       "name": "ips-list-2",
                       "url": "https://somedomain.som/path/path/path/some-ips-list-2.txt",
@@ -1101,19 +1713,43 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "400": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NoDataResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoDataResp"
+                }
+              }
+            },
             "description": "Bad Request"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -1125,10 +1761,22 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           }
         }
@@ -1175,7 +1823,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start date",
               "description": "Date from which you want to start sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -1187,7 +1844,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "End date",
               "description": "Date from which you want to end sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -1211,7 +1877,14 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Attempts count",
               "description": "Attempts count for ips list"
             },
@@ -1221,15 +1894,33 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IpsListsPayloadResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IpsListsPayloadResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -1245,25 +1936,53 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "exclusiveMinimum": 0, "title": "Ips list record ID" }
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Ips list record ID"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IpsListElementResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IpsListElementResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "404": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotFoundResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResp"
+                }
+              }
+            },
             "description": "Not Found"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -1277,21 +1996,43 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "exclusiveMinimum": 0, "title": "Ips list record ID" }
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "Ips list record ID"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -1337,7 +2078,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start date",
               "description": "Date from which you want to start sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -1349,7 +2099,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "End date",
               "description": "Date from which you want to end sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -1361,7 +2120,14 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "IP address type v4 or v6",
               "description": "IP address type filter parameter",
               "examples": [4, 6]
@@ -1372,15 +2138,33 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IpsPayloadResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IpsPayloadResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -1395,12 +2179,22 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "application/json": {
               "schema": {
                 "type": "array",
-                "items": { "$ref": "#/components/schemas/IpsPostElementReq" },
+                "items": {
+                  "$ref": "#/components/schemas/IpsPostElementReq"
+                },
                 "examples": [
                   [
-                    { "addr": "1.1.1.1" },
-                    { "addr": "9.9.9.9", "domain_id": 1 },
-                    { "addr": "2001:0db8:85a3:0000:0000:8a2e:0370:7334", "ros_comment": "discord ip address" },
+                    {
+                      "addr": "1.1.1.1"
+                    },
+                    {
+                      "addr": "9.9.9.9",
+                      "domain_id": 1
+                    },
+                    {
+                      "addr": "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+                      "ros_comment": "discord ip address"
+                    },
                     {
                       "addr": "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
                       "domain_id": 3,
@@ -1416,19 +2210,43 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "400": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NoDataResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoDataResp"
+                }
+              }
+            },
             "description": "Bad Request"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -1440,10 +2258,22 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           }
         }
@@ -1490,7 +2320,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start date",
               "description": "Date from which you want to start sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -1502,7 +2341,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "End date",
               "description": "Date from which you want to end sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -1525,15 +2373,33 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IpsPayloadResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IpsPayloadResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -1549,25 +2415,53 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "exclusiveMinimum": 0, "title": "IP address record ID" }
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "title": "IP address record ID"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IpsElementResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IpsElementResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "404": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotFoundResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResp"
+                }
+              }
+            },
             "description": "Not Found"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -1583,21 +2477,49 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "id_or_ip",
             "in": "path",
             "required": true,
-            "schema": { "anyOf": [{ "type": "integer" }, { "type": "string" }], "title": "ID or IP address" }
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "title": "ID or IP address"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -1643,7 +2565,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start date",
               "description": "Date from which you want to start sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -1655,7 +2586,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "End date",
               "description": "Date from which you want to end sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -1666,15 +2606,33 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RosConfigPayloadResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RosConfigPayloadResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -1689,7 +2647,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "application/json": {
               "schema": {
                 "type": "array",
-                "items": { "$ref": "#/components/schemas/RosConfigsPostElementReq" },
+                "items": {
+                  "$ref": "#/components/schemas/RosConfigsPostElementReq"
+                },
                 "examples": [
                   [
                     {
@@ -1709,19 +2669,43 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "400": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NoDataResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoDataResp"
+                }
+              }
+            },
             "description": "Bad Request"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -1733,10 +2717,22 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           }
         }
@@ -1783,7 +2779,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start date",
               "description": "Date from which you want to start sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -1795,7 +2800,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "string", "minLength": 19, "maxLength": 19 }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "End date",
               "description": "Date from which you want to end sampling",
               "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
@@ -1818,15 +2832,33 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RosConfigPayloadResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RosConfigPayloadResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -1842,25 +2874,53 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "minimum": 1, "title": "Router OS configs record ID" }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Router OS configs record ID"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RosConfigElementResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RosConfigElementResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "404": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotFoundResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResp"
+                }
+              }
+            },
             "description": "Not Found"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -1874,21 +2934,43 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "minimum": 1, "title": "Router OS configs record ID" }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Router OS configs record ID"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -1916,15 +2998,33 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -1938,11 +3038,23 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
             "description": "Internal Server Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            }
           }
         }
       }
@@ -1959,7 +3071,14 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "IP address type v4 or v6",
               "description": "IP address type filter parameter",
               "examples": [4, 6]
@@ -1970,15 +3089,201 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OkResp" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResp"
+                }
+              }
+            }
           },
           "500": {
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResp" } } },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
             "description": "Internal Server Error"
           },
           "422": {
             "description": "Validation Error",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HTTPValidationError" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stats": {
+      "get": {
+        "tags": ["Statistics"],
+        "summary": "Get All Statistics Total Data",
+        "description": "Displays all all statistics total data",
+        "operationId": "Get_all_statistics_total_data_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsResp"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stats/growth": {
+      "get": {
+        "tags": ["Statistics"],
+        "summary": "Get Growth Time Series",
+        "description": "Time series of record creation grouped by date/week/month.",
+        "operationId": "Get_Growth_Time_Series_stats_growth_get",
+        "parameters": [
+          {
+            "name": "entity",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/GrowthEntity",
+              "description": "Data entity to aggregate",
+              "examples": ["domains", "lists", "ips"]
+            },
+            "description": "Data entity to aggregate"
+          },
+          {
+            "name": "granularity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/GrowthGranularity",
+              "description": "Time grouping granularity",
+              "examples": ["minute", "hour", "day", "week", "month", "year"],
+              "default": "day"
+            },
+            "description": "Time grouping granularity"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start date",
+              "description": "Date from which you want to start sampling. Format '%Y-%m-%d %H:%M:%S'",
+              "examples": ["2024-10-01 15:00:00"]
+            },
+            "description": "Date from which you want to start sampling. Format '%Y-%m-%d %H:%M:%S'"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 19,
+                  "maxLength": 19
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End date",
+              "description": "Date from which you want to end sampling. Format '%Y-%m-%d %H:%M:%S'",
+              "examples": ["2024-10-01 15:00:00"]
+            },
+            "description": "Date from which you want to end sampling. Format '%Y-%m-%d %H:%M:%S'"
+          },
+          {
+            "name": "ip_subtype",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "IP version filter, only for entity=\"ips\". Allowed: 4 or 6",
+              "examples": [4, 6],
+              "title": "Ip Subtype"
+            },
+            "description": "IP version filter, only for entity=\"ips\". Allowed: 4 or 6"
+          },
+          {
+            "name": "date_filter_field",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/GrowthDateField",
+              "description": "Field to filter by date. \"last_resolved_at\" only for entity=\"domains\"",
+              "examples": ["created_at", "updated_at", "last_resolved_at"],
+              "default": "created_at"
+            },
+            "description": "Field to filter by date. \"last_resolved_at\" only for entity=\"domains\""
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsGrowthResp"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -1988,10 +3293,25 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     "schemas": {
       "ConfigDynamic": {
         "properties": {
-          "ip_not_allowed_list": { "items": { "type": "string" }, "type": "array", "title": "Ip Not Allowed List" },
-          "app_title_metrics": { "type": "string", "title": "App Title Metrics" },
-          "db_path": { "type": "string", "title": "Db Path" },
-          "db_connection": { "type": "string", "title": "Db Connection" }
+          "ip_not_allowed_list": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ip Not Allowed List"
+          },
+          "app_title_metrics": {
+            "type": "string",
+            "title": "App Title Metrics"
+          },
+          "db_path": {
+            "type": "string",
+            "title": "Db Path"
+          },
+          "db_connection": {
+            "type": "string",
+            "title": "Db Connection"
+          }
         },
         "type": "object",
         "required": ["ip_not_allowed_list", "app_title_metrics", "db_path", "db_connection"],
@@ -1999,8 +3319,12 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "ConfigResp": {
         "properties": {
-          "static": { "$ref": "#/components/schemas/ConfigStatic" },
-          "dynamic": { "$ref": "#/components/schemas/ConfigDynamic" }
+          "static": {
+            "$ref": "#/components/schemas/ConfigStatic"
+          },
+          "dynamic": {
+            "$ref": "#/components/schemas/ConfigDynamic"
+          }
         },
         "type": "object",
         "required": ["static", "dynamic"],
@@ -2008,42 +3332,150 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "ConfigStatic": {
         "properties": {
-          "root_path": { "type": "string", "title": "Root Path" },
-          "root_log_level": { "type": "string", "title": "Root Log Level" },
-          "app_title": { "type": "string", "title": "App Title" },
-          "app_summary": { "type": "string", "title": "App Summary" },
-          "app_description": { "type": "string", "title": "App Description" },
-          "app_debug": { "type": "boolean", "title": "App Debug" },
-          "app_version": { "type": "string", "title": "App Version" },
-          "app_host": { "type": "string", "title": "App Host" },
-          "app_port": { "type": "integer", "title": "App Port" },
-          "app_log_level": { "type": "string", "title": "App Log Level" },
-          "queue_max_size": { "type": "integer", "title": "Queue Max Size" },
-          "queue_get_timeout": { "type": "number", "title": "Queue Get Timeout" },
-          "queue_sleep_timeout": { "type": "number", "title": "Queue Sleep Timeout" },
-          "db_log_level": { "type": "string", "title": "Db Log Level" },
-          "db_timeout": { "type": "number", "title": "Db Timeout" },
-          "db_base_dir": { "type": "string", "title": "Db Base Dir" },
-          "db_file_name": { "type": "string", "title": "Db File Name" },
-          "db_table_prefix": { "type": "string", "title": "Db Table Prefix" },
-          "db_save_batch_size": { "type": "integer", "title": "Db Save Batch Size" },
-          "db_save_batch_timeout": { "type": "number", "title": "Db Save Batch Timeout" },
-          "attempts_limit": { "type": "integer", "title": "Attempts Limit" },
-          "req_connection_retries": { "type": "integer", "title": "Req Connection Retries" },
-          "req_timeout_default": { "type": "number", "title": "Req Timeout Default" },
-          "req_timeout_connect": { "type": "number", "title": "Req Timeout Connect" },
-          "req_timeout_read": { "type": "number", "title": "Req Timeout Read" },
-          "req_max_connections": { "type": "integer", "title": "Req Max Connections" },
-          "req_max_keepalive_connections": { "type": "integer", "title": "Req Max Keepalive Connections" },
-          "req_ssl_verify": { "type": "boolean", "title": "Req Ssl Verify" },
-          "req_default_limit": { "type": "integer", "title": "Req Default Limit" },
-          "domains_filtered_min_len": { "type": "integer", "title": "Domains Filtered Min Len" },
-          "domains_update_interval": { "type": "integer", "title": "Domains Update Interval" },
-          "domain_resolve_semaphore_limit": { "type": "integer", "title": "Domain Resolve Semaphore Limit" },
-          "domains_black_list": { "type": "string", "title": "Domains Black List" },
-          "lists_update_interval_sec": { "type": "integer", "title": "Lists Update Interval Sec" },
-          "ip_not_allowed": { "type": "string", "title": "Ip Not Allowed" },
-          "ros_rest_api_read_timeout": { "type": "number", "title": "Ros Rest Api Read Timeout" }
+          "root_path": {
+            "type": "string",
+            "title": "Root Path"
+          },
+          "root_log_level": {
+            "type": "string",
+            "title": "Root Log Level"
+          },
+          "app_title": {
+            "type": "string",
+            "title": "App Title"
+          },
+          "app_summary": {
+            "type": "string",
+            "title": "App Summary"
+          },
+          "app_description": {
+            "type": "string",
+            "title": "App Description"
+          },
+          "app_debug": {
+            "type": "boolean",
+            "title": "App Debug"
+          },
+          "app_version": {
+            "type": "string",
+            "title": "App Version"
+          },
+          "app_host": {
+            "type": "string",
+            "title": "App Host"
+          },
+          "app_port": {
+            "type": "integer",
+            "title": "App Port"
+          },
+          "app_log_level": {
+            "type": "string",
+            "title": "App Log Level"
+          },
+          "queue_max_size": {
+            "type": "integer",
+            "title": "Queue Max Size"
+          },
+          "queue_get_timeout": {
+            "type": "number",
+            "title": "Queue Get Timeout"
+          },
+          "queue_sleep_timeout": {
+            "type": "number",
+            "title": "Queue Sleep Timeout"
+          },
+          "db_log_level": {
+            "type": "string",
+            "title": "Db Log Level"
+          },
+          "db_timeout": {
+            "type": "number",
+            "title": "Db Timeout"
+          },
+          "db_base_dir": {
+            "type": "string",
+            "title": "Db Base Dir"
+          },
+          "db_file_name": {
+            "type": "string",
+            "title": "Db File Name"
+          },
+          "db_table_prefix": {
+            "type": "string",
+            "title": "Db Table Prefix"
+          },
+          "db_save_batch_size": {
+            "type": "integer",
+            "title": "Db Save Batch Size"
+          },
+          "db_save_batch_timeout": {
+            "type": "number",
+            "title": "Db Save Batch Timeout"
+          },
+          "attempts_limit": {
+            "type": "integer",
+            "title": "Attempts Limit"
+          },
+          "req_connection_retries": {
+            "type": "integer",
+            "title": "Req Connection Retries"
+          },
+          "req_timeout_default": {
+            "type": "number",
+            "title": "Req Timeout Default"
+          },
+          "req_timeout_connect": {
+            "type": "number",
+            "title": "Req Timeout Connect"
+          },
+          "req_timeout_read": {
+            "type": "number",
+            "title": "Req Timeout Read"
+          },
+          "req_max_connections": {
+            "type": "integer",
+            "title": "Req Max Connections"
+          },
+          "req_max_keepalive_connections": {
+            "type": "integer",
+            "title": "Req Max Keepalive Connections"
+          },
+          "req_ssl_verify": {
+            "type": "boolean",
+            "title": "Req Ssl Verify"
+          },
+          "req_default_limit": {
+            "type": "integer",
+            "title": "Req Default Limit"
+          },
+          "domains_filtered_min_len": {
+            "type": "integer",
+            "title": "Domains Filtered Min Len"
+          },
+          "domains_update_interval": {
+            "type": "integer",
+            "title": "Domains Update Interval"
+          },
+          "domain_resolve_semaphore_limit": {
+            "type": "integer",
+            "title": "Domain Resolve Semaphore Limit"
+          },
+          "domains_black_list": {
+            "type": "string",
+            "title": "Domains Black List"
+          },
+          "lists_update_interval_sec": {
+            "type": "integer",
+            "title": "Lists Update Interval Sec"
+          },
+          "ip_not_allowed": {
+            "type": "string",
+            "title": "Ip Not Allowed"
+          },
+          "ros_rest_api_read_timeout": {
+            "type": "number",
+            "title": "Ros Rest Api Read Timeout"
+          }
         },
         "type": "object",
         "required": [
@@ -2088,17 +3520,83 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "DnsElementResp": {
         "properties": {
-          "id": { "type": "integer", "title": "Id" },
-          "server": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Server" },
-          "doh_server": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Doh Server" },
-          "description": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Description" },
-          "created_at": { "anyOf": [{ "type": "integer" }, { "type": "number" }], "title": "Created At" },
-          "created_at_hum": { "type": "string", "title": "Created At Hum" },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "server": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server"
+          },
+          "doh_server": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doh Server"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Created At"
+          },
+          "created_at_hum": {
+            "type": "string",
+            "title": "Created At Hum"
+          },
           "updated_at": {
-            "anyOf": [{ "type": "integer" }, { "type": "number" }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Updated At"
           },
-          "updated_at_hum": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Updated At Hum" }
+          "updated_at_hum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At Hum"
+          }
         },
         "type": "object",
         "required": ["id", "created_at", "created_at_hum"],
@@ -2106,13 +3604,32 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "DnsPayloadResp": {
         "properties": {
-          "limit": { "type": "integer", "title": "Limit" },
-          "offset": { "type": "integer", "title": "Offset" },
-          "duration": { "type": "number", "title": "Duration" },
-          "count": { "type": "integer", "title": "Count", "default": 0 },
-          "total": { "type": "integer", "title": "Total", "default": 0 },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "duration": {
+            "type": "number",
+            "title": "Duration"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
           "payload": {
-            "items": { "$ref": "#/components/schemas/DnsElementResp" },
+            "items": {
+              "$ref": "#/components/schemas/DnsElementResp"
+            },
             "type": "array",
             "title": "Payload",
             "default": []
@@ -2125,15 +3642,39 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       "DnsPostElementReq": {
         "properties": {
           "server": {
-            "anyOf": [{ "type": "string", "minLength": 3 }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "IPv4, IPv6 DNS server address"
           },
           "doh_server": {
-            "anyOf": [{ "type": "string", "minLength": 3 }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "DoH server HTTP address"
           },
           "description": {
-            "anyOf": [{ "type": "string", "minLength": 3 }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Some description for DNS server"
           }
         },
@@ -2142,32 +3683,131 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "DomainElementResp": {
         "properties": {
-          "id": { "type": "integer", "title": "Id" },
-          "domains_list_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Domains List Id" },
-          "resolved": { "type": "boolean", "title": "Resolved" },
-          "name": { "type": "string", "title": "Name" },
-          "ros_comment": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Ros Comment" },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "domains_list_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domains List Id"
+          },
+          "resolved": {
+            "type": "boolean",
+            "title": "Resolved"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "ros_comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ros Comment"
+          },
           "ips_v4": {
-            "anyOf": [{ "items": { "type": "string" }, "type": "array" }, { "type": "null" }],
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Ips V4"
           },
           "ips_v6": {
-            "anyOf": [{ "items": { "type": "string" }, "type": "array" }, { "type": "null" }],
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Ips V6"
           },
-          "created_at": { "anyOf": [{ "type": "integer" }, { "type": "number" }], "title": "Created At" },
-          "created_at_hum": { "type": "string", "title": "Created At Hum" },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Created At"
+          },
+          "created_at_hum": {
+            "type": "string",
+            "title": "Created At Hum"
+          },
           "updated_at": {
-            "anyOf": [{ "type": "integer" }, { "type": "number" }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Updated At"
           },
-          "updated_at_hum": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Updated At Hum" },
+          "updated_at_hum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At Hum"
+          },
           "last_resolved_at": {
-            "anyOf": [{ "type": "integer" }, { "type": "number" }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Last Resolved At"
           },
           "last_resolved_at_hum": {
-            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Last Resolved At Hum"
           }
         },
@@ -2177,20 +3817,90 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "DomainsListElementResp": {
         "properties": {
-          "id": { "type": "integer", "title": "Id" },
-          "name": { "type": "string", "title": "Name" },
-          "url": { "type": "string", "title": "Url" },
-          "description": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Description" },
-          "hash": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Hash" },
-          "attempts": { "type": "integer", "title": "Attempts", "default": 0 },
-          "elements_count": { "type": "integer", "title": "Elements Count", "default": 0 },
-          "created_at": { "anyOf": [{ "type": "integer" }, { "type": "number" }], "title": "Created At" },
-          "created_at_hum": { "type": "string", "title": "Created At Hum" },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hash"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts",
+            "default": 0
+          },
+          "elements_count": {
+            "type": "integer",
+            "title": "Elements Count",
+            "default": 0
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Created At"
+          },
+          "created_at_hum": {
+            "type": "string",
+            "title": "Created At Hum"
+          },
           "updated_at": {
-            "anyOf": [{ "type": "integer" }, { "type": "number" }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Updated At"
           },
-          "updated_at_hum": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Updated At Hum" }
+          "updated_at_hum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At Hum"
+          }
         },
         "type": "object",
         "required": ["id", "name", "url", "created_at", "created_at_hum"],
@@ -2198,13 +3908,32 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "DomainsListsPayloadResp": {
         "properties": {
-          "limit": { "type": "integer", "title": "Limit" },
-          "offset": { "type": "integer", "title": "Offset" },
-          "duration": { "type": "number", "title": "Duration" },
-          "count": { "type": "integer", "title": "Count", "default": 0 },
-          "total": { "type": "integer", "title": "Total", "default": 0 },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "duration": {
+            "type": "number",
+            "title": "Duration"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
           "payload": {
-            "items": { "$ref": "#/components/schemas/DomainsListElementResp" },
+            "items": {
+              "$ref": "#/components/schemas/DomainsListElementResp"
+            },
             "type": "array",
             "title": "Payload",
             "default": []
@@ -2216,7 +3945,12 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "DomainsListsPostElementReq": {
         "properties": {
-          "name": { "type": "string", "minLength": 3, "title": "Domain list name", "examples": ["voice-domains-list"] },
+          "name": {
+            "type": "string",
+            "minLength": 3,
+            "title": "Domain list name",
+            "examples": ["voice-domains-list"]
+          },
           "url": {
             "type": "string",
             "minLength": 5,
@@ -2224,7 +3958,15 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "examples": ["https://somedomain.som/path/path/path/voice.txt"]
           },
           "description": {
-            "anyOf": [{ "type": "string", "minLength": 3 }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Description for record"
           }
         },
@@ -2234,15 +3976,42 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "DomainsPayloadResp": {
         "properties": {
-          "limit": { "type": "integer", "title": "Limit" },
-          "offset": { "type": "integer", "title": "Offset" },
-          "duration": { "type": "number", "title": "Duration" },
-          "count": { "type": "integer", "title": "Count", "default": 0 },
-          "total": { "type": "integer", "title": "Total", "default": 0 },
-          "total_resolved": { "type": "integer", "title": "Total Resolved", "default": 0 },
-          "total_query": { "type": "integer", "title": "Total Query", "default": 0 },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "duration": {
+            "type": "number",
+            "title": "Duration"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "total_resolved": {
+            "type": "integer",
+            "title": "Total Resolved",
+            "default": 0
+          },
+          "total_query": {
+            "type": "integer",
+            "title": "Total Query",
+            "default": 0
+          },
           "payload": {
-            "items": { "$ref": "#/components/schemas/DomainElementResp" },
+            "items": {
+              "$ref": "#/components/schemas/DomainElementResp"
+            },
             "type": "array",
             "title": "Payload",
             "default": []
@@ -2254,10 +4023,32 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "DomainsPostElementReq": {
         "properties": {
-          "domain": { "type": "string", "title": "Domain name", "examples": ["google.com"] },
-          "list_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Domains list id" },
+          "domain": {
+            "type": "string",
+            "title": "Domain name",
+            "examples": ["google.com"]
+          },
+          "list_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domains list id"
+          },
           "ros_comment": {
-            "anyOf": [{ "type": "string", "minLength": 3 }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Router OS comment for addr-list and route",
             "examples": ["discord domain"]
           }
@@ -2268,26 +4059,73 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "ErrorResp": {
         "properties": {
-          "error": { "type": "string", "title": "Error" },
-          "resolution": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Resolution" }
+          "error": {
+            "type": "string",
+            "title": "Error"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution"
+          }
         },
         "type": "object",
         "required": ["error"],
         "title": "ErrorResp"
       },
+      "GrowthDateField": {
+        "type": "string",
+        "enum": ["created_at", "updated_at", "last_resolved_at"],
+        "title": "GrowthDateField"
+      },
+      "GrowthEntity": {
+        "type": "string",
+        "enum": ["domains", "lists", "ips"],
+        "title": "GrowthEntity"
+      },
+      "GrowthGranularity": {
+        "type": "string",
+        "enum": ["minute", "hour", "day", "week", "month", "year"],
+        "title": "GrowthGranularity"
+      },
       "HTTPValidationError": {
         "properties": {
-          "detail": { "items": { "$ref": "#/components/schemas/ValidationError" }, "type": "array", "title": "Detail" }
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
         },
         "type": "object",
         "title": "HTTPValidationError"
       },
       "HealthResp": {
         "properties": {
-          "status": { "type": "string", "title": "Application status", "default": "OK" },
-          "ts": { "type": "number", "title": "Response now timestamp" },
-          "uptime": { "type": "number", "title": "Application uptime" },
-          "db_pool": { "type": "string", "title": "Database pool status" }
+          "status": {
+            "type": "string",
+            "title": "Application status",
+            "default": "OK"
+          },
+          "ts": {
+            "type": "number",
+            "title": "Response now timestamp"
+          },
+          "uptime": {
+            "type": "number",
+            "title": "Application uptime"
+          },
+          "db_pool": {
+            "type": "string",
+            "title": "Database pool status"
+          }
         },
         "type": "object",
         "required": ["ts", "uptime", "db_pool"],
@@ -2295,21 +4133,113 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "IpsElementResp": {
         "properties": {
-          "id": { "type": "integer", "title": "Id" },
-          "type": { "type": "integer", "title": "Type" },
-          "addr": { "type": "string", "title": "Addr" },
-          "ip_list_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Ip List Id" },
-          "ip_list_name": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Ip List Name" },
-          "domain_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Domain Id" },
-          "domain_name": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Domain Name" },
-          "ros_comment": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Ros Comment" },
-          "created_at": { "anyOf": [{ "type": "integer" }, { "type": "number" }], "title": "Created At" },
-          "created_at_hum": { "type": "string", "title": "Created At Hum" },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "type": {
+            "type": "integer",
+            "title": "Type"
+          },
+          "addr": {
+            "type": "string",
+            "title": "Addr"
+          },
+          "ip_list_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip List Id"
+          },
+          "ip_list_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip List Name"
+          },
+          "domain_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain Id"
+          },
+          "domain_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain Name"
+          },
+          "ros_comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ros Comment"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Created At"
+          },
+          "created_at_hum": {
+            "type": "string",
+            "title": "Created At Hum"
+          },
           "updated_at": {
-            "anyOf": [{ "type": "integer" }, { "type": "number" }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Updated At"
           },
-          "updated_at_hum": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Updated At Hum" }
+          "updated_at_hum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At Hum"
+          }
         },
         "type": "object",
         "required": ["id", "type", "addr", "created_at", "created_at_hum"],
@@ -2317,22 +4247,112 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "IpsListElementResp": {
         "properties": {
-          "id": { "type": "integer", "title": "Id" },
-          "name": { "type": "string", "title": "Name" },
-          "url": { "type": "string", "title": "Url" },
-          "description": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Description" },
-          "hash": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Hash" },
-          "attempts": { "type": "integer", "title": "Attempts", "default": 0 },
-          "elements_count": { "type": "integer", "title": "Elements Count", "default": 0 },
-          "created_at": { "anyOf": [{ "type": "integer" }, { "type": "number" }], "title": "Created At" },
-          "created_at_hum": { "type": "string", "title": "Created At Hum" },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hash"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts",
+            "default": 0
+          },
+          "elements_count": {
+            "type": "integer",
+            "title": "Elements Count",
+            "default": 0
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Created At"
+          },
+          "created_at_hum": {
+            "type": "string",
+            "title": "Created At Hum"
+          },
           "updated_at": {
-            "anyOf": [{ "type": "integer" }, { "type": "number" }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Updated At"
           },
-          "updated_at_hum": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Updated At Hum" },
-          "ip_v4_count": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Ip V4 Count" },
-          "ip_v6_count": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Ip V6 Count" }
+          "updated_at_hum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At Hum"
+          },
+          "ip_v4_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip V4 Count"
+          },
+          "ip_v6_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip V6 Count"
+          }
         },
         "type": "object",
         "required": ["id", "name", "url", "created_at", "created_at_hum"],
@@ -2340,13 +4360,32 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "IpsListsPayloadResp": {
         "properties": {
-          "limit": { "type": "integer", "title": "Limit" },
-          "offset": { "type": "integer", "title": "Offset" },
-          "duration": { "type": "number", "title": "Duration" },
-          "count": { "type": "integer", "title": "Count", "default": 0 },
-          "total": { "type": "integer", "title": "Total", "default": 0 },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "duration": {
+            "type": "number",
+            "title": "Duration"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
           "payload": {
-            "items": { "$ref": "#/components/schemas/IpsListElementResp" },
+            "items": {
+              "$ref": "#/components/schemas/IpsListElementResp"
+            },
             "type": "array",
             "title": "Payload",
             "default": []
@@ -2358,7 +4397,12 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "IpsListsPostElementReq": {
         "properties": {
-          "name": { "type": "string", "minLength": 3, "title": "IP address list name", "examples": ["goog.json"] },
+          "name": {
+            "type": "string",
+            "minLength": 3,
+            "title": "IP address list name",
+            "examples": ["goog.json"]
+          },
           "url": {
             "type": "string",
             "minLength": 5,
@@ -2366,7 +4410,15 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "examples": ["https://somedomain.som/path/path/path/goog.json"]
           },
           "description": {
-            "anyOf": [{ "type": "string", "minLength": 3 }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Description for record"
           }
         },
@@ -2376,13 +4428,32 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "IpsPayloadResp": {
         "properties": {
-          "limit": { "type": "integer", "title": "Limit" },
-          "offset": { "type": "integer", "title": "Offset" },
-          "duration": { "type": "number", "title": "Duration" },
-          "count": { "type": "integer", "title": "Count", "default": 0 },
-          "total": { "type": "integer", "title": "Total", "default": 0 },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "duration": {
+            "type": "number",
+            "title": "Duration"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
           "payload": {
-            "items": { "$ref": "#/components/schemas/IpsElementResp" },
+            "items": {
+              "$ref": "#/components/schemas/IpsElementResp"
+            },
             "type": "array",
             "title": "Payload",
             "default": []
@@ -2399,15 +4470,40 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "title": "IP address record",
             "examples": ["1.1.1.1", "9.9.9.9", "2001:0db8:85a3:0000:0000:8a2e:0370:7334"]
           },
-          "list_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Linked ips list ID" },
+          "list_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked ips list ID"
+          },
           "domain_id": {
-            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Linked domain ID",
             "description": "Linked domain ID. Default = `0`",
             "default": 0
           },
           "ros_comment": {
-            "anyOf": [{ "type": "string", "minLength": 3 }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Router OS comment for addr and route",
             "examples": ["discord ip address"]
           }
@@ -2417,38 +4513,122 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "title": "IpsPostElementReq"
       },
       "NoDataResp": {
-        "properties": { "status": { "type": "string", "title": "Status", "default": "No Data" } },
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "No Data"
+          }
+        },
         "type": "object",
         "title": "NoDataResp"
       },
       "NotFoundResp": {
         "properties": {
-          "error": { "type": "string", "title": "Error", "default": "NOT_FOUND" },
-          "resolution": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Resolution" }
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "default": "NOT_FOUND"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution"
+          }
         },
         "type": "object",
         "title": "NotFoundResp"
       },
       "OkResp": {
-        "properties": { "result": { "type": "string", "title": "Result OK", "default": "OK" } },
+        "properties": {
+          "result": {
+            "type": "string",
+            "title": "Result OK",
+            "default": "OK"
+          }
+        },
         "type": "object",
         "title": "OkResp"
       },
       "RosConfigElementResp": {
         "properties": {
-          "id": { "type": "integer", "title": "Id" },
-          "host": { "type": "string", "title": "Host" },
-          "user": { "type": "string", "title": "User" },
-          "password": { "type": "string", "title": "Password" },
-          "bgp_list_name": { "type": "string", "title": "Bgp List Name" },
-          "description": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Description" },
-          "created_at": { "anyOf": [{ "type": "integer" }, { "type": "number" }], "title": "Created At" },
-          "created_at_hum": { "type": "string", "title": "Created At Hum" },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "host": {
+            "type": "string",
+            "title": "Host"
+          },
+          "user": {
+            "type": "string",
+            "title": "User"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "bgp_list_name": {
+            "type": "string",
+            "title": "Bgp List Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Created At"
+          },
+          "created_at_hum": {
+            "type": "string",
+            "title": "Created At Hum"
+          },
           "updated_at": {
-            "anyOf": [{ "type": "integer" }, { "type": "number" }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Updated At"
           },
-          "updated_at_hum": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Updated At Hum" }
+          "updated_at_hum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At Hum"
+          }
         },
         "type": "object",
         "required": ["id", "host", "user", "password", "bgp_list_name", "created_at", "created_at_hum"],
@@ -2456,13 +4636,32 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "RosConfigPayloadResp": {
         "properties": {
-          "limit": { "type": "integer", "title": "Limit" },
-          "offset": { "type": "integer", "title": "Offset" },
-          "duration": { "type": "number", "title": "Duration" },
-          "count": { "type": "integer", "title": "Count", "default": 0 },
-          "total": { "type": "integer", "title": "Total", "default": 0 },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "duration": {
+            "type": "number",
+            "title": "Duration"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
           "payload": {
-            "items": { "$ref": "#/components/schemas/RosConfigElementResp" },
+            "items": {
+              "$ref": "#/components/schemas/RosConfigElementResp"
+            },
             "type": "array",
             "title": "Payload",
             "default": []
@@ -2474,8 +4673,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "RosConfigsPostElementReq": {
         "properties": {
-          "host": { "type": "string", "minLength": 3, "title": "RouterOS IP address or domain" },
-          "user": { "type": "string", "minLength": 3, "title": "User in RouterOS" },
+          "host": {
+            "type": "string",
+            "minLength": 3,
+            "title": "RouterOS IP address or domain"
+          },
+          "user": {
+            "type": "string",
+            "minLength": 3,
+            "title": "User in RouterOS"
+          },
           "user_password": {
             "type": "string",
             "minLength": 3,
@@ -2488,7 +4695,15 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "description": "BGP list name. Used for the list in the Firewall address list and routing table naming"
           },
           "description": {
-            "anyOf": [{ "type": "string", "minLength": 3 }, { "type": "null" }],
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Description for record"
           }
         },
@@ -2496,15 +4711,352 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         "required": ["host", "user", "user_password", "bgp_list_name"],
         "title": "RosConfigsPostElementReq"
       },
+      "StatsDnsData": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total DNS server records",
+            "default": 0
+          },
+          "classic": {
+            "type": "integer",
+            "title": "Classic",
+            "description": "Classic IPv4/IPv6 DNS servers",
+            "default": 0
+          },
+          "doh": {
+            "type": "integer",
+            "title": "Doh",
+            "description": "DNS-over-HTTPS servers",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "StatsDnsData"
+      },
+      "StatsDomainsData": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total domain records",
+            "default": 0
+          },
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved",
+            "description": "Resolved domains",
+            "default": 0
+          },
+          "unresolved": {
+            "type": "integer",
+            "title": "Unresolved",
+            "description": "Unresolved domains",
+            "default": 0
+          },
+          "lists_total": {
+            "type": "integer",
+            "title": "Lists Total",
+            "description": "Total domain lists",
+            "default": 0
+          },
+          "per_list": {
+            "items": {
+              "$ref": "#/components/schemas/StatsDomainsListItem"
+            },
+            "type": "array",
+            "title": "Per List",
+            "description": "Per-list breakdown for bar chart"
+          }
+        },
+        "type": "object",
+        "title": "StatsDomainsData"
+      },
+      "StatsDomainsListItem": {
+        "properties": {
+          "list_id": {
+            "type": "integer",
+            "title": "List Id",
+            "description": "Domain list ID"
+          },
+          "list_name": {
+            "type": "string",
+            "title": "List Name",
+            "description": "Domain list name"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total domains in this list",
+            "default": 0
+          },
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved",
+            "description": "Resolved domains count",
+            "default": 0
+          },
+          "unresolved": {
+            "type": "integer",
+            "title": "Unresolved",
+            "description": "Unresolved domains count",
+            "default": 0
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts",
+            "description": "Download attempts count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": ["list_id", "list_name"],
+        "title": "StatsDomainsListItem"
+      },
+      "StatsGrowthPoint": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "Aggregated date label (format depends on granularity)",
+            "examples": ["2025-01-15", "2025-03", "2025-01"]
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "Number of records created in this period",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": ["date"],
+        "title": "StatsGrowthPoint"
+      },
+      "StatsGrowthResp": {
+        "properties": {
+          "entity": {
+            "$ref": "#/components/schemas/GrowthEntity",
+            "description": "Requested entity"
+          },
+          "granularity": {
+            "$ref": "#/components/schemas/GrowthGranularity",
+            "description": "Applied granularity"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "Applied start date filter"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "Applied end date filter"
+          },
+          "ip_subtype": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Subtype",
+            "description": "Applied IP version filter (only for entity=ips)"
+          },
+          "total_in_period": {
+            "type": "integer",
+            "title": "Total In Period",
+            "description": "Total records in the requested period",
+            "default": 0
+          },
+          "payload": {
+            "items": {
+              "$ref": "#/components/schemas/StatsGrowthPoint"
+            },
+            "type": "array",
+            "title": "Payload",
+            "description": "Time series data points. All dates in range are included, missing dates have count=0"
+          },
+          "duration": {
+            "type": "number",
+            "title": "Duration",
+            "description": "Time taken to compute the response",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": ["entity", "granularity"],
+        "title": "StatsGrowthResp"
+      },
+      "StatsIpsData": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total IP address records",
+            "default": 0
+          },
+          "v4_total": {
+            "type": "integer",
+            "title": "V4 Total",
+            "description": "Total IPv4 addresses",
+            "default": 0
+          },
+          "v6_total": {
+            "type": "integer",
+            "title": "V6 Total",
+            "description": "Total IPv6 addresses",
+            "default": 0
+          },
+          "linked_to_domain": {
+            "type": "integer",
+            "title": "Linked To Domain",
+            "description": "IPs resolved from domains (domain_id != 0)",
+            "default": 0
+          },
+          "standalone": {
+            "type": "integer",
+            "title": "Standalone",
+            "description": "IPs added manually (domain_id = 0)",
+            "default": 0
+          },
+          "lists_total": {
+            "type": "integer",
+            "title": "Lists Total",
+            "description": "Total IP lists",
+            "default": 0
+          },
+          "per_list": {
+            "items": {
+              "$ref": "#/components/schemas/StatsIpsListItem"
+            },
+            "type": "array",
+            "title": "Per List",
+            "description": "Per-list breakdown for bar chart"
+          }
+        },
+        "type": "object",
+        "title": "StatsIpsData"
+      },
+      "StatsIpsListItem": {
+        "properties": {
+          "list_id": {
+            "type": "integer",
+            "title": "List Id",
+            "description": "IP list ID"
+          },
+          "list_name": {
+            "type": "string",
+            "title": "List Name",
+            "description": "IP list name"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total IPs in this list",
+            "default": 0
+          },
+          "v4_count": {
+            "type": "integer",
+            "title": "V4 Count",
+            "description": "IPv4 count",
+            "default": 0
+          },
+          "v6_count": {
+            "type": "integer",
+            "title": "V6 Count",
+            "description": "IPv6 count",
+            "default": 0
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts",
+            "description": "Download attempts count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": ["list_id", "list_name"],
+        "title": "StatsIpsListItem"
+      },
+      "StatsResp": {
+        "properties": {
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At",
+            "description": "Timestamp when aggregation was computed",
+            "examples": ["2025-01-15 10:30:00"]
+          },
+          "dns": {
+            "$ref": "#/components/schemas/StatsDnsData"
+          },
+          "domains": {
+            "$ref": "#/components/schemas/StatsDomainsData"
+          },
+          "ips": {
+            "$ref": "#/components/schemas/StatsIpsData"
+          },
+          "ros": {
+            "$ref": "#/components/schemas/StatsRosData"
+          }
+        },
+        "type": "object",
+        "required": ["generated_at", "dns", "domains", "ips", "ros"],
+        "title": "StatsResp",
+        "description": "Example:\n```json\n{\n  \"generated_at\": \"2025-01-15 10:30:00\",\n  \"dns\": {\n    \"total\": 5,\n    \"classic\": 3,\n    \"doh\": 2\n  },\n  \"domains\": {\n    \"total\": 1500,\n    \"resolved\": 1200,\n    \"unresolved\": 300,\n    \"lists_total\": 4,\n    \"per_list\": [\n      { \"list_id\": 1, \"list_name\": \"voice-domains\", \"total\": 500, \"resolved\": 450, \"unresolved\": 50, \"attempts\": 3 },\n      { \"list_id\": 2, \"list_name\": \"social-domains\", \"total\": 1000, \"resolved\": 750, \"unresolved\": 250, \"attempts\": 1 }\n    ]\n  },\n  \"ips\": {\n    \"total\": 2000,\n    \"v4_total\": 1800,\n    \"v6_total\": 200,\n    \"linked_to_domain\": 1500,\n    \"standalone\": 500,\n    \"lists_total\": 3,\n    \"per_list\": [\n      { \"list_id\": 1, \"list_name\": \"ips-list\", \"total\": 800, \"v4_count\": 700, \"v6_count\": 100 }\n    ]\n  },\n  \"ros\": {\n    \"total\": 2\n  }\n}\n```"
+      },
+      "StatsRosData": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total RouterOS configurations",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "StatsRosData"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
-            "items": { "anyOf": [{ "type": "string" }, { "type": "integer" }] },
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
             "type": "array",
             "title": "Location"
           },
-          "msg": { "type": "string", "title": "Message" },
-          "type": { "type": "string", "title": "Error Type" }
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
         },
         "type": "object",
         "required": ["loc", "msg", "type"],
@@ -2512,9 +5064,19 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       },
       "WelcomeResp": {
         "properties": {
-          "version": { "type": "string", "title": "API Version" },
-          "message": { "type": "string", "title": "Welcome message", "default": "Welcome to API" },
-          "docs": { "type": "string", "title": "link to docs" }
+          "version": {
+            "type": "string",
+            "title": "API Version"
+          },
+          "message": {
+            "type": "string",
+            "title": "Welcome message",
+            "default": "Welcome to API"
+          },
+          "docs": {
+            "type": "string",
+            "title": "link to docs"
+          }
         },
         "type": "object",
         "required": ["version", "docs"],
@@ -2522,6 +5084,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
       }
     }
   },
-  "tags": [{ "name": "Home", "description": "Welcome method and healthcheck" }]
+  "tags": [
+    {
+      "name": "Home",
+      "description": "Welcome method and healthcheck"
+    }
+  ]
 }
-```
+````

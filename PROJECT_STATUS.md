@@ -1,8 +1,8 @@
 # Статус Проекта GOST-RDPR UI
 
-## 📊 Прогресс: 100% базовой функциональности ✅
+## 📊 Прогресс: 100% ✅
 
-**Все основные CRUD страницы реализованы и проверены на адаптивность!**
+**Все страницы реализованы, статистика и графики добавлены, сортировка таблиц готова.**
 
 ---
 
@@ -17,137 +17,147 @@
 - ✅ Vite конфигурация
 - ✅ Environment variables (.env.development)
 - ✅ Vue Router с lazy loading
-- ✅ Pinia stores (dark mode)
-- ✅ Централизованные константы (100%: API config, Store config, Storage keys, UI тексты, пагинация, поиск, валидация, ошибки)
+- ✅ Pinia stores (dark mode, notifications, settings)
+- ✅ Централизованные константы (`src/constants.ts`)
 
-### 🎨 UI Kit & Components (100% базовых компонентов)
+### 🎨 UI Kit & Components (100%)
 
-| Компонент         | Статус | Файл                                            |
-| ----------------- | ------ | ----------------------------------------------- |
-| **UI Kit**        |
-| BaseButton        | ✅     | `src/ui/buttons/BaseButton.vue`                 |
-| BaseInput         | ✅     | `src/ui/forms/BaseInput.vue`                    |
-| BaseTextarea      | ✅     | `src/ui/forms/BaseTextarea.vue`                 |
-| BaseSelect        | ✅     | `src/ui/forms/BaseSelect.vue`                   |
-| DataTable         | ✅     | `src/ui/tables/DataTable.vue`                   |
-| PaginationControl | ✅     | `src/ui/tables/PaginationControl.vue`           |
-| BaseModal         | ✅     | `src/ui/modals/BaseModal.vue`                   |
-| ConfirmDialog     | ✅     | `src/ui/modals/ConfirmDialog.vue`               |
-| LoadingSpinner    | ✅     | `src/ui/feedback/LoadingSpinner.vue`            |
-| EmptyState        | ✅     | `src/ui/feedback/EmptyState.vue`                |
-| **Components**    |
-| AppLogo           | ✅     | `src/components/AppLogo.vue`                    |
-| HealthStatusCard  | ✅     | `src/components/dashboard/HealthStatusCard.vue` |
-| VersionInfoCard   | ✅     | `src/components/dashboard/VersionInfoCard.vue`  |
-| QuickActionsCard  | ✅     | `src/components/dashboard/QuickActionsCard.vue` |
-| ConnectionAlert   | ✅     | `src/components/dashboard/ConnectionAlert.vue`  |
-| PollingSettings   | ✅     | `src/components/dashboard/PollingSettings.vue`  |
+| Компонент          | Файл                                            |
+| ------------------ | ----------------------------------------------- |
+| **UI Kit**         |                                                 |
+| BaseButton         | `src/ui/buttons/BaseButton.vue`                 |
+| BaseInput          | `src/ui/forms/BaseInput.vue`                    |
+| BaseTextarea       | `src/ui/forms/BaseTextarea.vue`                 |
+| BaseSelect         | `src/ui/forms/BaseSelect.vue`                   |
+| DataTable          | `src/ui/tables/DataTable.vue`                   |
+| PaginationControl  | `src/ui/tables/PaginationControl.vue`           |
+| BaseModal          | `src/ui/modals/BaseModal.vue`                   |
+| ConfirmDialog      | `src/ui/modals/ConfirmDialog.vue`               |
+| LoadingSpinner     | `src/ui/feedback/LoadingSpinner.vue`            |
+| EmptyState         | `src/ui/feedback/EmptyState.vue`                |
+| ErrorNotification  | `src/components/ErrorNotification.vue`          |
+| **Dashboard**      |                                                 |
+| AppLogo            | `src/components/AppLogo.vue`                    |
+| HealthStatusCard   | `src/components/dashboard/HealthStatusCard.vue` |
+| VersionInfoCard    | `src/components/dashboard/VersionInfoCard.vue`  |
+| QuickActionsCard   | `src/components/dashboard/QuickActionsCard.vue` |
+| ConnectionAlert    | `src/components/dashboard/ConnectionAlert.vue`  |
+| PollingSettings    | `src/components/dashboard/PollingSettings.vue`  |
+| ConfigurationCard  | `src/components/dashboard/ConfigurationCard.vue`|
+| **Charts**         |                                                 |
+| LineChart          | `src/components/charts/LineChart.vue`           |
+| BarChart           | `src/components/charts/BarChart.vue`            |
+| PieChart           | `src/components/charts/PieChart.vue`            |
 
 ### 🔌 API Layer (100%)
 
-| Модуль                  | Статус  | Файл                                 |
-| ----------------------- | ------- | ------------------------------------ |
-| HTTP Client             | ✅      | `src/api/client.ts`                  |
-| Common Types            | ✅      | `src/api/types/common.ts`            |
-| DNS Types               | ✅      | `src/api/types/dns.ts`               |
-| Domains Types           | ✅      | `src/api/types/domains.ts`           |
-| IPs Types               | ✅      | `src/api/types/ips.ts`               |
-| ROS Types               | ✅      | `src/api/types/ros.ts`               |
-| DNS Endpoints           | ✅ 100% | `src/api/endpoints/dns.ts`           |
-| Domains Endpoints       | ✅ 100% | `src/api/endpoints/domains.ts`       |
-| Domains Lists Endpoints | ✅ 100% | `src/api/endpoints/domains-lists.ts` |
-| IPs Lists Endpoints     | ✅ 100% | `src/api/endpoints/ips-lists.ts`     |
-| IPs Endpoints           | ✅ 100% | `src/api/endpoints/ips.ts`           |
-| ROS Endpoints           | ✅ 100% | `src/api/endpoints/ros.ts`           |
-| Commands Endpoints      | ✅ 100% | `src/api/endpoints/commands.ts`      |
-| Endpoints Index         | ✅      | `src/api/endpoints/index.ts`         |
-
-**Улучшения:**
-
-- ✅ Типобезопасные хелперы для URL параметров (`toSearchParams`)
-- ✅ Отказ от использования типа `any`
-- ✅ Централизованный экспорт через `index.ts`
+| Модуль                  | Файл                                 |
+| ----------------------- | ------------------------------------ |
+| HTTP Client             | `src/api/client.ts`                  |
+| Common Types            | `src/api/types/common.ts`            |
+| DNS Types               | `src/api/types/dns.ts`               |
+| Domains Types           | `src/api/types/domains.ts`           |
+| IPs Types               | `src/api/types/ips.ts`               |
+| ROS Types               | `src/api/types/ros.ts`               |
+| Stats Types             | `src/api/types/stats.ts`             |
+| DNS Endpoints           | `src/api/endpoints/dns.ts`           |
+| Domains Endpoints       | `src/api/endpoints/domains.ts`       |
+| Domains Lists Endpoints | `src/api/endpoints/domains-lists.ts` |
+| IPs Lists Endpoints     | `src/api/endpoints/ips-lists.ts`     |
+| IPs Endpoints           | `src/api/endpoints/ips.ts`           |
+| ROS Endpoints           | `src/api/endpoints/ros.ts`           |
+| Commands Endpoints      | `src/api/endpoints/commands.ts`      |
+| Stats Endpoints         | `src/api/endpoints/stats.ts`         |
+| Endpoints Index         | `src/api/endpoints/index.ts`         |
 
 ### 🧩 Composables (100%)
 
-- ✅ `index.ts` - централизованный экспорт композаблов
-- ✅ `useApi.ts` - wrapper для API вызовов с обработкой ошибок
-- ✅ `usePagination.ts` - базовое управление состоянием пагинации
-- ✅ `usePaginatedData.ts` - автоматическая пагинация с загрузкой данных
-- ✅ `usePolling.ts` - периодический опрос данных
-- ✅ `README.md` - полная документация по композаблам
+- ✅ `useApi.ts` — wrapper для API вызовов с обработкой ошибок
+- ✅ `usePagination.ts` — базовое управление состоянием пагинации
+- ✅ `usePaginatedData.ts` — автоматическая пагинация с загрузкой данных
+- ✅ `usePolling.ts` — периодический опрос данных
 
 ### 🎯 Страницы (100%)
 
-| Страница      | Статус  | Путь               | Файл                                     |
-| ------------- | ------- | ------------------ | ---------------------------------------- |
-| Home          | ✅ 100% | `/`                | `src/pages/HomePage.vue`                 |
-| DNS Servers   | ✅ 100% | `/dns`             | `src/pages/dns/DnsServersPage.vue`       |
-| Domains Lists | ✅ 100% | `/domains/lists`   | `src/pages/domains/DomainsListsPage.vue` |
-| Domains       | ✅ 100% | `/domains`         | `src/pages/domains/DomainsPage.vue`      |
-| IPs Lists     | ✅ 100% | `/ips/lists`       | `src/pages/ips/IpsListsPage.vue`         |
-| IPs           | ✅ 100% | `/ips`             | `src/pages/ips/IpsPage.vue`              |
-| ROS Configs   | ✅ 100% | `/ros`             | `src/pages/ros/RosConfigsPage.vue`       |
-| Commands      | ✅ 100% | `/commands`        | `src/pages/commands/CommandsPage.vue`    |
-| 404 Not Found | ✅ 100% | `/:pathMatch(.*)*` | `src/pages/NotFoundPage.vue`             |
+| Страница        | Путь               | Файл                                     |
+| --------------- | ------------------ | ---------------------------------------- |
+| Home            | `/`                | `src/pages/HomePage.vue`                 |
+| DNS Servers     | `/dns`             | `src/pages/dns/DnsServersPage.vue`       |
+| Domains Lists   | `/domains/lists`   | `src/pages/domains/DomainsListsPage.vue` |
+| Domains         | `/domains`         | `src/pages/domains/DomainsPage.vue`      |
+| IPs Lists       | `/ips/lists`       | `src/pages/ips/IpsListsPage.vue`         |
+| IPs             | `/ips`             | `src/pages/ips/IpsPage.vue`              |
+| ROS Configs     | `/ros`             | `src/pages/ros/RosConfigsPage.vue`       |
+| Commands        | `/commands`        | `src/pages/commands/CommandsPage.vue`    |
+| Statistics      | `/stats`           | `src/pages/stats/StatisticsPage.vue`     |
+| 404 Not Found   | `/:pathMatch(.*)*` | `src/pages/NotFoundPage.vue`             |
 
 ### 🖼️ Layouts (100%)
 
-- ✅ MainLayout - адаптивный layout с sidebar, header, footer, темной темой
-- ✅ AppHeader - заголовок с логотипом и переключателем темы
-- ✅ AppFooter - подвал с копирайтом и информацией
+- ✅ `MainLayout` — адаптивный layout с sidebar, header, footer, тёмной темой
+- ✅ `AppHeader` — заголовок с логотипом и переключателем темы
+- ✅ `AppFooter` — подвал с копирайтом
 - ✅ Порядок меню соответствует структуре OpenAPI
 
 ### 🔔 Система уведомлений (100%)
 
-- ✅ ErrorNotification компонент с анимациями
+- ✅ `ErrorNotification` с анимациями и Teleport
 - ✅ Pinia store для управления уведомлениями
-- ✅ ErrorHandler с автоматической интеграцией
-- ✅ Поддержка severity levels (INFO, WARNING, ERROR, CRITICAL)
+- ✅ `ErrorHandler` (singleton) с автоматической интеграцией
+- ✅ Severity levels: INFO / WARNING / ERROR / CRITICAL
 - ✅ Автоматическое закрытие по таймеру
-- ✅ Поддержка тёмной темы
+- ✅ Фильтрация `ResizeObserver loop` из глобального обработчика
+
+### 📊 Статистика и графики (100%)
+
+- ✅ `StatisticsPage` — 4 раздела: обзор, активность, динамика роста, разбивка по спискам
+- ✅ `LineChart` — адаптивный responsive с ResizeObserver, частичная компенсация масштаба
+- ✅ `BarChart` — адаптивный responsive с ResizeObserver, частичная компенсация масштаба
+- ✅ `PieChart` — круговая диаграмма с легендой
+- ✅ Глобальные статистические карточки используют `statsApi.getStats()` (точные данные)
+
+### 🔀 Сортировка таблиц (100%)
+
+- ✅ `DataTable` поддерживает `sortable` и `sortType: 'default' | 'ip'`
+- ✅ Циклический переключатель: asc → desc → none
+- ✅ Специальный IP-компаратор: IPv4 (по октетам), IPv6 (нормализация)
+- ✅ `aria-sort` для доступности, `<button>` в заголовках
+- ✅ Включена сортировка на всех CRUD-страницах
 
 ---
 
 ## 📚 Документация
 
-- **README.md** - общая информация о проекте, установка, функциональность
-- **PROJECT_STATUS.md** - текущий документ, актуальный статус проекта
-- **PROJECT_HISTORY.md** - детальная история всех изменений и улучшений
-- **DEVELOPMENT.md** - руководство для разработчиков, шаблоны, best practices
-- **src/composables/README.md** - полная документация по композаблам
-- **TARGET_OPENAPI.md** - спецификация REST API backend
+| Файл                             | Содержание                            |
+| -------------------------------- | ------------------------------------- |
+| `README.md`                      | Обзор, скриншоты, быстрый старт       |
+| `PROJECT_STATUS.md`              | Текущий статус (этот файл)            |
+| `PROJECT_HISTORY.md`             | Детальная история всех изменений      |
+| `DEVELOPMENT.md`                 | Руководство для разработчиков         |
+| `src/composables/README.md`      | Документация по composables           |
+| `TARGET_OPENAPI.md`              | Спецификация REST API backend         |
 
 ---
 
-## 🎯 Статус завершения проекта
+## 🎯 Фазы проекта
 
-| Фаза                                | Прогресс | Описание                                                                       |
-| ----------------------------------- | -------- | ------------------------------------------------------------------------------ |
-| **Фаза 1:** Базовая инфраструктура  | ✅ 100%  | TypeScript, Vite, Tailwind, Router, Stores                                     |
-| **Фаза 2:** UI Kit и Layout         | ✅ 100%  | 11 UI компонентов, адаптивный layout                                           |
-| **Фаза 3:** API Layer               | ✅ 100%  | 7 API endpoints, типобезопасность                                              |
-| **Фаза 4:** Базовые страницы        | ✅ 100%  | 8 CRUD страниц с полной функциональностью                                      |
-| **Фаза 5:** UX улучшения            | ✅ 100%  | Уведомления, обработка ошибок, адаптивность                                    |
-| **Фаза 6:** Статистика и показатели | ❌ 0%    | Отдельный метод /stat, определение за период, кол-во без адресов, суммаризация |
-| **Фаза 7:** Полировка               | ⚪ 30%   | Тесты, accessibility, оптимизация                                              |
-
-**Базовая функциональность завершена на 100%** ✅
+| Фаза                                | Прогресс | Описание                                                  |
+| ----------------------------------- | -------- | --------------------------------------------------------- |
+| **Фаза 1:** Базовая инфраструктура  | ✅ 100%  | TypeScript, Vite, Tailwind, Router, Stores                |
+| **Фаза 2:** UI Kit и Layout         | ✅ 100%  | 10 UI компонентов, адаптивный layout                      |
+| **Фаза 3:** API Layer               | ✅ 100%  | 8 API endpoints + Stats, типобезопасность                 |
+| **Фаза 4:** CRUD страницы           | ✅ 100%  | 8 CRUD страниц + 404                                      |
+| **Фаза 5:** UX улучшения            | ✅ 100%  | Уведомления, обработка ошибок, адаптивность               |
+| **Фаза 6:** Статистика и показатели | ✅ 100%  | StatisticsPage, LineChart, BarChart, PieChart, statsApi   |
+| **Фаза 7:** Полировка               | ⚪ 40%   | Сортировка таблиц готова; тесты, accessibility — нет      |
 
 ---
 
-## ⏳ Следующие задачи (опциональные улучшения)
-
-### Статистика и показатели
-
-- ❌ Отдельный метод /stat (нужно новое TARGET_OPENAPI.md)
-- ❌ Количество определенных доменов за период
-- ❌ Количество без адресов
-- ❌ Суммаризованных по маске
+## ⏳ Опциональные улучшения
 
 ### Тестирование
 
-- ❌ Unit тесты для композаблов
+- ❌ Unit тесты для composables
 - ❌ Component тесты для UI Kit
 - ❌ E2E тесты с Playwright
 - ❌ Integration тесты для API слоя
@@ -156,7 +166,6 @@
 
 - ❌ Performance профилирование
 - ❌ Bundle size оптимизация
-- ❌ Lazy loading для тяжелых компонентов
 - ❌ Image optimization
 
 ### Accessibility
@@ -169,319 +178,41 @@
 ### Дополнительные функции
 
 - ❌ Retry механизм для failed API запросов
-- ❌ Offline mode поддержка (Service Worker)
-- ❌ Анимации переходов между страницами
 - ❌ Экспорт данных (CSV, JSON)
 - ❌ Bulk operations (массовое редактирование)
-
-### Документация
-
 - ❌ Storybook для UI компонентов
-- ❌ API документация (JSDoc)
-- ❌ User Guide (руководство пользователя)
 
 ---
 
-## 📝 Ключевые особенности реализованных страниц
+## 🛠️ Технический стек
 
-### DNS Servers Page (Эталонная реализация)
+| Технология      | Версия  |
+| --------------- | ------- |
+| Vue             | 3.5.x   |
+| TypeScript      | ~5.9.x  |
+| Vite            | 7.x     |
+| Tailwind CSS    | v4      |
+| Pinia           | 3.x     |
+| Vue Router      | 4.x     |
+| Headless UI     | 1.7.x   |
+| Heroicons       | 2.x     |
 
-- Просмотр списка с пагинацией (10/20/50/100)
-- Поиск по server/doh_server (минимум 3 символа)
-- Добавление/удаление с подтверждением
-- Адаптивный дизайн, темная тема
-- Использует `usePaginatedData`
-
-### Domains Lists & IPs Lists Pages
-
-- Статистические карточки (всего, без ошибок, с ошибками, критические)
-- Фильтрация по статусу загрузки
-- Цветовая индикация попыток (зелёный/жёлтый/красный)
-- Просмотр деталей списка (hash, количество элементов)
-
-### Domains & IPs Pages
-
-- Множественные фильтры (статус, список, тип IP, домен)
-- Статистика по категориям (5 карточек для IPs)
-- Отображение связанных сущностей
-- IPv4/IPv6 валидация и бейджи
-
-### ROS Configs Page
-
-- Безопасное хранение паролей (скрыты в UI)
-- Поиск по хосту, пользователю, BGP списку
-- Monospace форматирование технических данных
-- Упрощенный CRUD (как DNS Servers)
-
-### Commands Page
-
-- Загрузка списков (с принудительной перезагрузкой)
-- Определение доменов через DNS
-- Обновление RouterOS конфигураций (фильтр по типу IP)
-- Подтверждение перед выполнением
-
-### Home Page
-
-- Мониторинг системы (status, uptime, db pool)
-- Полная конфигурация (42 параметра в 9 категориях)
-- Автообновление с настраиваемым интервалом
-- Быстрые действия (7 ссылок)
-
----
-
-## 🛠️ Технические детали
-
-### Стек
-
-- Vue 3.5.26
-- TypeScript 5.9.3
-- Vite 7.3.1
-- Tailwind CSS 4.1.18
-- Headless UI 1.7.23
-- Heroicons 2.2.0
-
-### Совместимость
-
-- Node.js: ^20.19.0 || >=22.12.0
-- Браузеры: современные (ES6+)
-
-### Размер бандла (оценка)
-
-- Vendors: ~250KB (gzipped)
-- App: ~80-100KB (gzipped)
-- Total: ~350KB (gzipped)
+- Node.js: `^20.19.0 || >=22.12.0`
+- Браузеры: современные (ES2020+)
 
 ---
 
 ## 📜 История разработки
 
-Для детальной истории всех изменений, улучшений и milestone'ов см. [PROJECT_HISTORY.md](PROJECT_HISTORY.md)
+| Дата       | Основные изменения                                                   |
+| ---------- | -------------------------------------------------------------------- |
+| 2026-02-13 | Централизация констант, рефакторинг пагинации                        |
+| 2026-02-14 | Реализация всех CRUD страниц, система ошибок, страница 404           |
+| 2026-02-15 | Проверка адаптивности, скриншоты в README, реструктуризация документации |
+| 2026-03-05 | StatisticsPage + чарты, сортировка таблиц, statsApi, адаптивные SVG  |
 
-**Краткая сводка:**
-
-- **2026-02-13**: Централизация констант, рефакторинг пагинации, улучшение типобезопасности
-- **2026-02-14**: Реализация всех CRUD страниц, система обработки ошибок, страница 404
-- **2026-02-15**: Проверка и исправление адаптивности на всех устройствах
-
----
-
-## 📝 Обновления (2026-02-15)
-
-### ✅ Проверка адаптивности на всех разрешениях
-
-#### Проверенные разрешения
-
-- **Mobile**: 375×667 (iPhone SE, Samsung Galaxy)
-- **iPad Pro**: 1024×1366 (планшет)
-- **Desktop**: 1920×1080 (стандартный монитор)
-
-#### Страницы проверены
-
-1. ✅ Главная (HomePage) - карточки метрик, конфигурация
-2. ✅ DNS Серверы - таблица, пагинация
-3. ✅ Списки Доменов - статистика, фильтры, таблица
-4. ✅ Домены - множественные фильтры
-5. ✅ Списки IP Адресов - структура подтверждена
-6. ✅ IP Адреса - большие таблицы (87К записей)
-7. ✅ Конфигурации RouterOS - форма с паролями
-8. ✅ Команды - управление командами
-
-#### Исправления адаптивности
-
-**1. Карточки дашборда (`HealthStatusCard`, `VersionInfoCard`, `ConfigurationCard`)**
-
-- **Проблема**: На iPad Pro (1024px) текст обрезался из-за несоответствия breakpoints
-- **Решение**: Изменен breakpoint с `sm:` (640px) на `md:` (768px) для всех 11 секций
-- **Результат**:
-  - Mobile (< 768px): вертикальная раскладка
-  - iPad Pro (1024px): вертикальная раскладка (из-за узкой колонки с боковым меню)
-  - Desktop (≥ 768px с широкой колонкой): горизонтальная раскладка
-
-**2. Пагинация (PaginationControl)**
-
-- **Mobile (< 640px)**: только кнопки "Предыдущая" / "Следующая"
-- **Desktop (≥ 640px)**: полная пагинация с номерами страниц
-- **Обоснование**: Стандартная практика UX для экономии места на мобильных
-
-#### Результаты
-
-**Mobile (375×667)**:
-
-- ✅ Карточки статистики вертикально
-- ✅ Таблицы с минимумом колонок
-- ✅ Длинные текстовые поля переносятся
-- ✅ Упрощенная пагинация
-
-**iPad Pro (1024×1366)**:
-
-- ✅ Боковое меню активно (256px)
-- ✅ Карточки в ряд (2-4 шт.)
-- ✅ Текст не обрезается благодаря `md:` breakpoint
-- ✅ Таблицы с оптимальным набором колонок
-
-**Desktop (1920×1080)**:
-
-- ✅ Полноценный вид со всеми колонками
-- ✅ Максимум информации на экране
-- ✅ Горизонтальное выравнивание элементов
-- ✅ Полная пагинация
-
-#### Документация
-
-- 📄 `.cursor/agent_context/20260215153500-responsive-success.md`
-- 📄 `.cursor/agent_context/20260215154500-text-overflow-fixed.md`
-- 📄 `.cursor/agent_context/20260215155000-ipad-pro-fixed.md`
-- 📄 `.cursor/agent_context/20260215161000-health-card-unified.md`
-- 📄 `.cursor/agent_context/20260215163500-all-pages-responsive-check.md`
-- 📄 `.cursor/agent_context/20260215164500-pagination-mobile-decision.md`
-
-#### Статус
-
-**✅ Завершено**: Все страницы корректно адаптированы для Mobile, iPad Pro и Desktop
+Детальная история: [PROJECT_HISTORY.md](PROJECT_HISTORY.md)
 
 ---
 
-### 📂 Реструктуризация документации проекта
-
-#### Создан PROJECT_HISTORY.md
-
-- **Цель**: Отделить детальную историю разработки от актуального статуса проекта
-- **Содержимое**:
-  - Все улучшения 2026-02-13 (централизация констант, рефакторинг пагинации)
-  - Полная история 2026-02-14 (5 частей) со всеми реализованными страницами
-  - Milestone "Базовая функциональность завершена"
-  - Итоговая статистика разработки
-- **Объем**: ~600 строк детальной документации
-
-#### Обновлен PROJECT_STATUS.md
-
-- **Удалено**:
-  - Устаревший раздел "Следующие шаги" (~22 строки)
-  - Детальная история разработки (~594 строки)
-- **Обновлено**:
-  - Раздел "Статус завершения проекта" с реалистичными процентами
-  - Раздел "Следующие задачи" с опциональными улучшениями
-- **Добавлено**:
-  - Ссылка на PROJECT_HISTORY.md
-  - Краткая сводка по датам
-  - Раздел о реструктуризации (текущий)
-- **Результат**: Файл уменьшен с 891 до ~305 строк, улучшена читаемость
-
-#### Преимущества
-
-- ✅ PROJECT_STATUS.md стал компактным и актуальным
-- ✅ Детальная история сохранена в PROJECT_HISTORY.md
-- ✅ Улучшена навигация по документации
-- ✅ Легко поддерживать актуальность основного статуса
-
----
-
-### 🎯 Полная централизация констант
-
-#### Централизованы все константы из API и Store модулей
-
-**Из `api/client.ts`:**
-
-- ✅ `API.TIMEOUT` (5000 мс)
-- ✅ `API.FALLBACK_BASE_URL` ('http://127.0.0.1:4000')
-- ✅ `API.HEADERS.CONTENT_TYPE` ('application/json')
-- ✅ Сообщения об ошибках API (3 типа)
-
-**Из `stores/health.ts`:**
-
-- ✅ `STORES.HEALTH_CACHE_TTL` (10000 мс)
-
-**Из `stores/settings.ts`:**
-
-- ✅ `STORES.DEFAULT_POLLING_INTERVAL` (3000 мс)
-- ✅ `POLLING_INTERVALS` массив с опциями
-- ✅ `PollingIntervalOption` интерфейс
-
-**Из `stores/darkMode.ts`:**
-
-- ✅ Рефакторинг `DARK_MODE_KEY` → `STORAGE_KEYS.DARK_MODE`
-- ✅ Добавлен `STORAGE_KEYS.POLLING_INTERVAL`
-
-#### Итоговая структура constants.ts (286 строк)
-
-**Группы констант:**
-
-1. Application identity (4 константы)
-2. Storage keys (2 ключа localStorage)
-3. Author links (3 ссылки)
-4. Pagination config (2 настройки)
-5. Search config (1 настройка)
-6. Validation config (2 правила)
-7. API configuration (3 параметра + заголовки)
-8. Store configuration (2 параметра кеша/polling)
-9. Polling intervals (интерфейс + 7 опций)
-10. Error messages (7 сообщений)
-11. UI texts (~250+ строк)
-
-#### Обновленные файлы
-
-- ✅ `src/constants.ts` - добавлены 3 новые группы
-- ✅ `src/api/client.ts` - использует `API`, `ERROR_MESSAGES`
-- ✅ `src/stores/health.ts` - использует `STORES.HEALTH_CACHE_TTL`
-- ✅ `src/stores/settings.ts` - использует `STORAGE_KEYS`, `STORES`, `POLLING_INTERVALS`
-- ✅ `src/stores/darkMode.ts` - использует `STORAGE_KEYS.DARK_MODE`
-
-#### Документация обновлена
-
-- ✅ README.md - расширен раздел "Централизация констант"
-- ✅ DEVELOPMENT.md - добавлена секция (~70 строк) с примерами использования
-- ✅ src/composables/README.md - расширен раздел использования констант
-
-#### Валидация
-
-- ✅ 0 linter ошибок
-- ✅ 0 magic numbers в коде (проверено regex)
-- ✅ 100% константы централизованы
-
----
-
-### 📸 Добавлены скриншоты в README
-
-#### Созданы визуальные материалы
-
-**Скриншоты (4 файла, ~366KB):**
-
-1. `docs/screenshots/dashboard-dark.png` (84KB)
-2. `docs/screenshots/dashboard-light.png` (83KB)
-3. `docs/screenshots/domains-page-dark.png` (98KB)
-4. `docs/screenshots/domains-page-light.png` (100KB)
-
-**Содержание:**
-
-- Dashboard: системные метрики, конфигурация, быстрые действия
-- CRUD Page (Domains): статистика, фильтры, поиск, таблица с данными
-
-#### Обновлен README.md
-
-Добавлена новая секция "📸 Скриншоты" в начало файла (после описания, перед технологическим стеком):
-
-**Структура:**
-
-- Side-by-side сравнение светлой и тёмной тем
-- HTML таблицы для профессионального отображения
-- Списки возможностей под каждым набором скриншотов
-- Относительные пути для совместимости с GitHub
-
-**Преимущества:**
-
-- ✅ Визуальная демонстрация проекта
-- ✅ Показаны обе темы
-- ✅ Видны ключевые функции
-- ✅ Профессиональная презентация
-- ✅ GitHub-совместимые пути
-
-#### Методология создания
-
-- Использован Playwright MCP для автоматизированных скриншотов
-- Реальные данные из запущенного dev server (http://127.0.0.1:5000)
-- Full-page screenshots с header, sidebar, content, footer
-- Desktop разрешение для оптимального отображения
-
----
-
-Последнее обновление: 2026-02-15 (18:00)
+Последнее обновление: 2026-03-05
