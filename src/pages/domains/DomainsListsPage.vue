@@ -14,6 +14,7 @@ import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
 import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
+import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
 
 /**
@@ -63,7 +64,7 @@ const selectedList = ref<DomainsList | null>(null)
 const formData = ref<DomainsListCreateData>({
   name: '',
   url: '',
-  description: '',
+  description: undefined,
 })
 
 const formErrors = ref<Record<string, string>>({})
@@ -211,7 +212,7 @@ const openViewModal = (list: DomainsList) => {
  * Open add modal
  */
 const openAddModal = () => {
-  formData.value = { name: '', url: '', description: '' }
+  formData.value = { name: '', url: '', description: undefined }
   formErrors.value = {}
   isAddModalOpen.value = true
 }
@@ -220,7 +221,7 @@ const openAddModal = () => {
  * Close add modal and reset form
  */
 const closeAddModal = () => {
-  formData.value = { name: '', url: '', description: '' }
+  formData.value = { name: '', url: '', description: undefined }
   formErrors.value = {}
   isAddModalOpen.value = false
 }
@@ -236,6 +237,7 @@ const createList = async () => {
     await domainsListsApi.create([formData.value])
     closeAddModal()
     showSuccess(`${DOMAINS_LISTS_TEXTS.LIST_PREFIX} "${formData.value.name}" ${DOMAINS_LISTS_TEXTS.SUCCESS_CREATED}`)
+    await delay()
     await refreshLists()
     await loadGlobalStats()
   } catch (error) {
@@ -272,6 +274,7 @@ const deleteList = async () => {
     showSuccess(`${DOMAINS_LISTS_TEXTS.LIST_PREFIX} #${listId} ${DOMAINS_LISTS_TEXTS.SUCCESS_DELETED}`)
 
     // Reload data after deletion
+    await delay()
     await refreshLists()
     await loadGlobalStats()
 

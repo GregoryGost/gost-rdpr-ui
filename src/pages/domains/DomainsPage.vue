@@ -13,6 +13,7 @@ import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
 import { PlusIcon, TrashIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
+import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
 
 /**
@@ -59,7 +60,7 @@ const selectedDomain = ref<Domain | null>(null)
 const formData = ref<DomainCreateData>({
   domain: '',
   list_id: undefined,
-  ros_comment: '',
+  ros_comment: undefined,
 })
 
 const formErrors = ref<Record<string, string>>({})
@@ -266,7 +267,7 @@ const validateForm = (): boolean => {
  * Open add modal
  */
 const openAddModal = () => {
-  formData.value = { domain: '', list_id: undefined, ros_comment: '' }
+  formData.value = { domain: '', list_id: undefined, ros_comment: undefined }
   formErrors.value = {}
   isAddModalOpen.value = true
 }
@@ -275,7 +276,7 @@ const openAddModal = () => {
  * Close add modal and reset form
  */
 const closeAddModal = () => {
-  formData.value = { domain: '', list_id: undefined, ros_comment: '' }
+  formData.value = { domain: '', list_id: undefined, ros_comment: undefined }
   formErrors.value = {}
   isAddModalOpen.value = false
 }
@@ -291,6 +292,7 @@ const createDomain = async () => {
     await domainsApi.create([formData.value])
     closeAddModal()
     showSuccess(`Домен "${formData.value.domain}" успешно добавлен`)
+    await delay()
     await refreshDomains()
   } catch (error) {
     errorHandler.handleError(error, {
@@ -334,6 +336,7 @@ const deleteDomain = async () => {
     showSuccess(`Домен #${domainId} успешно удален`)
 
     // Reload data after deletion
+    await delay()
     await refreshDomains()
 
     // Check if we need to go to previous page (if current page is now empty)
@@ -391,7 +394,9 @@ onMounted(() => {
       </div>
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">Не определено</div>
-        <div class="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">{{ globalTotalQuery - globalTotalResolved }}</div>
+        <div class="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">
+          {{ globalTotalQuery - globalTotalResolved }}
+        </div>
       </div>
     </div>
 

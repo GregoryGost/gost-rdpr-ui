@@ -13,6 +13,7 @@ import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
 import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
+import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
 
 /**
@@ -61,7 +62,7 @@ const formData = ref<IpAddressCreateData>({
   addr: '',
   list_id: undefined,
   domain_id: undefined,
-  ros_comment: '',
+  ros_comment: undefined,
 })
 
 const formErrors = ref<Record<string, string>>({})
@@ -263,7 +264,7 @@ const openViewModal = (ip: IpAddress) => {
  * Open add modal
  */
 const openAddModal = () => {
-  formData.value = { addr: '', list_id: undefined, domain_id: undefined, ros_comment: '' }
+  formData.value = { addr: '', list_id: undefined, domain_id: undefined, ros_comment: undefined }
   formErrors.value = {}
   isAddModalOpen.value = true
 }
@@ -272,7 +273,7 @@ const openAddModal = () => {
  * Close add modal and reset form
  */
 const closeAddModal = () => {
-  formData.value = { addr: '', list_id: undefined, domain_id: undefined, ros_comment: '' }
+  formData.value = { addr: '', list_id: undefined, domain_id: undefined, ros_comment: undefined }
   formErrors.value = {}
   isAddModalOpen.value = false
 }
@@ -288,6 +289,7 @@ const createIp = async () => {
     await ipsApi.create([formData.value])
     closeAddModal()
     showSuccess(`${IPS_TEXTS.IP_PREFIX} "${formData.value.addr}" ${IPS_TEXTS.SUCCESS_CREATED}`)
+    await delay()
     await loadIpsWithStats()
     await loadGlobalStats()
   } catch (error) {
@@ -324,6 +326,7 @@ const deleteIp = async () => {
     showSuccess(`${IPS_TEXTS.IP_PREFIX} #${ipId} ${IPS_TEXTS.SUCCESS_DELETED}`)
 
     // Reload data after deletion
+    await delay()
     await loadIpsWithStats()
     await loadGlobalStats()
 

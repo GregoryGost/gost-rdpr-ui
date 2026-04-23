@@ -68,7 +68,7 @@ const getIcon = (severity: string): Component => {
   </teleport>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .notification-container {
   position: fixed;
   top: 1rem;
