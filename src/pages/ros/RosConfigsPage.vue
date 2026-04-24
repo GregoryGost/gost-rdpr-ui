@@ -13,6 +13,7 @@ import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
 import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
+import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
 
 /**
@@ -47,7 +48,7 @@ const formData = ref<RosConfigCreateData>({
   user: '',
   user_password: '',
   bgp_list_name: '',
-  description: '',
+  description: undefined,
 })
 
 const formErrors = ref<Record<string, string>>({})
@@ -56,12 +57,12 @@ const formErrors = ref<Record<string, string>>({})
  * Table columns configuration
  */
 const TABLE_COLUMNS = [
-  { key: 'id', label: UI_TEXTS.ID },
-  { key: 'host', label: ROS_TEXTS.COLUMN_HOST },
-  { key: 'user', label: ROS_TEXTS.COLUMN_USER },
-  { key: 'bgp_list_name', label: ROS_TEXTS.COLUMN_BGP_LIST_NAME },
-  { key: 'description', label: ROS_TEXTS.COLUMN_DESCRIPTION },
-  { key: 'created_at_hum', label: UI_TEXTS.CREATED },
+  { key: 'id', label: UI_TEXTS.ID, sortable: true },
+  { key: 'host', label: ROS_TEXTS.COLUMN_HOST, sortable: true },
+  { key: 'user', label: ROS_TEXTS.COLUMN_USER, sortable: true },
+  { key: 'bgp_list_name', label: ROS_TEXTS.COLUMN_BGP_LIST_NAME, sortable: true },
+  { key: 'description', label: ROS_TEXTS.COLUMN_DESCRIPTION, sortable: true },
+  { key: 'created_at_hum', label: UI_TEXTS.CREATED, sortable: true },
   { key: 'actions', label: UI_TEXTS.ACTIONS },
 ]
 
@@ -158,7 +159,7 @@ const openViewModal = (config: RosConfig) => {
  * Open add modal
  */
 const openAddModal = () => {
-  formData.value = { host: '', user: '', user_password: '', bgp_list_name: '', description: '' }
+  formData.value = { host: '', user: '', user_password: '', bgp_list_name: '', description: undefined }
   formErrors.value = {}
   isAddModalOpen.value = true
 }
@@ -167,7 +168,7 @@ const openAddModal = () => {
  * Close add modal and reset form
  */
 const closeAddModal = () => {
-  formData.value = { host: '', user: '', user_password: '', bgp_list_name: '', description: '' }
+  formData.value = { host: '', user: '', user_password: '', bgp_list_name: '', description: undefined }
   formErrors.value = {}
   isAddModalOpen.value = false
 }
@@ -183,6 +184,7 @@ const createConfig = async () => {
     await rosApi.create([formData.value])
     closeAddModal()
     showSuccess(`${ROS_TEXTS.CONFIG_PREFIX} "${formData.value.host}" ${ROS_TEXTS.SUCCESS_CREATED}`)
+    await delay()
     await refreshConfigs()
   } catch (error) {
     errorHandler.handleError(error, {
@@ -218,6 +220,7 @@ const deleteConfig = async () => {
     showSuccess(`${ROS_TEXTS.CONFIG_PREFIX} #${configId} ${ROS_TEXTS.SUCCESS_DELETED}`)
 
     // Reload data after deletion
+    await delay()
     await refreshConfigs()
 
     // Check if we need to go to previous page (if current page is now empty)

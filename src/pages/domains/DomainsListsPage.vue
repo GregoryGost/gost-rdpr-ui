@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { domainsListsApi } from '@/api/endpoints/domains-lists'
+import { statsApi } from '@/api/endpoints/stats'
 import type { DomainsList, DomainsListCreateData } from '@/api/types/domains'
 import { usePaginatedData } from '@/composables'
 import { DOMAINS_LISTS_TEXTS, UI_TEXTS, SEARCH, VALIDATION, ERROR_MESSAGES } from '@/constants'
@@ -13,6 +14,7 @@ import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
 import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
+import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
 
 /**
@@ -39,11 +41,6 @@ const {
 } = usePaginatedData<DomainsList>(async (params) => {
   const response = await domainsListsApi.getAll(params)
 
-  // Update statistics
-  totalLists.value = response.total
-  totalWithErrors.value = response.payload.filter((item) => item.attempts > 0 && item.attempts < 3).length
-  totalCritical.value = response.payload.filter((item) => item.attempts >= 3).length
-
   // Apply client-side filtering by attempts
   let filtered = response.payload
   if (attemptsFilter.value === 'success') {
@@ -53,7 +50,7 @@ const {
   } else if (attemptsFilter.value === 'critical') {
     filtered = filtered.filter((item) => item.attempts >= 3)
   }
-  return { ...response, payload: filtered, total: filtered.length }
+  return { ...response, payload: filtered }
 }, 20)
 
 // Modals
@@ -67,7 +64,7 @@ const selectedList = ref<DomainsList | null>(null)
 const formData = ref<DomainsListCreateData>({
   name: '',
   url: '',
-  description: '',
+  description: undefined,
 })
 
 const formErrors = ref<Record<string, string>>({})
@@ -76,13 +73,13 @@ const formErrors = ref<Record<string, string>>({})
  * Table columns configuration
  */
 const TABLE_COLUMNS = [
-  { key: 'id', label: UI_TEXTS.ID },
-  { key: 'name', label: UI_TEXTS.NAME },
-  { key: 'url', label: UI_TEXTS.URL },
-  { key: 'description', label: UI_TEXTS.DESCRIPTION },
-  { key: 'elements_count', label: DOMAINS_LISTS_TEXTS.COLUMN_DOMAINS_COUNT },
-  { key: 'attempts', label: DOMAINS_LISTS_TEXTS.COLUMN_ATTEMPTS },
-  { key: 'created_at_hum', label: UI_TEXTS.CREATED },
+  { key: 'id', label: UI_TEXTS.ID, sortable: true },
+  { key: 'name', label: UI_TEXTS.NAME, sortable: true },
+  { key: 'url', label: UI_TEXTS.URL, sortable: true },
+  { key: 'description', label: UI_TEXTS.DESCRIPTION, sortable: true },
+  { key: 'elements_count', label: DOMAINS_LISTS_TEXTS.COLUMN_DOMAINS_COUNT, sortable: true },
+  { key: 'attempts', label: DOMAINS_LISTS_TEXTS.COLUMN_ATTEMPTS, sortable: true },
+  { key: 'created_at_hum', label: UI_TEXTS.CREATED, sortable: true },
   { key: 'actions', label: UI_TEXTS.ACTIONS },
 ]
 
@@ -110,11 +107,6 @@ const searchLists = async () => {
         offset: pagination.offset.value,
       })
 
-      // Update statistics
-      totalLists.value = response.total
-      totalWithErrors.value = response.payload.filter((item) => item.attempts > 0 && item.attempts < 3).length
-      totalCritical.value = response.payload.filter((item) => item.attempts >= 3).length
-
       // Apply client-side filtering by attempts
       let filtered = response.payload
       if (attemptsFilter.value === 'success') {
@@ -126,16 +118,16 @@ const searchLists = async () => {
       }
 
       lists.value = filtered
-      pagination.totalItems.value = filtered.length
+      pagination.totalItems.value = response.total
 
       // Show search results notification
-      if (lists.value.length === 0) {
+      if (response.total === 0) {
         showInfo(
           `${DOMAINS_LISTS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
           UI_TEXTS.SEARCH_RESULTS,
         )
       } else {
-        showInfo(`${DOMAINS_LISTS_TEXTS.SEARCH_FOUND_PREFIX} ${lists.value.length}`, UI_TEXTS.SEARCH_RESULTS)
+        showInfo(`${DOMAINS_LISTS_TEXTS.SEARCH_FOUND_PREFIX} ${response.total}`, UI_TEXTS.SEARCH_RESULTS)
       }
     } catch (error) {
       errorHandler.handleError(error, {
@@ -147,6 +139,20 @@ const searchLists = async () => {
       isLoading.value = false
     }
   }, 300) // Debounce 300ms
+}
+
+/**
+ * Load global statistics from the dedicated statistics API endpoint
+ */
+const loadGlobalStats = async () => {
+  try {
+    const stats = await statsApi.getStats()
+    totalLists.value = stats.domains.lists_total
+    totalWithErrors.value = stats.domains.per_list.filter((l) => l.attempts > 0 && l.attempts < 3).length
+    totalCritical.value = stats.domains.per_list.filter((l) => l.attempts >= 3).length
+  } catch (error) {
+    errorHandler.handleError(error, { action: 'loadGlobalStats', component: 'DomainsListsPage' })
+  }
 }
 
 /**
@@ -206,7 +212,7 @@ const openViewModal = (list: DomainsList) => {
  * Open add modal
  */
 const openAddModal = () => {
-  formData.value = { name: '', url: '', description: '' }
+  formData.value = { name: '', url: '', description: undefined }
   formErrors.value = {}
   isAddModalOpen.value = true
 }
@@ -215,7 +221,7 @@ const openAddModal = () => {
  * Close add modal and reset form
  */
 const closeAddModal = () => {
-  formData.value = { name: '', url: '', description: '' }
+  formData.value = { name: '', url: '', description: undefined }
   formErrors.value = {}
   isAddModalOpen.value = false
 }
@@ -231,7 +237,9 @@ const createList = async () => {
     await domainsListsApi.create([formData.value])
     closeAddModal()
     showSuccess(`${DOMAINS_LISTS_TEXTS.LIST_PREFIX} "${formData.value.name}" ${DOMAINS_LISTS_TEXTS.SUCCESS_CREATED}`)
+    await delay()
     await refreshLists()
+    await loadGlobalStats()
   } catch (error) {
     errorHandler.handleError(error, {
       action: 'createList',
@@ -266,7 +274,9 @@ const deleteList = async () => {
     showSuccess(`${DOMAINS_LISTS_TEXTS.LIST_PREFIX} #${listId} ${DOMAINS_LISTS_TEXTS.SUCCESS_DELETED}`)
 
     // Reload data after deletion
+    await delay()
     await refreshLists()
+    await loadGlobalStats()
 
     // Check if we need to go to previous page (if current page is now empty)
     if (lists.value.length === 0 && pagination.currentPage.value > 1) {
@@ -286,6 +296,7 @@ const deleteList = async () => {
 }
 
 onMounted(() => {
+  loadGlobalStats()
   loadLists()
 })
 </script>

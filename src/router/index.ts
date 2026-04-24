@@ -55,6 +55,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Команды' },
       },
       {
+        path: 'stats',
+        name: 'stats',
+        component: () => import('@/pages/stats/StatisticsPage.vue'),
+        meta: { title: 'Статистика' },
+      },
+      {
         path: ':pathMatch(.*)*',
         name: 'not-found',
         component: () => import('@/pages/NotFoundPage.vue'),

@@ -11,6 +11,7 @@ import {
   ListBulletIcon,
   Cog6ToothIcon,
   CommandLineIcon,
+  ChartBarIcon,
 } from '@heroicons/vue/24/outline'
 import AppHeader from './AppHeader.vue'
 import AppFooter from './AppFooter.vue'
@@ -32,6 +33,7 @@ const NAVIGATION_ITEMS = [
   { name: 'IP Адреса', path: '/ips', icon: MapPinIcon },
   { name: 'Конфигурации RoS', path: '/ros', icon: Cog6ToothIcon },
   { name: 'Команды', path: '/commands', icon: CommandLineIcon },
+  { name: 'Статистика', path: '/stats', icon: ChartBarIcon },
 ]
 
 const closeSidebar = () => {

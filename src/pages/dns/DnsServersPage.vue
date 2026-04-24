@@ -12,6 +12,7 @@ import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
 import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
+import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
 
 /**
@@ -38,9 +39,9 @@ const serverToDelete = ref<number | null>(null)
 
 // Form data
 const formData = ref<DnsServerCreateData>({
-  server: '',
-  doh_server: '',
-  description: '',
+  server: undefined,
+  doh_server: undefined,
+  description: undefined,
 })
 
 const formErrors = ref<Record<string, string>>({})
@@ -49,11 +50,11 @@ const formErrors = ref<Record<string, string>>({})
  * Table columns configuration
  */
 const TABLE_COLUMNS = [
-  { key: 'id', label: 'ID' },
-  { key: 'server', label: 'DNS Server' },
-  { key: 'doh_server', label: 'DoH Server' },
-  { key: 'description', label: 'Описание' },
-  { key: 'created_at_hum', label: 'Создано' },
+  { key: 'id', label: 'ID', sortable: true },
+  { key: 'server', label: 'DNS Server', sortable: true },
+  { key: 'doh_server', label: 'DoH Server', sortable: true },
+  { key: 'description', label: 'Описание', sortable: true },
+  { key: 'created_at_hum', label: 'Создано', sortable: true },
   { key: 'actions', label: 'Действия' },
 ]
 
@@ -135,7 +136,7 @@ const validateForm = (): boolean => {
  * Open add modal
  */
 const openAddModal = () => {
-  formData.value = { server: '', doh_server: '', description: '' }
+  formData.value = { server: undefined, doh_server: undefined, description: undefined }
   formErrors.value = {}
   isAddModalOpen.value = true
 }
@@ -144,7 +145,7 @@ const openAddModal = () => {
  * Close add modal and reset form
  */
 const closeAddModal = () => {
-  formData.value = { server: '', doh_server: '', description: '' }
+  formData.value = { server: undefined, doh_server: undefined, description: undefined }
   formErrors.value = {}
   isAddModalOpen.value = false
 }
@@ -158,9 +159,10 @@ const createServer = async () => {
   isLoading.value = true
   try {
     await dnsApi.create([formData.value])
-    closeAddModal()
     const serverName = formData.value.server || formData.value.doh_server
+    closeAddModal()
     showSuccess(`DNS сервер "${serverName}" успешно добавлен`)
+    await delay()
     await refreshServers()
   } catch (error) {
     errorHandler.handleError(error, {
@@ -196,6 +198,7 @@ const deleteServer = async () => {
     showSuccess(`DNS сервер #${serverId} успешно удален`)
 
     // Reload data after deletion
+    await delay()
     await refreshServers()
 
     // Check if we need to go to previous page (if current page is now empty)

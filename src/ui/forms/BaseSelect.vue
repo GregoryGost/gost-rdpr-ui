@@ -10,6 +10,7 @@ import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
 interface SelectOption {
   value: string | number
   label: string
+  disabled: boolean
 }
 
 interface Props {
@@ -60,6 +61,7 @@ const selectedOption = computed(() => props.options.find((opt) => opt.value === 
               :key="option.value"
               v-slot="{ active, selected }"
               :value="option.value"
+              :disabled="option.disabled"
               as="template"
             >
               <li
@@ -68,7 +70,13 @@ const selectedOption = computed(() => props.options.find((opt) => opt.value === 
                   'relative cursor-pointer py-2 pr-4 pl-10 text-gray-900 select-none dark:text-gray-100',
                 ]"
               >
-                <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">
+                <span
+                  :class="[
+                    selected ? 'font-semibold' : 'font-normal',
+                    'block truncate',
+                    option.disabled ? 'cursor-not-allowed opacity-50' : '',
+                  ]"
+                >
                   {{ option.label }}
                 </span>
                 <span

@@ -1,37 +1,3 @@
-<template>
-  <teleport to="body">
-    <div class="notification-container">
-      <transition-group name="notification-list" tag="div">
-        <div
-          v-for="notification in notifications"
-          :key="notification.id"
-          :class="['notification-item', `notification-${notification.severity}`]"
-          role="alert"
-        >
-          <div class="notification-content">
-            <div class="notification-icon">
-              <component :is="getIcon(notification.severity)" class="icon-size" />
-            </div>
-            <div class="notification-body">
-              <h4 class="notification-title">{{ notification.title }}</h4>
-              <p class="notification-message">{{ notification.message }}</p>
-            </div>
-            <button
-              v-if="notification.dismissible"
-              type="button"
-              class="notification-close"
-              @click="handleDismiss(notification.id)"
-              aria-label="Закрыть уведомление"
-            >
-              <XMarkIcon class="icon-close-size" />
-            </button>
-          </div>
-        </div>
-      </transition-group>
-    </div>
-  </teleport>
-</template>
-
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useNotificationsStore } from '@/stores/notifications'
@@ -68,7 +34,41 @@ const getIcon = (severity: string): Component => {
 }
 </script>
 
-<style scoped>
+<template>
+  <teleport to="body">
+    <div class="notification-container">
+      <transition-group name="notification-list" tag="div">
+        <div
+          v-for="notification in notifications"
+          :key="notification.id"
+          :class="['notification-item', `notification-${notification.severity}`]"
+          role="alert"
+        >
+          <div class="notification-content">
+            <div class="notification-icon">
+              <component :is="getIcon(notification.severity)" class="icon-size" />
+            </div>
+            <div class="notification-body">
+              <h4 class="notification-title">{{ notification.title }}</h4>
+              <p class="notification-message">{{ notification.message }}</p>
+            </div>
+            <button
+              v-if="notification.dismissible"
+              type="button"
+              class="notification-close"
+              @click="handleDismiss(notification.id)"
+              aria-label="Закрыть уведомление"
+            >
+              <XMarkIcon class="icon-close-size" />
+            </button>
+          </div>
+        </div>
+      </transition-group>
+    </div>
+  </teleport>
+</template>
+
+<style lang="scss" scoped>
 .notification-container {
   position: fixed;
   top: 1rem;

@@ -674,3 +674,106 @@
 ---
 
 **Документ создан**: 2026-02-15 (17:15)
+
+---
+
+## 📝 Обновления (2026-03-05)
+
+### ✅ Сортировка колонок в таблицах
+
+#### DataTable.vue — клиентская сортировка
+- Добавлены поля `sortable?: boolean` и `sortType?: 'default' | 'ip'` в интерфейс `Column<T>`
+- Состояние `sortKey` / `sortDirection` (`'asc' | 'desc' | null`) с циклическим переключением
+- `sortedData` computed с поддержкой IP-сортировки через `compareIp`
+- IP-компаратор: IPv4 — сравнение по октетам, IPv6 — нормализация + лексикографическое
+- Заголовки сортируемых колонок заменены на `<button>` с `aria-sort` и SVG-шевронами
+
+#### Сортировка включена на страницах
+- `DnsServersPage` — все колонки
+- `DomainsListsPage`, `DomainsPage` — все колонки; `addr` с `sortType: 'ip'`
+- `IpsListsPage`, `IpsPage` — все колонки; `addr` с `sortType: 'ip' as const`
+- `RosConfigsPage` — все колонки
+
+---
+
+### ✅ Страница статистики (StatisticsPage)
+
+#### Новые компоненты — `src/components/charts/`
+- `LineChart.vue` — линейный график с hover, area-заливкой, X/Y-осями
+- `BarChart.vue` — горизонтальный бар-чарт с подписями внутри/снаружи полос
+- `PieChart.vue` — круговая диаграмма с легендой
+
+#### StatisticsPage — `src/pages/stats/StatisticsPage.vue`
+- Раздел «Обзор данных»: карточки с PieChart для DNS, доменов, IP-адресов + числовые сводки
+- Раздел «Активность за последний час»: счётчики обновлений с polling
+- Раздел «Динамика роста»: LineChart с фильтрами (сущность, группировка, поле даты, диапазон)
+- Раздел «Разбивка по спискам»: BarChart по доменным и IP-спискам с сортировкой и пагинацией
+
+#### API — `src/api/endpoints/stats.ts`
+- `getStats()` — глобальная статистика
+- `getGrowth(params)` — данные роста за период
+
+---
+
+### ✅ Исправление статистических карточек
+
+Глобальные счётчики на страницах `DomainsPage`, `DomainsListsPage`, `IpsPage`, `IpsListsPage` переведены с накопления из пагинации на `statsApi.getStats()`:
+- При активных фильтрах карточки теперь показывают реальные глобальные значения
+- `DomainsPage`: `total_resolved` → `stats.domains.resolved`, `total` → `stats.domains.total`
+- `DomainsListsPage`: `lists_total`, `per_list[].attempts` из `/stats`
+- `IpsPage`: `v4_total`, `v6_total`, `linked_to_domain`, `per_list[].total` из `/stats`
+- `IpsListsPage`: `lists_total`, `per_list[].attempts` из `/stats`
+
+---
+
+### ✅ Адаптивные SVG-графики (ResizeObserver)
+
+#### Проблема
+SVG с `viewBox="0 0 800 H"` и `width: 100%` масштабирует все атрибуты (`font-size`, `stroke-width`, `r`) пропорционально контейнеру. На 1920px шрифт 11px SVG-единиц рендерится в ~23px — непропорционально крупно.
+
+#### Решение
+`ResizeObserver` + `requestAnimationFrame` + коэффициент компенсации `sc = WIDTH / containerWidth`.
+
+Функция `s(px)` использует частичную компенсацию с адаптивным clamp:
+```
+rendered_px = px × clamp(containerWidth / 800, 0.85, 1.4)
+```
+- На 800px: 1× (базовая линия)
+- На 1920px (~1700px контент): 1.4× — элементы становятся крупнее
+- На узких контейнерах (400px): не ниже 0.85× — остаётся читаемым
+
+#### Изменения в LineChart.vue
+- `FONT_PX = 13`; шевроны, точки, линии — через `s()`
+- `dotRadius`, `lineStrokeWidth` — responsive через `sc`
+- `requestAnimationFrame` в ResizeObserver — устранена ошибка `ResizeObserver loop completed`
+
+#### Изменения в BarChart.vue
+- `FONT_PX = 13`, `BAR_HEIGHT_PX = 28`, `BAR_GAP_PX = 12`
+- Размеры полос вычисляются как plain-числа внутри `barItems` computed — устранена ошибка Vue `BAR_HEIGHT not defined on instance` при использовании `ComputedRef` в арифметике шаблона
+
+---
+
+## 📊 Обновлённая статистика
+
+### Созданные/изменённые файлы (2026-03-05)
+
+**Новые файлы:**
+- `src/components/charts/LineChart.vue`
+- `src/components/charts/BarChart.vue`
+- `src/components/charts/PieChart.vue`
+- `src/pages/stats/StatisticsPage.vue`
+- `src/api/endpoints/stats.ts`
+- `src/api/types/stats.ts`
+
+**Изменённые файлы:**
+- `src/ui/tables/DataTable.vue` — сортировка
+- `src/pages/domains/DomainsPage.vue` — сортировка + statsApi
+- `src/pages/domains/DomainsListsPage.vue` — сортировка + statsApi
+- `src/pages/ips/IpsPage.vue` — сортировка + statsApi
+- `src/pages/ips/IpsListsPage.vue` — сортировка + statsApi
+- `src/pages/dns/DnsServersPage.vue` — сортировка
+- `src/pages/ros/RosConfigsPage.vue` — сортировка
+
+---
+
+Последнее обновление: 2026-03-05

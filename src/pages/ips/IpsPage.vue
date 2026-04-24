@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { ipsApi } from '@/api/endpoints/ips'
+import { statsApi } from '@/api/endpoints/stats'
 import type { IpAddress, IpAddressCreateData } from '@/api/types/ips'
 import { PAGINATION, IPS_TEXTS, UI_TEXTS, SEARCH, ERROR_MESSAGES } from '@/constants'
 import DataTable from '@/ui/tables/DataTable.vue'
@@ -12,6 +13,7 @@ import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
 import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
+import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
 
 /**
@@ -60,7 +62,8 @@ const formData = ref<IpAddressCreateData>({
   addr: '',
   list_id: undefined,
   domain_id: undefined,
-  ros_comment: '',
+  ros_comment: undefined,
+  use_default_gw: false,
 })
 
 const formErrors = ref<Record<string, string>>({})
@@ -69,13 +72,13 @@ const formErrors = ref<Record<string, string>>({})
  * Table columns configuration
  */
 const TABLE_COLUMNS = [
-  { key: 'id', label: UI_TEXTS.ID },
-  { key: 'type', label: IPS_TEXTS.COLUMN_TYPE },
-  { key: 'addr', label: IPS_TEXTS.COLUMN_ADDR },
-  { key: 'ip_list_name', label: IPS_TEXTS.COLUMN_IP_LIST },
-  { key: 'domain_name', label: IPS_TEXTS.COLUMN_DOMAIN },
-  { key: 'ros_comment', label: IPS_TEXTS.COLUMN_ROS_COMMENT },
-  { key: 'created_at_hum', label: UI_TEXTS.CREATED },
+  { key: 'id', label: UI_TEXTS.ID, sortable: true },
+  { key: 'type', label: IPS_TEXTS.COLUMN_TYPE, sortable: true },
+  { key: 'addr', label: IPS_TEXTS.COLUMN_ADDR, sortable: true, sortType: 'ip' as const },
+  { key: 'ip_list_name', label: IPS_TEXTS.COLUMN_IP_LIST, sortable: true },
+  { key: 'domain_name', label: IPS_TEXTS.COLUMN_DOMAIN, sortable: true },
+  { key: 'ros_comment', label: IPS_TEXTS.COLUMN_ROS_COMMENT, sortable: true },
+  { key: 'created_at_hum', label: UI_TEXTS.CREATED, sortable: true },
   { key: 'actions', label: UI_TEXTS.ACTIONS },
 ]
 
@@ -121,13 +124,7 @@ const loadIpsWithStats = async () => {
     })
 
     allIps.value = response.payload
-
-    // Calculate statistics
     totalItems.value = response.total
-    totalIpv4.value = response.payload.filter((ip) => ip.type === 4).length
-    totalIpv6.value = response.payload.filter((ip) => ip.type === 6).length
-    totalWithList.value = response.payload.filter((ip) => ip.ip_list_id != null).length
-    totalWithDomain.value = response.payload.filter((ip) => ip.domain_id != null).length
 
     // Apply filters
     ips.value = applyFilters(allIps.value)
@@ -166,13 +163,7 @@ const searchIps = async () => {
       })
 
       allIps.value = response.payload
-
-      // Calculate statistics
       totalItems.value = response.total
-      totalIpv4.value = response.payload.filter((ip) => ip.type === 4).length
-      totalIpv6.value = response.payload.filter((ip) => ip.type === 6).length
-      totalWithList.value = response.payload.filter((ip) => ip.ip_list_id != null).length
-      totalWithDomain.value = response.payload.filter((ip) => ip.domain_id != null).length
 
       // Apply filters
       ips.value = applyFilters(allIps.value)
@@ -196,6 +187,21 @@ const searchIps = async () => {
       isLoading.value = false
     }
   }, 300) // Debounce 300ms
+}
+
+/**
+ * Load global statistics from the dedicated statistics API endpoint
+ */
+const loadGlobalStats = async () => {
+  try {
+    const stats = await statsApi.getStats()
+    totalIpv4.value = stats.ips.v4_total
+    totalIpv6.value = stats.ips.v6_total
+    totalWithList.value = stats.ips.per_list.reduce((sum, l) => sum + l.total, 0)
+    totalWithDomain.value = stats.ips.linked_to_domain
+  } catch (error) {
+    errorHandler.handleError(error, { action: 'loadGlobalStats', component: 'IpsPage' })
+  }
 }
 
 /**
@@ -259,7 +265,7 @@ const openViewModal = (ip: IpAddress) => {
  * Open add modal
  */
 const openAddModal = () => {
-  formData.value = { addr: '', list_id: undefined, domain_id: undefined, ros_comment: '' }
+  formData.value = { addr: '', list_id: undefined, domain_id: undefined, ros_comment: undefined, use_default_gw: false }
   formErrors.value = {}
   isAddModalOpen.value = true
 }
@@ -268,7 +274,7 @@ const openAddModal = () => {
  * Close add modal and reset form
  */
 const closeAddModal = () => {
-  formData.value = { addr: '', list_id: undefined, domain_id: undefined, ros_comment: '' }
+  formData.value = { addr: '', list_id: undefined, domain_id: undefined, ros_comment: undefined, use_default_gw: false }
   formErrors.value = {}
   isAddModalOpen.value = false
 }
@@ -284,7 +290,9 @@ const createIp = async () => {
     await ipsApi.create([formData.value])
     closeAddModal()
     showSuccess(`${IPS_TEXTS.IP_PREFIX} "${formData.value.addr}" ${IPS_TEXTS.SUCCESS_CREATED}`)
+    await delay()
     await loadIpsWithStats()
+    await loadGlobalStats()
   } catch (error) {
     errorHandler.handleError(error, {
       action: 'createIp',
@@ -319,7 +327,9 @@ const deleteIp = async () => {
     showSuccess(`${IPS_TEXTS.IP_PREFIX} #${ipId} ${IPS_TEXTS.SUCCESS_DELETED}`)
 
     // Reload data after deletion
+    await delay()
     await loadIpsWithStats()
+    await loadGlobalStats()
 
     // Check if we need to go to previous page (if current page is now empty)
     if (ips.value.length === 0 && currentPage.value > 1) {
@@ -356,6 +366,7 @@ const changePageSize = (size: number) => {
 }
 
 onMounted(() => {
+  loadGlobalStats()
   loadIpsWithStats()
 })
 </script>
@@ -601,6 +612,23 @@ onMounted(() => {
           </p>
         </div>
 
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ IPS_TEXTS.LABEL_USE_DEFAULT_GATEWAY }}
+          </label>
+          <label class="mt-3 mb-4 flex cursor-pointer items-center gap-2">
+            <input
+              v-model="formData.use_default_gw"
+              type="checkbox"
+              class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+            />
+            <span class="text-sm text-gray-700 dark:text-gray-300">Использовать дефолтный gateway вместо VPN</span>
+          </label>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ IPS_TEXTS.HINT_USE_DEFAULT_GATEWAY }}
+          </p>
+        </div>
+
         <div class="flex justify-end gap-3 pt-4">
           <BaseButton variant="ghost" type="button" @click="closeAddModal">{{ UI_TEXTS.CANCEL }}</BaseButton>
           <BaseButton variant="primary" type="submit" :is-loading="isLoading">{{ UI_TEXTS.CREATE }}</BaseButton>
@@ -674,6 +702,15 @@ onMounted(() => {
               {{ selectedIp.ros_comment }}
             </p>
             <p v-else class="text-sm text-gray-500 dark:text-gray-400">Не указан</p>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+              {{ IPS_TEXTS.COLUMN_USE_DEFAULT_GATEWAY }}
+            </label>
+            <p class="text-sm text-gray-900 dark:text-gray-100">
+              {{ selectedIp.use_default_gw ? 'Да' : 'Нет' }}
+            </p>
           </div>
 
           <div class="border-t pt-3 dark:border-gray-700">

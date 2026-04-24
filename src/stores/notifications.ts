@@ -100,6 +100,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
    * Add error notification from ErrorInfo
    */
   function addErrorNotification(errorInfo: ErrorInfo): void {
+    console.error(errorInfo)
     addNotification({
       title: getErrorTitle(errorInfo),
       message: errorInfo.message,
