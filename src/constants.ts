@@ -208,7 +208,7 @@ export const IPS_TEXTS = {
   LABEL_LIST_ID: 'ID списка IP',
   LABEL_DOMAIN_ID: 'ID домена',
   LABEL_ROS_COMMENT: 'Комментарий RoS',
-  LABEL_USE_DEFAULT_GATEWAY: 'Использовать базовый Gateway на клиентах',
+  LABEL_USE_DEFAULT_GATEWAY: 'Базовый Gateway на клиентах',
   PLACEHOLDER_ADDR: '192.168.1.1 или 2001:db8::1',
   PLACEHOLDER_LIST_ID: '1',
   PLACEHOLDER_DOMAIN_ID: '1',

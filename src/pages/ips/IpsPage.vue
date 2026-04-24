@@ -616,7 +616,14 @@ onMounted(() => {
           <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
             {{ IPS_TEXTS.LABEL_USE_DEFAULT_GATEWAY }}
           </label>
-          Тут Нужен Чекбокс
+          <label class="mt-3 mb-4 flex cursor-pointer items-center gap-2">
+            <input
+              v-model="formData.use_default_gw"
+              type="checkbox"
+              class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+            />
+            <span class="text-sm text-gray-700 dark:text-gray-300">Использовать дефолтный gateway вместо VPN</span>
+          </label>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {{ IPS_TEXTS.HINT_USE_DEFAULT_GATEWAY }}
           </p>
