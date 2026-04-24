@@ -67,7 +67,7 @@ const SIZE_CLASSES = {
                 </DialogTitle>
                 <button
                   @click="emit('close')"
-                  class="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                  class="cursor-pointer rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                 >
                   <XMarkIcon class="h-6 w-6" />
                 </button>

@@ -28,14 +28,14 @@ const confirmTitle = ref('')
 const confirmMessage = ref('')
 
 const forcedReload = ref(false)
-const rosIpType = ref<number | null>(null)
+const rosIpType = ref<number | null>(4)
 
 const lastResult = ref<{ type: 'success' | 'error'; message: string } | null>(null)
 
 const IP_TYPE_OPTIONS = [
-  { value: '', label: 'Все типы IP' },
-  { value: 4, label: 'Только IPv4' },
-  { value: 6, label: 'Только IPv6' },
+  { value: '', label: 'Все типы IP', disabled: true },
+  { value: 4, label: 'Только IPv4', disabled: false },
+  { value: 6, label: 'Только IPv6', disabled: true },
 ]
 
 /**

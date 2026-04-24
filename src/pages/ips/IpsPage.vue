@@ -63,6 +63,7 @@ const formData = ref<IpAddressCreateData>({
   list_id: undefined,
   domain_id: undefined,
   ros_comment: undefined,
+  use_default_gw: false,
 })
 
 const formErrors = ref<Record<string, string>>({})
@@ -264,7 +265,7 @@ const openViewModal = (ip: IpAddress) => {
  * Open add modal
  */
 const openAddModal = () => {
-  formData.value = { addr: '', list_id: undefined, domain_id: undefined, ros_comment: undefined }
+  formData.value = { addr: '', list_id: undefined, domain_id: undefined, ros_comment: undefined, use_default_gw: false }
   formErrors.value = {}
   isAddModalOpen.value = true
 }
@@ -273,7 +274,7 @@ const openAddModal = () => {
  * Close add modal and reset form
  */
 const closeAddModal = () => {
-  formData.value = { addr: '', list_id: undefined, domain_id: undefined, ros_comment: undefined }
+  formData.value = { addr: '', list_id: undefined, domain_id: undefined, ros_comment: undefined, use_default_gw: false }
   formErrors.value = {}
   isAddModalOpen.value = false
 }
@@ -611,6 +612,16 @@ onMounted(() => {
           </p>
         </div>
 
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ IPS_TEXTS.LABEL_USE_DEFAULT_GATEWAY }}
+          </label>
+          Тут Нужен Чекбокс
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ IPS_TEXTS.HINT_USE_DEFAULT_GATEWAY }}
+          </p>
+        </div>
+
         <div class="flex justify-end gap-3 pt-4">
           <BaseButton variant="ghost" type="button" @click="closeAddModal">{{ UI_TEXTS.CANCEL }}</BaseButton>
           <BaseButton variant="primary" type="submit" :is-loading="isLoading">{{ UI_TEXTS.CREATE }}</BaseButton>
@@ -684,6 +695,15 @@ onMounted(() => {
               {{ selectedIp.ros_comment }}
             </p>
             <p v-else class="text-sm text-gray-500 dark:text-gray-400">Не указан</p>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+              {{ IPS_TEXTS.COLUMN_USE_DEFAULT_GATEWAY }}
+            </label>
+            <p class="text-sm text-gray-900 dark:text-gray-100">
+              {{ selectedIp.use_default_gw ? 'Да' : 'Нет' }}
+            </p>
           </div>
 
           <div class="border-t pt-3 dark:border-gray-700">

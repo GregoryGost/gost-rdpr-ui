@@ -31,6 +31,7 @@ export interface IpAddress {
   domain_id?: number
   domain_name?: string
   ros_comment?: string
+  use_default_gw: boolean
   created_at: number
   created_at_hum: string
   updated_at?: number
@@ -56,4 +57,5 @@ export interface IpAddressCreateData {
   list_id?: number
   domain_id?: number
   ros_comment?: string
+  use_default_gw: boolean
 }
