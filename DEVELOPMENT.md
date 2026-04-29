@@ -28,7 +28,7 @@
 
 - **Buttons:** `BaseButton`
 - **Forms:** `BaseInput`, `BaseTextarea`, `BaseSelect`
-- **Tables:** `DataTable` (с сортировкой), `PaginationControl`
+- **Tables:** `DataTable` (с сортировкой и фильтрами по колонкам), `PaginationControl`
 - **Modals:** `BaseModal`, `ConfirmDialog`
 - **Feedback:** `LoadingSpinner`, `EmptyState`
 
@@ -46,18 +46,18 @@
 
 ### 6. Страницы ✅
 
-| Страница        | Путь               | Файл                                         |
-| --------------- | ------------------ | -------------------------------------------- |
-| Home            | `/`                | `src/pages/HomePage.vue`                     |
-| DNS Servers     | `/dns`             | `src/pages/dns/DnsServersPage.vue`           |
-| Domains Lists   | `/domains/lists`   | `src/pages/domains/DomainsListsPage.vue`     |
-| Domains         | `/domains`         | `src/pages/domains/DomainsPage.vue`          |
-| IPs Lists       | `/ips/lists`       | `src/pages/ips/IpsListsPage.vue`             |
-| IPs             | `/ips`             | `src/pages/ips/IpsPage.vue`                  |
-| ROS Configs     | `/ros`             | `src/pages/ros/RosConfigsPage.vue`           |
-| Commands        | `/commands`        | `src/pages/commands/CommandsPage.vue`        |
-| Statistics      | `/stats`           | `src/pages/stats/StatisticsPage.vue`         |
-| 404 Not Found   | `/:pathMatch(.*)*` | `src/pages/NotFoundPage.vue`                 |
+| Страница      | Путь               | Файл                                     |
+| ------------- | ------------------ | ---------------------------------------- |
+| Home          | `/`                | `src/pages/HomePage.vue`                 |
+| DNS Servers   | `/dns`             | `src/pages/dns/DnsServersPage.vue`       |
+| Domains Lists | `/domains/lists`   | `src/pages/domains/DomainsListsPage.vue` |
+| Domains       | `/domains`         | `src/pages/domains/DomainsPage.vue`      |
+| IPs Lists     | `/ips/lists`       | `src/pages/ips/IpsListsPage.vue`         |
+| IPs           | `/ips`             | `src/pages/ips/IpsPage.vue`              |
+| ROS Configs   | `/ros`             | `src/pages/ros/RosConfigsPage.vue`       |
+| Commands      | `/commands`        | `src/pages/commands/CommandsPage.vue`    |
+| Statistics    | `/stats`           | `src/pages/stats/StatisticsPage.vue`     |
+| 404 Not Found | `/:pathMatch(.*)*` | `src/pages/NotFoundPage.vue`             |
 
 ---
 
@@ -92,7 +92,7 @@ const formData = ref({})
 
 const TABLE_COLUMNS = [
   { key: 'id', label: 'ID', sortable: true },
-  { key: 'name', label: 'Название', sortable: true },
+  { key: 'name', label: 'Название', sortable: true, filterPlaceholder: 'Название' },
 ]
 
 const createItem = async () => {
@@ -138,11 +138,7 @@ onMounted(() => {
       <!-- Form -->
     </BaseModal>
 
-    <ConfirmDialog
-      :is-open="isDeleteConfirmOpen"
-      @confirm="deleteItem"
-      @cancel="isDeleteConfirmOpen = false"
-    />
+    <ConfirmDialog :is-open="isDeleteConfirmOpen" @confirm="deleteItem" @cancel="isDeleteConfirmOpen = false" />
   </div>
 </template>
 ```
@@ -160,6 +156,34 @@ const TABLE_COLUMNS = [
 ```
 
 `sortType: 'ip'` активирует IP-компаратор (поддерживает IPv4 по октетам и IPv6 с нормализацией).
+
+### Фильтрация колонок
+
+`DataTable` автоматически выводит строку фильтров под заголовками таблицы. Все колонки фильтруются по умолчанию, кроме колонки `actions`.
+
+```typescript
+const TABLE_COLUMNS = [
+  { key: 'id', label: 'ID', sortable: true },
+  {
+    key: 'resolved',
+    label: 'Статус',
+    sortable: true,
+    filterValue: (_row: Domain, value: unknown) =>
+      value ? 'определен resolved true да 1' : 'не определен unresolved false нет 0',
+  },
+  { key: 'actions', label: 'Действия' },
+]
+```
+
+Параметры колонки:
+
+| Поле                | Описание                                                         |
+| ------------------- | ---------------------------------------------------------------- |
+| `filterable`        | `false` отключает поле фильтра для колонки                       |
+| `filterPlaceholder` | Плейсхолдер для input фильтра                                    |
+| `filterValue`       | Преобразует значение строки в текст, по которому идет фильтрация |
+
+Фильтрация применяется к данным, переданным в `DataTable`, и выполняется перед сортировкой. Для глобальной фильтрации по всем записям страница должна перезагружать данные через API, если backend предоставляет соответствующий query-параметр.
 
 ---
 
@@ -239,6 +263,7 @@ timeout: 5000
 - **Mobile-first** подход в стилях
 - **ResizeObserver + requestAnimationFrame** для адаптивных SVG-чартов
 - **statsApi.getStats()** для точных глобальных метрик (не из пагинации)
+- **Фильтры над таблицами** перезагружают данные через API там, где backend поддерживает параметры фильтрации; неподдерживаемые условия применяются локально после загрузки свежей страницы данных
 
 ---
 

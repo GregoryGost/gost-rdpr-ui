@@ -4,10 +4,10 @@ import type { PaginatedResponse, PaginationParams, OkResponse } from '../types/c
 
 /**
  * Convert pagination params to URLSearchParams
- * @param {PaginationParams} params - Pagination parameters
+ * @param {PaginationParams & { type?: number }} params - Pagination and filter parameters
  * @returns {URLSearchParams}
  */
-function toSearchParams(params: PaginationParams): URLSearchParams {
+function toSearchParams(params: PaginationParams & { type?: number }): URLSearchParams {
   const searchParams = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
@@ -23,10 +23,10 @@ function toSearchParams(params: PaginationParams): URLSearchParams {
 export const ipsApi = {
   /**
    * Get all IP addresses
-   * @param {PaginationParams} [params] - Pagination parameters
+   * @param {PaginationParams & { type?: number }} [params] - Pagination and filter parameters
    * @returns {Promise<PaginatedResponse<IpAddress>>}
    */
-  getAll: (params?: PaginationParams) => {
+  getAll: (params?: PaginationParams & { type?: number }) => {
     const queryString = params ? `?${toSearchParams(params)}` : ''
     return apiRequest<PaginatedResponse<IpAddress>>(`/ips${queryString}`)
   },

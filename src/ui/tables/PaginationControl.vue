@@ -55,14 +55,20 @@ const visiblePages = computed(() => {
       <button
         @click="emit('update:currentPage', currentPage - 1)"
         :disabled="!hasPrevPage"
-        class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+        :class="[
+          hasPrevPage ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : 'cursor-default',
+          'relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200',
+        ]"
       >
         Предыдущая
       </button>
       <button
         @click="emit('update:currentPage', currentPage + 1)"
         :disabled="!hasNextPage"
-        class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+        :class="[
+          hasNextPage ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : 'cursor-default',
+          'relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200',
+        ]"
       >
         Следующая
       </button>
@@ -91,7 +97,10 @@ const visiblePages = computed(() => {
         <button
           @click="emit('update:currentPage', currentPage - 1)"
           :disabled="!hasPrevPage"
-          class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+          :class="[
+            hasPrevPage ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : 'cursor-default',
+            'relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400',
+          ]"
         >
           <ChevronLeftIcon class="h-5 w-5" />
         </button>
@@ -101,8 +110,8 @@ const visiblePages = computed(() => {
           @click="emit('update:currentPage', page)"
           :class="[
             page === currentPage
-              ? 'z-10 border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-              : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700',
+              ? 'z-10 cursor-default border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+              : 'cursor-pointer border-gray-300 bg-white text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700',
             'relative inline-flex items-center border px-4 py-2 text-sm font-medium',
           ]"
         >
@@ -111,7 +120,10 @@ const visiblePages = computed(() => {
         <button
           @click="emit('update:currentPage', currentPage + 1)"
           :disabled="!hasNextPage"
-          class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+          :class="[
+            hasNextPage ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : 'cursor-default',
+            'relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400',
+          ]"
         >
           <ChevronRightIcon class="h-5 w-5" />
         </button>

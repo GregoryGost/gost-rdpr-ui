@@ -1,7 +1,3 @@
----
-alwaysApply: true
----
-
 # Use Playwright MCP for local UI checks
 
 - When you modify UI or routes, validate changes using the "playwright" MCP tools.
@@ -10,7 +6,7 @@ alwaysApply: true
   1. browser_navigate to the page
   2. browser_wait_for need element
   3. browser_snapshot for accessible elements
-  4. browser_take_screenshot to .agent/artifacts
+  4. browser_take_screenshot to `.agent/artifacts`
 - Summarize console errors and network requests after each run.
 - If there are errors, we make corrections until we correct the errors.
 

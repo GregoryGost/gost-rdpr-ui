@@ -14,7 +14,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
   "paths": {
     "/metrics": {
       "get": {
-        "tags": ["Metrics"],
+        "tags": [
+          "Metrics"
+        ],
         "summary": "Metrics",
         "description": "Prometheus metrics",
         "operationId": "Metrics_metrics_get",
@@ -44,7 +46,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/": {
       "get": {
-        "tags": ["Home"],
+        "tags": [
+          "Home"
+        ],
         "summary": "Welcome",
         "description": "Base welcome answer",
         "operationId": "Welcome__get",
@@ -64,7 +68,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/health": {
       "get": {
-        "tags": ["Home"],
+        "tags": [
+          "Home"
+        ],
         "summary": "Health Check",
         "description": "API OK checker",
         "operationId": "Health_check_health_get",
@@ -84,7 +90,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/config": {
       "get": {
-        "tags": ["Home"],
+        "tags": [
+          "Home"
+        ],
         "summary": "Current Config",
         "description": "Current config. All settings parameters",
         "operationId": "Current_config_config_get",
@@ -104,7 +112,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/dns": {
       "get": {
-        "tags": ["DNS Servers"],
+        "tags": [
+          "DNS Servers"
+        ],
         "summary": "Get All Dns Servers Records",
         "description": "Displays all available DNS server records. Also displays the default DNS server with ID -1",
         "operationId": "Get_all_DNS_servers_records_dns_get",
@@ -119,7 +129,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "exclusiveMinimum": 0,
               "title": "Limit param",
               "description": "Number of items to be sampled",
-              "examples": [100],
+              "examples": [
+                100
+              ],
               "default": 100
             },
             "description": "Number of items to be sampled"
@@ -133,7 +145,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "minimum": 0,
               "title": "Offset param",
               "description": "Offset quantity to start sampling from",
-              "examples": [10],
+              "examples": [
+                10
+              ],
               "default": 0
             },
             "description": "Offset quantity to start sampling from"
@@ -154,10 +168,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "Start date",
-              "description": "Date from which you want to start sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to start sampling"
+            "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`"
           },
           {
             "name": "end_date",
@@ -175,10 +192,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "End date",
-              "description": "Date from which you want to end sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to end sampling"
+            "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           },
           {
             "name": "default",
@@ -195,7 +215,10 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               ],
               "title": "View default DNS",
               "description": "Whether or not to include the default DNS server in the result",
-              "examples": [true, false]
+              "examples": [
+                true,
+                false
+              ]
             },
             "description": "Whether or not to include the default DNS server in the result"
           }
@@ -234,7 +257,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "post": {
-        "tags": ["DNS Servers"],
+        "tags": [
+          "DNS Servers"
+        ],
         "summary": "Add New Dns Servers",
         "description": "Allows you to add the required DNS servers through an array with parameters",
         "operationId": "Add_new_DNS_servers_dns_post",
@@ -311,7 +336,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "delete": {
-        "tags": ["DNS Servers"],
+        "tags": [
+          "DNS Servers"
+        ],
         "summary": "Clear All Dns Servers Records (Warning!!!)",
         "description": "Clear All DNS servers records. But not default record id=-1",
         "operationId": "Clear_All_DNS_servers_records__WARNING_____dns_delete",
@@ -341,7 +368,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/dns/search": {
       "get": {
-        "tags": ["DNS Servers"],
+        "tags": [
+          "DNS Servers"
+        ],
         "summary": "Find Dns Server By Text",
         "description": "Find a DNS server by text. Using fields \"server\" or \"doh_server\"",
         "operationId": "Find_DNS_server_by_text_dns_search_get",
@@ -356,7 +385,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "exclusiveMinimum": 0,
               "title": "Limit param",
               "description": "Number of items to be sampled",
-              "examples": [100],
+              "examples": [
+                100
+              ],
               "default": 100
             },
             "description": "Number of items to be sampled"
@@ -370,7 +401,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "minimum": 0,
               "title": "Offset param",
               "description": "Offset quantity to start sampling from",
-              "examples": [10],
+              "examples": [
+                10
+              ],
               "default": 0
             },
             "description": "Offset quantity to start sampling from"
@@ -391,10 +424,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "Start date",
-              "description": "Date from which you want to start sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to start sampling"
+            "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`"
           },
           {
             "name": "end_date",
@@ -412,10 +448,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "End date",
-              "description": "Date from which you want to end sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to end sampling"
+            "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           },
           {
             "name": "text",
@@ -466,7 +505,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/dns/{id}": {
       "get": {
-        "tags": ["DNS Servers"],
+        "tags": [
+          "DNS Servers"
+        ],
         "summary": "Get One Dns Server Record",
         "description": "Display parameters at one DNS server record",
         "operationId": "Get_one_DNS_server_record_dns__id__get",
@@ -526,7 +567,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "delete": {
-        "tags": ["DNS Servers"],
+        "tags": [
+          "DNS Servers"
+        ],
         "summary": "Delete One Dns Server Record",
         "description": "Delete one DNS server record",
         "operationId": "Delete_one_DNS_server_record_dns__id__delete",
@@ -578,7 +621,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/domains/lists": {
       "get": {
-        "tags": ["Domains Lists"],
+        "tags": [
+          "Domains Lists"
+        ],
         "summary": "Get All Domains Lists",
         "description": "Displays all Domains lists records",
         "operationId": "Get_all_Domains_lists_domains_lists_get",
@@ -593,7 +638,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "exclusiveMinimum": 0,
               "title": "Limit param",
               "description": "Number of items to be sampled",
-              "examples": [100],
+              "examples": [
+                100
+              ],
               "default": 100
             },
             "description": "Number of items to be sampled"
@@ -607,7 +654,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "minimum": 0,
               "title": "Offset param",
               "description": "Offset quantity to start sampling from",
-              "examples": [10],
+              "examples": [
+                10
+              ],
               "default": 0
             },
             "description": "Offset quantity to start sampling from"
@@ -628,10 +677,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "Start date",
-              "description": "Date from which you want to start sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to start sampling"
+            "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`"
           },
           {
             "name": "end_date",
@@ -649,10 +701,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "End date",
-              "description": "Date from which you want to end sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to end sampling"
+            "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           },
           {
             "name": "attempts",
@@ -707,7 +762,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "post": {
-        "tags": ["Domains Lists"],
+        "tags": [
+          "Domains Lists"
+        ],
         "summary": "Add New Domains Lists",
         "description": "Add new domains lists URL for download and parse for next",
         "operationId": "Add_new_domains_lists_domains_lists_post",
@@ -782,7 +839,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "delete": {
-        "tags": ["Domains Lists"],
+        "tags": [
+          "Domains Lists"
+        ],
         "summary": "Delete All Domains Lists Records",
         "description": "Delete all Domains lists records",
         "operationId": "Delete_all_Domains_lists_records_domains_lists_delete",
@@ -812,7 +871,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/domains/lists/search": {
       "get": {
-        "tags": ["Domains Lists"],
+        "tags": [
+          "Domains Lists"
+        ],
         "summary": "Find Domains Lists By Text",
         "description": "Find a Domains lists by text. Using fields \"name\" or \"url\"",
         "operationId": "Find_Domains_lists_by_text_domains_lists_search_get",
@@ -827,7 +888,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "exclusiveMinimum": 0,
               "title": "Limit param",
               "description": "Number of items to be sampled",
-              "examples": [100],
+              "examples": [
+                100
+              ],
               "default": 100
             },
             "description": "Number of items to be sampled"
@@ -841,7 +904,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "minimum": 0,
               "title": "Offset param",
               "description": "Offset quantity to start sampling from",
-              "examples": [10],
+              "examples": [
+                10
+              ],
               "default": 0
             },
             "description": "Offset quantity to start sampling from"
@@ -862,10 +927,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "Start date",
-              "description": "Date from which you want to start sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to start sampling"
+            "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`"
           },
           {
             "name": "end_date",
@@ -883,10 +951,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "End date",
-              "description": "Date from which you want to end sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to end sampling"
+            "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           },
           {
             "name": "text",
@@ -955,7 +1026,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/domains/lists/{id}": {
       "get": {
-        "tags": ["Domains Lists"],
+        "tags": [
+          "Domains Lists"
+        ],
         "summary": "Get One Domains List",
         "description": "Displays one Domains list record info",
         "operationId": "Get_one_Domains_list_domains_lists__id__get",
@@ -1015,7 +1088,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "delete": {
-        "tags": ["Domains Lists"],
+        "tags": [
+          "Domains Lists"
+        ],
         "summary": "Delete One Domains List",
         "description": "Delete one Domains list record",
         "operationId": "Delete_one_Domains_list_domains_lists__id__delete",
@@ -1067,7 +1142,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/domains": {
       "get": {
-        "tags": ["Domains"],
+        "tags": [
+          "Domains"
+        ],
         "summary": "Get All Domains Records",
         "description": "Displays all available Domains records",
         "operationId": "Get_all_Domains_records_domains_get",
@@ -1082,7 +1159,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "exclusiveMinimum": 0,
               "title": "Limit param",
               "description": "Number of items to be sampled",
-              "examples": [100],
+              "examples": [
+                100
+              ],
               "default": 100
             },
             "description": "Number of items to be sampled"
@@ -1096,7 +1175,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "minimum": 0,
               "title": "Offset param",
               "description": "Offset quantity to start sampling from",
-              "examples": [10],
+              "examples": [
+                10
+              ],
               "default": 0
             },
             "description": "Offset quantity to start sampling from"
@@ -1117,10 +1198,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "Start date",
-              "description": "Date from which you want to start sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to start sampling"
+            "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`"
           },
           {
             "name": "end_date",
@@ -1138,10 +1222,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "End date",
-              "description": "Date from which you want to end sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to end sampling"
+            "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           },
           {
             "name": "resolved",
@@ -1194,7 +1281,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "post": {
-        "tags": ["Domains"],
+        "tags": [
+          "Domains"
+        ],
         "summary": "Add New Domains",
         "description": "Background add new domains",
         "operationId": "Add_new_domains_domains_post",
@@ -1267,7 +1356,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "delete": {
-        "tags": ["Domains"],
+        "tags": [
+          "Domains"
+        ],
         "summary": "Clear All Domains Records (Warning!!!)",
         "description": "Clear All Domains records. But not default record id=-1",
         "operationId": "Clear_All_Domains_records__WARNING_____domains_delete",
@@ -1297,7 +1388,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/domains/search": {
       "get": {
-        "tags": ["Domains"],
+        "tags": [
+          "Domains"
+        ],
         "summary": "Find Domains By Text",
         "description": "Find a Domains by text. Using fields \"name\" or \"url\"",
         "operationId": "Find_Domains_by_text_domains_search_get",
@@ -1312,7 +1405,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "exclusiveMinimum": 0,
               "title": "Limit param",
               "description": "Number of items to be sampled",
-              "examples": [100],
+              "examples": [
+                100
+              ],
               "default": 100
             },
             "description": "Number of items to be sampled"
@@ -1326,7 +1421,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "minimum": 0,
               "title": "Offset param",
               "description": "Offset quantity to start sampling from",
-              "examples": [10],
+              "examples": [
+                10
+              ],
               "default": 0
             },
             "description": "Offset quantity to start sampling from"
@@ -1347,10 +1444,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "Start date",
-              "description": "Date from which you want to start sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to start sampling"
+            "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`"
           },
           {
             "name": "end_date",
@@ -1368,10 +1468,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "End date",
-              "description": "Date from which you want to end sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to end sampling"
+            "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           },
           {
             "name": "resolved",
@@ -1438,7 +1541,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/domains/{id}": {
       "get": {
-        "tags": ["Domains"],
+        "tags": [
+          "Domains"
+        ],
         "summary": "Get One Domain",
         "description": "Displays one Domain record info",
         "operationId": "Get_one_Domain_domains__id__get",
@@ -1498,7 +1603,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "delete": {
-        "tags": ["Domains"],
+        "tags": [
+          "Domains"
+        ],
         "summary": "Delete One Domain Record",
         "description": "Background delete one Domain record",
         "operationId": "Delete_one_Domain_record_domains__id__delete",
@@ -1550,7 +1657,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/ips/lists": {
       "get": {
-        "tags": ["IP Address Lists"],
+        "tags": [
+          "IP Address Lists"
+        ],
         "summary": "Get All Ip Address Lists",
         "description": "Displays all IP address lists records",
         "operationId": "Get_all_IP_address_lists_ips_lists_get",
@@ -1565,7 +1674,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "exclusiveMinimum": 0,
               "title": "Limit param",
               "description": "Number of items to be sampled",
-              "examples": [100],
+              "examples": [
+                100
+              ],
               "default": 100
             },
             "description": "Number of items to be sampled"
@@ -1579,7 +1690,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "minimum": 0,
               "title": "Offset param",
               "description": "Offset quantity to start sampling from",
-              "examples": [10],
+              "examples": [
+                10
+              ],
               "default": 0
             },
             "description": "Offset quantity to start sampling from"
@@ -1600,10 +1713,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "Start date",
-              "description": "Date from which you want to start sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to start sampling"
+            "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`"
           },
           {
             "name": "end_date",
@@ -1621,10 +1737,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "End date",
-              "description": "Date from which you want to end sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to end sampling"
+            "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           },
           {
             "name": "attempts",
@@ -1679,7 +1798,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "post": {
-        "tags": ["IP Address Lists"],
+        "tags": [
+          "IP Address Lists"
+        ],
         "summary": "Add New Ip Address Lists",
         "description": "Add new IP address lists URL for download",
         "operationId": "Add_new_IP_address_lists_ips_lists_post",
@@ -1754,7 +1875,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "delete": {
-        "tags": ["IP Address Lists"],
+        "tags": [
+          "IP Address Lists"
+        ],
         "summary": "Delete All Ip Address Lists Records",
         "description": "Delete all IP address lists records",
         "operationId": "Delete_all_IP_address_lists_records_ips_lists_delete",
@@ -1784,7 +1907,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/ips/lists/search": {
       "get": {
-        "tags": ["IP Address Lists"],
+        "tags": [
+          "IP Address Lists"
+        ],
         "summary": "Find Ips Lists By Text",
         "description": "Find a Ips lists by text. Using fields \"name\" or \"url\"",
         "operationId": "Find_Ips_lists_by_text_ips_lists_search_get",
@@ -1799,7 +1924,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "exclusiveMinimum": 0,
               "title": "Limit param",
               "description": "Number of items to be sampled",
-              "examples": [100],
+              "examples": [
+                100
+              ],
               "default": 100
             },
             "description": "Number of items to be sampled"
@@ -1813,7 +1940,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "minimum": 0,
               "title": "Offset param",
               "description": "Offset quantity to start sampling from",
-              "examples": [10],
+              "examples": [
+                10
+              ],
               "default": 0
             },
             "description": "Offset quantity to start sampling from"
@@ -1834,10 +1963,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "Start date",
-              "description": "Date from which you want to start sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to start sampling"
+            "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`"
           },
           {
             "name": "end_date",
@@ -1855,10 +1987,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "End date",
-              "description": "Date from which you want to end sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to end sampling"
+            "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           },
           {
             "name": "text",
@@ -1927,7 +2062,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/ips/lists/{id}": {
       "get": {
-        "tags": ["IP Address Lists"],
+        "tags": [
+          "IP Address Lists"
+        ],
         "summary": "Get One Ip Address List",
         "description": "Displays one IP address list record on ID",
         "operationId": "Get_one_IP_address_list_ips_lists__id__get",
@@ -1987,7 +2124,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "delete": {
-        "tags": ["IP Address Lists"],
+        "tags": [
+          "IP Address Lists"
+        ],
         "summary": "Delete One Ip Address List",
         "description": "Delete one IP address list record",
         "operationId": "Delete_one_IP_address_list_ips_lists__id__delete",
@@ -2039,7 +2178,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/ips": {
       "get": {
-        "tags": ["IP address"],
+        "tags": [
+          "IP address"
+        ],
         "summary": "Get All Ip Address Records",
         "description": "Displays all available IP address records",
         "operationId": "Get_all_IP_address_records_ips_get",
@@ -2054,7 +2195,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "exclusiveMinimum": 0,
               "title": "Limit param",
               "description": "Number of items to be sampled",
-              "examples": [100],
+              "examples": [
+                100
+              ],
               "default": 100
             },
             "description": "Number of items to be sampled"
@@ -2068,7 +2211,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "minimum": 0,
               "title": "Offset param",
               "description": "Offset quantity to start sampling from",
-              "examples": [10],
+              "examples": [
+                10
+              ],
               "default": 0
             },
             "description": "Offset quantity to start sampling from"
@@ -2089,10 +2234,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "Start date",
-              "description": "Date from which you want to start sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to start sampling"
+            "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`"
           },
           {
             "name": "end_date",
@@ -2110,10 +2258,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "End date",
-              "description": "Date from which you want to end sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to end sampling"
+            "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           },
           {
             "name": "type",
@@ -2130,7 +2281,10 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               ],
               "title": "IP address type v4 or v6",
               "description": "IP address type filter parameter",
-              "examples": [4, 6]
+              "examples": [
+                4,
+                6
+              ]
             },
             "description": "IP address type filter parameter"
           }
@@ -2169,7 +2323,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "post": {
-        "tags": ["IP address"],
+        "tags": [
+          "IP address"
+        ],
         "summary": "Add New Ip Address Records",
         "description": "Add new IP address records. New IPs link to default domain at ID = 0",
         "operationId": "Add_new_IP_address_records_ips_post",
@@ -2199,6 +2355,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                       "addr": "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
                       "domain_id": 3,
                       "ros_comment": "meta ip address"
+                    },
+                    {
+                      "addr": "8.8.8.8",
+                      "list_id": 15,
+                      "ros_comment": "add address to list"
+                    },
+                    {
+                      "addr": "172.10.4.4",
+                      "use_default_gw": true,
+                      "ros_comment": "Exclude IP /32 from the larger mask /16/24 so it doesnt go through the VPN"
                     }
                   ]
                 ],
@@ -2251,7 +2417,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "delete": {
-        "tags": ["IP address"],
+        "tags": [
+          "IP address"
+        ],
         "summary": "Clear All Ip Address Records (Warning!!!)",
         "description": "Clear All IP address records",
         "operationId": "Clear_All_IP_address_records__WARNING_____ips_delete",
@@ -2281,7 +2449,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/ips/search": {
       "get": {
-        "tags": ["IP address"],
+        "tags": [
+          "IP address"
+        ],
         "summary": "Find Ips Address By Text",
         "description": "Find a Ips address by text. Using fields \"addr\"",
         "operationId": "Find_Ips_address_by_text_ips_search_get",
@@ -2296,7 +2466,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "exclusiveMinimum": 0,
               "title": "Limit param",
               "description": "Number of items to be sampled",
-              "examples": [100],
+              "examples": [
+                100
+              ],
               "default": 100
             },
             "description": "Number of items to be sampled"
@@ -2310,7 +2482,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "minimum": 0,
               "title": "Offset param",
               "description": "Offset quantity to start sampling from",
-              "examples": [10],
+              "examples": [
+                10
+              ],
               "default": 0
             },
             "description": "Offset quantity to start sampling from"
@@ -2331,10 +2505,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "Start date",
-              "description": "Date from which you want to start sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to start sampling"
+            "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`"
           },
           {
             "name": "end_date",
@@ -2352,10 +2529,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "End date",
-              "description": "Date from which you want to end sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to end sampling"
+            "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           },
           {
             "name": "text",
@@ -2406,7 +2586,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/ips/{id}": {
       "get": {
-        "tags": ["IP address"],
+        "tags": [
+          "IP address"
+        ],
         "summary": "Get One Ip Address Record On Id",
         "description": "Displays one IP address record on ID",
         "operationId": "Get_one_IP_address_record_on_ID_ips__id__get",
@@ -2468,7 +2650,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/ips/{id_or_ip}": {
       "delete": {
-        "tags": ["IP address"],
+        "tags": [
+          "IP address"
+        ],
         "summary": "Delete One Ip Address Record (Ip Or Id Over Query Param)",
         "description": "Delete one IP address record on ID or IP",
         "operationId": "Delete_one_IP_address_record__ip_or_id_over_query_param__ips__id_or_ip__delete",
@@ -2526,7 +2710,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/ros": {
       "get": {
-        "tags": ["RoS Configs"],
+        "tags": [
+          "RoS Configs"
+        ],
         "summary": "Get All Router Os Configs",
         "description": "Displays all Router OS configs records. No connect tests",
         "operationId": "Get_all_Router_OS_configs_ros_get",
@@ -2541,7 +2727,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "exclusiveMinimum": 0,
               "title": "Limit param",
               "description": "Number of items to be sampled",
-              "examples": [100],
+              "examples": [
+                100
+              ],
               "default": 100
             },
             "description": "Number of items to be sampled"
@@ -2555,7 +2743,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "minimum": 0,
               "title": "Offset param",
               "description": "Offset quantity to start sampling from",
-              "examples": [10],
+              "examples": [
+                10
+              ],
               "default": 0
             },
             "description": "Offset quantity to start sampling from"
@@ -2576,10 +2766,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "Start date",
-              "description": "Date from which you want to start sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to start sampling"
+            "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`"
           },
           {
             "name": "end_date",
@@ -2597,10 +2790,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "End date",
-              "description": "Date from which you want to end sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to end sampling"
+            "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           }
         ],
         "responses": {
@@ -2637,7 +2833,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "post": {
-        "tags": ["RoS Configs"],
+        "tags": [
+          "RoS Configs"
+        ],
         "summary": "Add Router Os Configs",
         "description": "Adds new RouterOS configurations. IP address rollout will be applied to each configuration",
         "operationId": "Add_Router_OS_configs_ros_post",
@@ -2710,7 +2908,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "delete": {
-        "tags": ["RoS Configs"],
+        "tags": [
+          "RoS Configs"
+        ],
         "summary": "Delete All Routeros Configs",
         "description": "Delete all RouterOS configs records",
         "operationId": "Delete_all_RouterOS_configs_ros_delete",
@@ -2740,7 +2940,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/ros/search": {
       "get": {
-        "tags": ["RoS Configs"],
+        "tags": [
+          "RoS Configs"
+        ],
         "summary": "Find Router Os Configs By Text",
         "description": "Find a Router OS configs by text. Using fields \"host\" or \"user\" or \"bgp_list_name\"",
         "operationId": "Find_Router_OS_configs_by_text_ros_search_get",
@@ -2755,7 +2957,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "exclusiveMinimum": 0,
               "title": "Limit param",
               "description": "Number of items to be sampled",
-              "examples": [100],
+              "examples": [
+                100
+              ],
               "default": 100
             },
             "description": "Number of items to be sampled"
@@ -2769,7 +2973,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               "minimum": 0,
               "title": "Offset param",
               "description": "Offset quantity to start sampling from",
-              "examples": [10],
+              "examples": [
+                10
+              ],
               "default": 0
             },
             "description": "Offset quantity to start sampling from"
@@ -2790,10 +2996,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "Start date",
-              "description": "Date from which you want to start sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to start sampling"
+            "description": "Date from which you want to start sampling. Example `2024-04-24 00:00:00`"
           },
           {
             "name": "end_date",
@@ -2811,10 +3020,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "title": "End date",
-              "description": "Date from which you want to end sampling",
-              "examples": ["%Y-%m-%d %H:%M:%S", "2024-10-01 15:00:00"]
+              "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`",
+              "examples": [
+                "%Y-%m-%d %H:%M:%S",
+                "2024-10-01 15:00:00"
+              ]
             },
-            "description": "Date from which you want to end sampling"
+            "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           },
           {
             "name": "text",
@@ -2865,7 +3077,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/ros/{id}": {
       "get": {
-        "tags": ["RoS Configs"],
+        "tags": [
+          "RoS Configs"
+        ],
         "summary": "Get Router Os Configs By Id",
         "description": "Get a Router OS configs by id",
         "operationId": "Get_Router_OS_configs_by_id_ros__id__get",
@@ -2925,7 +3139,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
         }
       },
       "delete": {
-        "tags": ["RoS Configs"],
+        "tags": [
+          "RoS Configs"
+        ],
         "summary": "Delete One Routeros Config",
         "description": "Delete once RouterOS config record",
         "operationId": "Delete_one_RouterOS_config_ros__id__delete",
@@ -2977,7 +3193,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/commands/lists/load": {
       "post": {
-        "tags": ["Commands"],
+        "tags": [
+          "Commands"
+        ],
         "summary": "Download Domains And Ips Lists",
         "description": "Start background task for download domains and ips lists if hash files changed",
         "operationId": "Download_domains_and_ips_lists_commands_lists_load_post",
@@ -3031,7 +3249,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/commands/domains/resolve": {
       "post": {
-        "tags": ["Commands"],
+        "tags": [
+          "Commands"
+        ],
         "summary": "Resolve Domains",
         "description": "Start background task for resolve all domains",
         "operationId": "Resolve_domains_commands_domains_resolve_post",
@@ -3061,7 +3281,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/commands/ros/update": {
       "post": {
-        "tags": ["Commands"],
+        "tags": [
+          "Commands"
+        ],
         "summary": "Update Firewall And Routing At Routeros Devices",
         "description": "Update firewall address-list and routing records at all RouterOS devices(configs)",
         "operationId": "Update_firewall_and_routing_at_RouterOS_devices_commands_ros_update_post",
@@ -3081,7 +3303,10 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               ],
               "title": "IP address type v4 or v6",
               "description": "IP address type filter parameter",
-              "examples": [4, 6]
+              "examples": [
+                4,
+                6
+              ]
             },
             "description": "IP address type filter parameter"
           }
@@ -3107,6 +3332,16 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             },
             "description": "Internal Server Error"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResp"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -3122,7 +3357,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/stats": {
       "get": {
-        "tags": ["Statistics"],
+        "tags": [
+          "Statistics"
+        ],
         "summary": "Get All Statistics Total Data",
         "description": "Displays all all statistics total data",
         "operationId": "Get_all_statistics_total_data_stats_get",
@@ -3152,7 +3389,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
     },
     "/stats/growth": {
       "get": {
-        "tags": ["Statistics"],
+        "tags": [
+          "Statistics"
+        ],
         "summary": "Get Growth Time Series",
         "description": "Time series of record creation grouped by date/week/month.",
         "operationId": "Get_Growth_Time_Series_stats_growth_get",
@@ -3164,7 +3403,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "schema": {
               "$ref": "#/components/schemas/GrowthEntity",
               "description": "Data entity to aggregate",
-              "examples": ["domains", "lists", "ips"]
+              "examples": [
+                "domains",
+                "lists",
+                "ips"
+              ]
             },
             "description": "Data entity to aggregate"
           },
@@ -3175,7 +3418,14 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "schema": {
               "$ref": "#/components/schemas/GrowthGranularity",
               "description": "Time grouping granularity",
-              "examples": ["minute", "hour", "day", "week", "month", "year"],
+              "examples": [
+                "minute",
+                "hour",
+                "day",
+                "week",
+                "month",
+                "year"
+              ],
               "default": "day"
             },
             "description": "Time grouping granularity"
@@ -3197,7 +3447,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               ],
               "title": "Start date",
               "description": "Date from which you want to start sampling. Format '%Y-%m-%d %H:%M:%S'",
-              "examples": ["2024-10-01 15:00:00"]
+              "examples": [
+                "2024-10-01 15:00:00"
+              ]
             },
             "description": "Date from which you want to start sampling. Format '%Y-%m-%d %H:%M:%S'"
           },
@@ -3218,7 +3470,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               ],
               "title": "End date",
               "description": "Date from which you want to end sampling. Format '%Y-%m-%d %H:%M:%S'",
-              "examples": ["2024-10-01 15:00:00"]
+              "examples": [
+                "2024-10-01 15:00:00"
+              ]
             },
             "description": "Date from which you want to end sampling. Format '%Y-%m-%d %H:%M:%S'"
           },
@@ -3236,7 +3490,10 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
                 }
               ],
               "description": "IP version filter, only for entity=\"ips\". Allowed: 4 or 6",
-              "examples": [4, 6],
+              "examples": [
+                4,
+                6
+              ],
               "title": "Ip Subtype"
             },
             "description": "IP version filter, only for entity=\"ips\". Allowed: 4 or 6"
@@ -3248,7 +3505,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "schema": {
               "$ref": "#/components/schemas/GrowthDateField",
               "description": "Field to filter by date. \"last_resolved_at\" only for entity=\"domains\"",
-              "examples": ["created_at", "updated_at", "last_resolved_at"],
+              "examples": [
+                "created_at",
+                "updated_at",
+                "last_resolved_at"
+              ],
               "default": "created_at"
             },
             "description": "Field to filter by date. \"last_resolved_at\" only for entity=\"domains\""
@@ -3314,7 +3575,12 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["ip_not_allowed_list", "app_title_metrics", "db_path", "db_connection"],
+        "required": [
+          "ip_not_allowed_list",
+          "app_title_metrics",
+          "db_path",
+          "db_connection"
+        ],
         "title": "ConfigDynamic"
       },
       "ConfigResp": {
@@ -3327,7 +3593,10 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["static", "dynamic"],
+        "required": [
+          "static",
+          "dynamic"
+        ],
         "title": "ConfigResp"
       },
       "ConfigStatic": {
@@ -3599,7 +3868,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["id", "created_at", "created_at_hum"],
+        "required": [
+          "id",
+          "created_at",
+          "created_at_hum"
+        ],
         "title": "DnsElementResp"
       },
       "DnsPayloadResp": {
@@ -3636,7 +3909,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["limit", "offset", "duration"],
+        "required": [
+          "limit",
+          "offset",
+          "duration"
+        ],
         "title": "DnsPayloadResp"
       },
       "DnsPostElementReq": {
@@ -3812,7 +4089,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["id", "resolved", "name", "created_at", "created_at_hum"],
+        "required": [
+          "id",
+          "resolved",
+          "name",
+          "created_at",
+          "created_at_hum"
+        ],
         "title": "DomainElementResp"
       },
       "DomainsListElementResp": {
@@ -3903,7 +4186,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["id", "name", "url", "created_at", "created_at_hum"],
+        "required": [
+          "id",
+          "name",
+          "url",
+          "created_at",
+          "created_at_hum"
+        ],
         "title": "DomainsListElementResp"
       },
       "DomainsListsPayloadResp": {
@@ -3940,7 +4229,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["limit", "offset", "duration"],
+        "required": [
+          "limit",
+          "offset",
+          "duration"
+        ],
         "title": "DomainsListsPayloadResp"
       },
       "DomainsListsPostElementReq": {
@@ -3949,13 +4242,17 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "type": "string",
             "minLength": 3,
             "title": "Domain list name",
-            "examples": ["voice-domains-list"]
+            "examples": [
+              "voice-domains-list"
+            ]
           },
           "url": {
             "type": "string",
             "minLength": 5,
             "title": "Link to file with domain lists",
-            "examples": ["https://somedomain.som/path/path/path/voice.txt"]
+            "examples": [
+              "https://somedomain.som/path/path/path/voice.txt"
+            ]
           },
           "description": {
             "anyOf": [
@@ -3971,7 +4268,10 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["name", "url"],
+        "required": [
+          "name",
+          "url"
+        ],
         "title": "DomainsListsPostElementReq"
       },
       "DomainsPayloadResp": {
@@ -4018,7 +4318,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["limit", "offset", "duration"],
+        "required": [
+          "limit",
+          "offset",
+          "duration"
+        ],
         "title": "DomainsPayloadResp"
       },
       "DomainsPostElementReq": {
@@ -4026,7 +4330,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           "domain": {
             "type": "string",
             "title": "Domain name",
-            "examples": ["google.com"]
+            "examples": [
+              "google.com"
+            ]
           },
           "list_id": {
             "anyOf": [
@@ -4050,11 +4356,15 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               }
             ],
             "title": "Router OS comment for addr-list and route",
-            "examples": ["discord domain"]
+            "examples": [
+              "discord domain"
+            ]
           }
         },
         "type": "object",
-        "required": ["domain"],
+        "required": [
+          "domain"
+        ],
         "title": "DomainsPostElementReq"
       },
       "ErrorResp": {
@@ -4076,22 +4386,39 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["error"],
+        "required": [
+          "error"
+        ],
         "title": "ErrorResp"
       },
       "GrowthDateField": {
         "type": "string",
-        "enum": ["created_at", "updated_at", "last_resolved_at"],
+        "enum": [
+          "created_at",
+          "updated_at",
+          "last_resolved_at"
+        ],
         "title": "GrowthDateField"
       },
       "GrowthEntity": {
         "type": "string",
-        "enum": ["domains", "lists", "ips"],
+        "enum": [
+          "domains",
+          "lists",
+          "ips"
+        ],
         "title": "GrowthEntity"
       },
       "GrowthGranularity": {
         "type": "string",
-        "enum": ["minute", "hour", "day", "week", "month", "year"],
+        "enum": [
+          "minute",
+          "hour",
+          "day",
+          "week",
+          "month",
+          "year"
+        ],
         "title": "GrowthGranularity"
       },
       "HTTPValidationError": {
@@ -4128,7 +4455,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["ts", "uptime", "db_pool"],
+        "required": [
+          "ts",
+          "uptime",
+          "db_pool"
+        ],
         "title": "HealthResp"
       },
       "IpsElementResp": {
@@ -4200,6 +4531,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             ],
             "title": "Ros Comment"
           },
+          "use_default_gw": {
+            "type": "boolean",
+            "title": "Use Default Gw",
+            "default": false
+          },
           "created_at": {
             "anyOf": [
               {
@@ -4242,7 +4578,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["id", "type", "addr", "created_at", "created_at_hum"],
+        "required": [
+          "id",
+          "type",
+          "addr",
+          "created_at",
+          "created_at_hum"
+        ],
         "title": "IpsElementResp"
       },
       "IpsListElementResp": {
@@ -4355,7 +4697,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["id", "name", "url", "created_at", "created_at_hum"],
+        "required": [
+          "id",
+          "name",
+          "url",
+          "created_at",
+          "created_at_hum"
+        ],
         "title": "IpsListElementResp"
       },
       "IpsListsPayloadResp": {
@@ -4392,7 +4740,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["limit", "offset", "duration"],
+        "required": [
+          "limit",
+          "offset",
+          "duration"
+        ],
         "title": "IpsListsPayloadResp"
       },
       "IpsListsPostElementReq": {
@@ -4401,13 +4753,17 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "type": "string",
             "minLength": 3,
             "title": "IP address list name",
-            "examples": ["goog.json"]
+            "examples": [
+              "goog.json"
+            ]
           },
           "url": {
             "type": "string",
             "minLength": 5,
             "title": "Link to file with IP address lists",
-            "examples": ["https://somedomain.som/path/path/path/goog.json"]
+            "examples": [
+              "https://somedomain.som/path/path/path/goog.json"
+            ]
           },
           "description": {
             "anyOf": [
@@ -4423,7 +4779,10 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["name", "url"],
+        "required": [
+          "name",
+          "url"
+        ],
         "title": "IpsListsPostElementReq"
       },
       "IpsPayloadResp": {
@@ -4460,7 +4819,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["limit", "offset", "duration"],
+        "required": [
+          "limit",
+          "offset",
+          "duration"
+        ],
         "title": "IpsPayloadResp"
       },
       "IpsPostElementReq": {
@@ -4468,7 +4831,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           "addr": {
             "type": "string",
             "title": "IP address record",
-            "examples": ["1.1.1.1", "9.9.9.9", "2001:0db8:85a3:0000:0000:8a2e:0370:7334"]
+            "examples": [
+              "1.1.1.1",
+              "9.9.9.9",
+              "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+            ]
           },
           "list_id": {
             "anyOf": [
@@ -4505,11 +4872,20 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
               }
             ],
             "title": "Router OS comment for addr and route",
-            "examples": ["discord ip address"]
+            "examples": [
+              "discord ip address"
+            ]
+          },
+          "use_default_gw": {
+            "type": "boolean",
+            "title": "Not use VPN gateway. Use default client router gateway",
+            "default": false
           }
         },
         "type": "object",
-        "required": ["addr"],
+        "required": [
+          "addr"
+        ],
         "title": "IpsPostElementReq"
       },
       "NoDataResp": {
@@ -4631,7 +5007,15 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["id", "host", "user", "password", "bgp_list_name", "created_at", "created_at_hum"],
+        "required": [
+          "id",
+          "host",
+          "user",
+          "password",
+          "bgp_list_name",
+          "created_at",
+          "created_at_hum"
+        ],
         "title": "RosConfigElementResp"
       },
       "RosConfigPayloadResp": {
@@ -4668,7 +5052,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["limit", "offset", "duration"],
+        "required": [
+          "limit",
+          "offset",
+          "duration"
+        ],
         "title": "RosConfigPayloadResp"
       },
       "RosConfigsPostElementReq": {
@@ -4708,7 +5096,12 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["host", "user", "user_password", "bgp_list_name"],
+        "required": [
+          "host",
+          "user",
+          "user_password",
+          "bgp_list_name"
+        ],
         "title": "RosConfigsPostElementReq"
       },
       "StatsDnsData": {
@@ -4811,7 +5204,10 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["list_id", "list_name"],
+        "required": [
+          "list_id",
+          "list_name"
+        ],
         "title": "StatsDomainsListItem"
       },
       "StatsGrowthPoint": {
@@ -4820,7 +5216,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "type": "string",
             "title": "Date",
             "description": "Aggregated date label (format depends on granularity)",
-            "examples": ["2025-01-15", "2025-03", "2025-01"]
+            "examples": [
+              "2025-01-15",
+              "2025-03",
+              "2025-01"
+            ]
           },
           "count": {
             "type": "integer",
@@ -4830,7 +5230,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["date"],
+        "required": [
+          "date"
+        ],
         "title": "StatsGrowthPoint"
       },
       "StatsGrowthResp": {
@@ -4897,11 +5299,14 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "type": "number",
             "title": "Duration",
             "description": "Time taken to compute the response",
-            "default": 0
+            "default": 0.0
           }
         },
         "type": "object",
-        "required": ["entity", "granularity"],
+        "required": [
+          "entity",
+          "granularity"
+        ],
         "title": "StatsGrowthResp"
       },
       "StatsIpsData": {
@@ -4992,7 +5397,10 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["list_id", "list_name"],
+        "required": [
+          "list_id",
+          "list_name"
+        ],
         "title": "StatsIpsListItem"
       },
       "StatsResp": {
@@ -5001,7 +5409,9 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "type": "string",
             "title": "Generated At",
             "description": "Timestamp when aggregation was computed",
-            "examples": ["2025-01-15 10:30:00"]
+            "examples": [
+              "2025-01-15 10:30:00"
+            ]
           },
           "dns": {
             "$ref": "#/components/schemas/StatsDnsData"
@@ -5017,7 +5427,13 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["generated_at", "dns", "domains", "ips", "ros"],
+        "required": [
+          "generated_at",
+          "dns",
+          "domains",
+          "ips",
+          "ros"
+        ],
         "title": "StatsResp",
         "description": "Example:\n```json\n{\n  \"generated_at\": \"2025-01-15 10:30:00\",\n  \"dns\": {\n    \"total\": 5,\n    \"classic\": 3,\n    \"doh\": 2\n  },\n  \"domains\": {\n    \"total\": 1500,\n    \"resolved\": 1200,\n    \"unresolved\": 300,\n    \"lists_total\": 4,\n    \"per_list\": [\n      { \"list_id\": 1, \"list_name\": \"voice-domains\", \"total\": 500, \"resolved\": 450, \"unresolved\": 50, \"attempts\": 3 },\n      { \"list_id\": 2, \"list_name\": \"social-domains\", \"total\": 1000, \"resolved\": 750, \"unresolved\": 250, \"attempts\": 1 }\n    ]\n  },\n  \"ips\": {\n    \"total\": 2000,\n    \"v4_total\": 1800,\n    \"v6_total\": 200,\n    \"linked_to_domain\": 1500,\n    \"standalone\": 500,\n    \"lists_total\": 3,\n    \"per_list\": [\n      { \"list_id\": 1, \"list_name\": \"ips-list\", \"total\": 800, \"v4_count\": 700, \"v6_count\": 100 }\n    ]\n  },\n  \"ros\": {\n    \"total\": 2\n  }\n}\n```"
       },
@@ -5059,7 +5475,11 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["loc", "msg", "type"],
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
         "title": "ValidationError"
       },
       "WelcomeResp": {
@@ -5079,7 +5499,10 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
           }
         },
         "type": "object",
-        "required": ["version", "docs"],
+        "required": [
+          "version",
+          "docs"
+        ],
         "title": "WelcomeResp"
       }
     }
