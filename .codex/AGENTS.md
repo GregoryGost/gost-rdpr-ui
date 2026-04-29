@@ -32,3 +32,4 @@ Please be sure to read all of the following rules:
 * [Markdown files](./rules/mark.md)
 * [Use Playwright MCP for local UI checks](./rules/playwright.md)
 * [SVG Image Generation Rules](./rules/vector_image.md)
+* [Git work rules](./rules/git.md)
