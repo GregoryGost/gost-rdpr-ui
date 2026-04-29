@@ -9,6 +9,7 @@
 ## 🆕 Недавние улучшения
 
 ### Централизация констант (2026-02-13)
+
 - ✅ Расширен файл `src/constants.ts` с группами констант:
   - `PAGE_TITLES` и `PAGE_DESCRIPTIONS` для заголовков страниц
   - `UI_TEXTS` для общих UI текстов (кнопки, лейблы, состояния)
@@ -23,6 +24,7 @@
 - ✅ Подготовлена база для будущей локализации (i18n)
 
 ### Рефакторинг пагинации (2026-02-13)
+
 - ✅ Создан `usePaginatedData` композабл для автоматической пагинации
 - ✅ Централизованный экспорт композаблов через `index.ts`
 - ✅ Обновлен `DnsServersPage` для использования нового композабла
@@ -31,6 +33,7 @@
 - ✅ Создана полная документация композаблов
 
 ### Качество кода
+
 - ✅ Устранены все использования типа `any`
 - ✅ Созданы типобезопасные хелперы для URL параметров
 - ✅ Все линтер проверки пройдены без ошибок
@@ -43,6 +46,7 @@
 ### ✅ Страница "Domains Lists" - Полная реализация
 
 #### API Layer
+
 - ✅ API endpoints для списков доменов (`src/api/endpoints/domains-lists.ts`)
   - `getAll()` - получение всех списков с пагинацией
   - `getOne()` - получение одного списка по ID
@@ -52,6 +56,7 @@
   - `search()` - поиск по названию или URL
 
 #### UI/UX Features
+
 - ✅ **Таблица с данными:**
   - Отображение ID, названия, URL, описания, количества доменов, попыток
   - Цветовая индикация статуса попыток (зелёный/жёлтый/красный)
@@ -95,6 +100,7 @@
   - Автоматический переход при пустой странице
 
 #### Code Quality
+
 - ✅ Все константы централизованы в `src/constants.ts`
 - ✅ TypeScript strict mode без ошибок
 - ✅ ESLint проверка пройдена
@@ -103,6 +109,7 @@
 - ✅ Структура идентична DomainsPage (консистентность UX)
 
 #### Error Handling
+
 - ✅ Интеграция с ErrorHandler
 - ✅ Автоматические уведомления об ошибках
 - ✅ Контекстная информация для отладки
@@ -111,6 +118,7 @@
 ### ✅ Система обработки ошибок
 
 #### Архитектура
+
 - ✅ **ErrorHandler** (`src/utils/errorHandler.ts`):
   - Singleton паттерн
   - Парсинг различных типов ошибок (API, Network, Runtime, Unknown)
@@ -132,6 +140,7 @@
   - Полная поддержка тёмной темы
 
 #### Интеграция
+
 - ✅ Глобальные обработчики (Vue, Window, Router)
 - ✅ Автоматическое создание уведомлений из ошибок
 - ✅ Использование во всех страницах
@@ -139,11 +148,13 @@
 ### ✅ Порядок меню согласно OpenAPI
 
 #### Изменения
+
 - ✅ Меню переупорядочено согласно тегам в `TARGET_OPENAPI.md`
 - ✅ Добавлен пункт "Списки IP Адресов" (`/ips/lists`)
 - ✅ Добавлена иконка `ListBulletIcon` для списков IP
 
 #### Новый порядок меню
+
 1. 🏠 Главная → `/`
 2. 🖥️ DNS Серверы → `/dns`
 3. 📄 Списки Доменов → `/domains/lists`
@@ -154,6 +165,7 @@
 8. 💻 Команды → `/commands`
 
 #### Преимущества
+
 - Логическая группировка (списки перед элементами)
 - Соответствие структуре backend API
 - Улучшенная навигация для пользователей
@@ -165,6 +177,7 @@
 ### ✅ Страница "IPs Lists" - Полная реализация
 
 #### API Layer
+
 - ✅ API endpoints для списков IP адресов (`src/api/endpoints/ips-lists.ts`)
   - `getAll()` - получение всех списков с пагинацией
   - `getOne()` - получение одного списка по ID
@@ -174,6 +187,7 @@
   - `search()` - поиск по названию или URL
 
 #### UI/UX Features
+
 - ✅ **Таблица с данными:**
   - Отображение ID, названия, URL, описания
   - Количество IP адресов, IPv4, IPv6
@@ -220,6 +234,7 @@
   - Автоматический переход при пустой странице
 
 #### Code Quality
+
 - ✅ Все константы централизованы в `src/constants.ts` (`IPS_LISTS_TEXTS`)
 - ✅ TypeScript strict mode без ошибок
 - ✅ ESLint проверка пройдена (ReadLints - No errors)
@@ -229,12 +244,14 @@
 - ✅ Специфические поля для IPs (ip_v4_count, ip_v6_count) с визуальным отличием
 
 #### Error Handling
+
 - ✅ Интеграция с ErrorHandler
 - ✅ Автоматические уведомления об ошибках
 - ✅ Контекстная информация для отладки
 - ✅ Graceful degradation
 
 #### Files Created/Modified
+
 - 📄 `src/api/endpoints/ips-lists.ts` - NEW
 - 📄 `src/pages/ips/IpsListsPage.vue` - NEW
 - 📝 `src/constants.ts` - добавлены константы `IPS_LISTS_TEXTS`
@@ -248,6 +265,7 @@
 ### ✅ Страница "IP Адреса" - Полная реализация
 
 #### API Layer
+
 - ✅ API endpoints для IP адресов (`src/api/endpoints/ips.ts`)
   - `getAll(params?)` - получение всех IP адресов с пагинацией
   - `getOne(id)` - получение одного IP адреса по ID
@@ -257,6 +275,7 @@
   - `search(text, params?)` - поиск по IP адресу
 
 #### UI/UX Features
+
 - ✅ **Таблица с данными:**
   - Отображение ID, типа (IPv4/IPv6), адреса
   - Связанный список IP (с ID)
@@ -309,10 +328,10 @@
   - Автоматический переход при пустой странице
 
 #### Visual Design
+
 - **Type badges:**
   - IPv4: синий (`bg-blue-100`, `text-blue-800`, dark mode)
   - IPv6: фиолетовый (`bg-purple-100`, `text-purple-800`, dark mode)
-  
 - **Statistics colors:**
   - Total: серый
   - IPv4: синий
@@ -321,6 +340,7 @@
   - With Domain: оранжевый
 
 #### Code Quality
+
 - ✅ Все константы централизованы в `src/constants.ts` (`IPS_TEXTS`)
 - ✅ TypeScript strict mode без ошибок
 - ✅ ESLint проверка пройдена (ReadLints - No errors)
@@ -330,12 +350,14 @@
 - ✅ IPv4/IPv6 валидация с regex проверкой
 
 #### Error Handling
+
 - ✅ Интеграция с ErrorHandler
 - ✅ Автоматические уведомления об ошибках
 - ✅ Контекстная информация для отладки
 - ✅ Graceful degradation
 
 #### Files Created/Modified
+
 - 📄 `src/api/endpoints/ips.ts` - NEW (87 lines)
 - 📄 `src/pages/ips/IpsPage.vue` - NEW (753 lines)
 - 📝 `src/constants.ts` - добавлены константы `IPS_TEXTS` (52 lines)
@@ -343,6 +365,7 @@
 - 📝 `src/router/index.ts` - обновлён путь `/ips` на реальный компонент
 
 #### Special Features
+
 - **Flexible filtering:** Три независимых фильтра (тип, список, домен) работают одновременно
 - **Related entities display:** Показ связанных списков и доменов с их ID
 - **IPv4/IPv6 validation:** Regex проверка корректности формата IP адреса
@@ -355,6 +378,7 @@
 ### ✅ Страница "Конфигурации RouterOS" - Полная реализация
 
 #### API Layer
+
 - ✅ API endpoints для RouterOS конфигураций (`src/api/endpoints/ros.ts`)
   - `getAll(params?)` - получение всех конфигураций с пагинацией
   - `getOne(id)` - получение одной конфигурации по ID
@@ -364,6 +388,7 @@
   - `search(text, params?)` - поиск по хосту, пользователю или BGP списку
 
 #### UI/UX Features
+
 - ✅ **Таблица с данными:**
   - Отображение ID, хоста, пользователя, BGP списка
   - Описание конфигурации
@@ -407,6 +432,7 @@
 #### Security Features
 
 **Password Protection:**
+
 - В таблице: пароль НЕ отображается вообще
 - В view modal: отображается как `••••••••` (8 точек)
 - Дополнительное предупреждение: "Пароль скрыт из соображений безопасности"
@@ -417,15 +443,18 @@
 #### Visual Design
 
 **BGP List Name:**
+
 - Отображается в monospace шрифте
 - Синий цвет (`text-blue-600`, `dark:text-blue-400`)
 - Выделяется как ключевое поле конфигурации
 
 **Host:**
+
 - Monospace шрифт для технических данных
 - Bold для визуального акцента
 
 #### Code Quality
+
 - ✅ Все константы централизованы в `src/constants.ts` (`ROS_TEXTS`)
 - ✅ TypeScript strict mode без ошибок
 - ✅ ESLint проверка пройдена (ReadLints - No errors)
@@ -435,12 +464,14 @@
 - ✅ Использует `usePaginatedData` композабл
 
 #### Error Handling
+
 - ✅ Интеграция с ErrorHandler
 - ✅ Автоматические уведомления об ошибках
 - ✅ Контекстная информация для отладки
 - ✅ Graceful degradation
 
 #### Files Created/Modified
+
 - 📄 `src/api/endpoints/ros.ts` - NEW (87 lines)
 - 📄 `src/pages/ros/RosConfigsPage.vue` - NEW (538 lines)
 - 📝 `src/constants.ts` - добавлены константы `ROS_TEXTS` (40 lines)
@@ -450,16 +481,19 @@
 #### Special Features
 
 **Security-First Approach:**
+
 - Passwords are never displayed in the UI (except during input)
 - Clear security message in view modal
 - Password field uses `type="password"` in forms
 
 **Simplified CRUD:**
+
 - No complex filtering (similar to DNS Servers Page)
 - Focus on essential CRUD operations
 - Clear and straightforward UI
 
 **BGP List Integration:**
+
 - Highlighted BGP list name for quick identification
 - Used for Firewall address list and routing table naming
 - Key field for RouterOS configuration
@@ -471,6 +505,7 @@
 ### Статус: API Layer и Страницы - 100%
 
 **Все основные CRUD страницы реализованы:**
+
 1. ✅ Home Page - Дашборд с метриками
 2. ✅ DNS Servers Page - Управление DNS серверами
 3. ✅ Domains Lists Page - Управление списками доменов
@@ -481,6 +516,7 @@
 8. ✅ Commands Page - Выполнение команд
 
 **Все API endpoints реализованы:**
+
 - ✅ DNS API
 - ✅ Domains API
 - ✅ Domains Lists API
@@ -490,6 +526,7 @@
 - ✅ Commands API
 
 **Архитектура:**
+
 - ✅ 100% TypeScript coverage
 - ✅ Error handling system
 - ✅ Notifications system
@@ -505,11 +542,13 @@
 ### ✅ Отображение полной конфигурации на главной странице
 
 #### Configuration Types - `src/api/types/config.ts` (NEW)
+
 - ✅ `ConfigStatic` - 38 статических параметров
 - ✅ `ConfigDynamic` - 4 динамических параметра
 - ✅ `ConfigResponse` - полная структура ответа
 
 #### Configuration Card - `src/components/dashboard/ConfigurationCard.vue` (NEW)
+
 - ✅ **9 логических секций** с emoji:
   - 🚀 Приложение (7 параметров)
   - 💾 База данных (9 параметров)
@@ -522,6 +561,7 @@
   - 🖥️ Система (3 параметра)
 
 #### Features
+
 - ✅ Все 42 параметра конфигурации отображаются
 - ✅ Организация по категориям
 - ✅ Форматирование значений (булевы, таймауты, массивы)
@@ -532,6 +572,7 @@
 ### ✅ Обновление карточки быстрых действий
 
 #### Quick Actions Card - `src/components/dashboard/QuickActionsCard.vue` (MODIFIED)
+
 - ✅ Расширено с 3 до 7 действий
 - ✅ Добавлены иконки для каждого действия
 - ✅ Цветовое кодирование для визуального различия
@@ -539,6 +580,7 @@
 - ✅ TypeScript интерфейс `QuickAction`
 
 #### Actions (7 total):
+
 1. 🖥️ DNS Серверы (синий)
 2. 📄 Списки Доменов (зелёный)
 3. @ Домены (фиолетовый)
@@ -550,6 +592,7 @@
 ### ✅ Страница 404 Not Found
 
 #### Not Found Page - `src/pages/NotFoundPage.vue` (NEW)
+
 - ✅ Большая иконка предупреждения (жёлтая)
 - ✅ Крупный текст "404"
 - ✅ Понятное сообщение об ошибке
@@ -560,12 +603,14 @@
 - ✅ Адаптивный дизайн (1 колонка на мобильных, 2 на десктопе)
 
 #### Router Integration
+
 - ✅ Catch-all route: `:pathMatch(.*)*`
 - ✅ Должен быть последним в массиве маршрутов
 - ✅ Синтаксис Vue Router 4
 - ✅ Meta title: "404 - Страница не найдена"
 
 #### Features
+
 - ✅ 8 карточек страниц с описаниями
 - ✅ Программная навигация (router.push)
 - ✅ Декларативная навигация (router-link)
@@ -580,11 +625,13 @@
 ### ✅ Проверка адаптивности на всех разрешениях
 
 #### Проверенные разрешения
+
 - **Mobile**: 375×667 (iPhone SE, Samsung Galaxy)
 - **iPad Pro**: 1024×1366 (планшет)
 - **Desktop**: 1920×1080 (стандартный монитор)
 
 #### Страницы проверены
+
 1. ✅ Главная (HomePage) - карточки метрик, конфигурация
 2. ✅ DNS Серверы - таблица, пагинация
 3. ✅ Списки Доменов - статистика, фильтры, таблица
@@ -597,14 +644,16 @@
 #### Исправления адаптивности
 
 **1. Карточки дашборда (`HealthStatusCard`, `VersionInfoCard`, `ConfigurationCard`)**
+
 - **Проблема**: На iPad Pro (1024px) текст обрезался из-за несоответствия breakpoints
 - **Решение**: Изменен breakpoint с `sm:` (640px) на `md:` (768px) для всех 11 секций
-- **Результат**: 
+- **Результат**:
   - Mobile (< 768px): вертикальная раскладка
   - iPad Pro (1024px): вертикальная раскладка (из-за узкой колонки с боковым меню)
   - Desktop (≥ 768px с широкой колонкой): горизонтальная раскладка
 
 **2. Пагинация (PaginationControl)**
+
 - **Mobile (< 640px)**: только кнопки "Предыдущая" / "Следующая"
 - **Desktop (≥ 640px)**: полная пагинация с номерами страниц
 - **Обоснование**: Стандартная практика UX для экономии места на мобильных
@@ -612,24 +661,28 @@
 #### Результаты
 
 **Mobile (375×667)**:
+
 - ✅ Карточки статистики вертикально
 - ✅ Таблицы с минимумом колонок
 - ✅ Длинные текстовые поля переносятся
 - ✅ Упрощенная пагинация
 
 **iPad Pro (1024×1366)**:
+
 - ✅ Боковое меню активно (256px)
 - ✅ Карточки в ряд (2-4 шт.)
 - ✅ Текст не обрезается благодаря `md:` breakpoint
 - ✅ Таблицы с оптимальным набором колонок
 
 **Desktop (1920×1080)**:
+
 - ✅ Полноценный вид со всеми колонками
 - ✅ Максимум информации на экране
 - ✅ Горизонтальное выравнивание элементов
 - ✅ Полная пагинация
 
 #### Документация
+
 - 📄 `.cursor/agent_context/20260215153500-responsive-success.md`
 - 📄 `.cursor/agent_context/20260215154500-text-overflow-fixed.md`
 - 📄 `.cursor/agent_context/20260215155000-ipad-pro-fixed.md`
@@ -638,6 +691,7 @@
 - 📄 `.cursor/agent_context/20260215164500-pagination-mobile-decision.md`
 
 #### Статус
+
 **✅ Завершено**: Все страницы корректно адаптированы для Mobile, iPad Pro и Desktop
 
 ---
@@ -645,11 +699,13 @@
 ## 📊 Итоговая статистика разработки
 
 ### Временные рамки
+
 - **Начало проекта**: 2026-02-13
 - **Завершение базовой функциональности**: 2026-02-15
 - **Общее время разработки**: 3 дня
 
 ### Созданные файлы
+
 - **API endpoints**: 7 файлов
 - **Pages**: 9 файлов (включая 404)
 - **Components**: 11 файлов
@@ -659,11 +715,13 @@
 - **Stores**: 2 файла
 
 ### Объем кода
+
 - **TypeScript**: ~5000+ строк
 - **Vue SFC**: ~4000+ строк
 - **Всего**: ~9000+ строк кода
 
 ### Качество
+
 - ✅ 0 TypeScript ошибок
 - ✅ 0 ESLint ошибок
 - ✅ 100% TypeScript coverage
@@ -682,6 +740,7 @@
 ### ✅ Сортировка колонок в таблицах
 
 #### DataTable.vue — клиентская сортировка
+
 - Добавлены поля `sortable?: boolean` и `sortType?: 'default' | 'ip'` в интерфейс `Column<T>`
 - Состояние `sortKey` / `sortDirection` (`'asc' | 'desc' | null`) с циклическим переключением
 - `sortedData` computed с поддержкой IP-сортировки через `compareIp`
@@ -689,6 +748,7 @@
 - Заголовки сортируемых колонок заменены на `<button>` с `aria-sort` и SVG-шевронами
 
 #### Сортировка включена на страницах
+
 - `DnsServersPage` — все колонки
 - `DomainsListsPage`, `DomainsPage` — все колонки; `addr` с `sortType: 'ip'`
 - `IpsListsPage`, `IpsPage` — все колонки; `addr` с `sortType: 'ip' as const`
@@ -699,17 +759,20 @@
 ### ✅ Страница статистики (StatisticsPage)
 
 #### Новые компоненты — `src/components/charts/`
+
 - `LineChart.vue` — линейный график с hover, area-заливкой, X/Y-осями
 - `BarChart.vue` — горизонтальный бар-чарт с подписями внутри/снаружи полос
 - `PieChart.vue` — круговая диаграмма с легендой
 
 #### StatisticsPage — `src/pages/stats/StatisticsPage.vue`
+
 - Раздел «Обзор данных»: карточки с PieChart для DNS, доменов, IP-адресов + числовые сводки
 - Раздел «Активность за последний час»: счётчики обновлений с polling
 - Раздел «Динамика роста»: LineChart с фильтрами (сущность, группировка, поле даты, диапазон)
 - Раздел «Разбивка по спискам»: BarChart по доменным и IP-спискам с сортировкой и пагинацией
 
 #### API — `src/api/endpoints/stats.ts`
+
 - `getStats()` — глобальная статистика
 - `getGrowth(params)` — данные роста за период
 
@@ -718,6 +781,7 @@
 ### ✅ Исправление статистических карточек
 
 Глобальные счётчики на страницах `DomainsPage`, `DomainsListsPage`, `IpsPage`, `IpsListsPage` переведены с накопления из пагинации на `statsApi.getStats()`:
+
 - При активных фильтрах карточки теперь показывают реальные глобальные значения
 - `DomainsPage`: `total_resolved` → `stats.domains.resolved`, `total` → `stats.domains.total`
 - `DomainsListsPage`: `lists_total`, `per_list[].attempts` из `/stats`
@@ -729,27 +793,111 @@
 ### ✅ Адаптивные SVG-графики (ResizeObserver)
 
 #### Проблема
+
 SVG с `viewBox="0 0 800 H"` и `width: 100%` масштабирует все атрибуты (`font-size`, `stroke-width`, `r`) пропорционально контейнеру. На 1920px шрифт 11px SVG-единиц рендерится в ~23px — непропорционально крупно.
 
 #### Решение
+
 `ResizeObserver` + `requestAnimationFrame` + коэффициент компенсации `sc = WIDTH / containerWidth`.
 
 Функция `s(px)` использует частичную компенсацию с адаптивным clamp:
+
 ```
 rendered_px = px × clamp(containerWidth / 800, 0.85, 1.4)
 ```
+
 - На 800px: 1× (базовая линия)
 - На 1920px (~1700px контент): 1.4× — элементы становятся крупнее
 - На узких контейнерах (400px): не ниже 0.85× — остаётся читаемым
 
 #### Изменения в LineChart.vue
+
 - `FONT_PX = 13`; шевроны, точки, линии — через `s()`
 - `dotRadius`, `lineStrokeWidth` — responsive через `sc`
 - `requestAnimationFrame` в ResizeObserver — устранена ошибка `ResizeObserver loop completed`
 
 #### Изменения в BarChart.vue
+
 - `FONT_PX = 13`, `BAR_HEIGHT_PX = 28`, `BAR_GAP_PX = 12`
 - Размеры полос вычисляются как plain-числа внутри `barItems` computed — устранена ошибка Vue `BAR_HEIGHT not defined on instance` при использовании `ComputedRef` в арифметике шаблона
+
+---
+
+## 📝 Обновления (2026-04-29)
+
+### ✅ Фильтры колонок в таблицах
+
+#### DataTable.vue — фильтрация под заголовками
+
+- Добавлена отдельная строка input-фильтров под строкой заголовков
+- Все колонки фильтруются по умолчанию, кроме `actions`
+- В интерфейс `Column<T>` добавлены поля:
+  - `filterable?: boolean`
+  - `filterPlaceholder?: string`
+  - `filterValue?: (row, value) => string`
+- Фильтрация применяется перед сортировкой
+- Empty state теперь учитывает результат фильтрации и сортировки
+
+#### Display-aware фильтры
+
+- `DomainsPage`:
+  - статус домена ищется по русским, английским, boolean и numeric значениям
+  - наличие списка ищется по `Список N` и `Без списка`
+- `DomainsListsPage` и `IpsListsPage`:
+  - `attempts` ищется по числу и статусам `Без ошибок`, `С ошибками`, `Критические`
+- `IpsPage`:
+  - тип IP ищется по `IPv4` / `IPv6` и `4` / `6`
+  - связи со списком и доменом ищутся по имени, ID и состоянию отсутствия
+  - `use_default_gw` ищется по `Да` / `Нет`, boolean и numeric значениям
+
+### ✅ Перезагрузка данных при кнопочных фильтрах
+
+Кнопочные фильтры над таблицами теперь сбрасывают пагинацию и загружают свежие данные через текущий источник данных:
+
+- `/domains` отправляет `resolved` в API
+- `/domains/search` отправляет `resolved` в API
+- `/ips` отправляет `type` в API
+- `/domains/lists`, `/domains/lists/search`, `/ips/lists`, `/ips/lists/search` отправляют `attempts=0` для фильтра `Без ошибок`
+
+Ограничения backend-контракта сохранены явно:
+
+- Фильтры наличия списка у доменов и IP применяются локально после загрузки
+- Фильтры наличия домена у IP применяются локально после загрузки
+- Диапазоны attempts (`0 < attempts < 3`, `attempts >= 3`) применяются локально после загрузки
+- `/ips/search` не поддерживает `type`, поэтому тип IP в режиме поиска применяется локально к свежему ответу поиска
+
+### ✅ Актуализация OpenAPI и IP Gateway
+
+#### TARGET_OPENAPI.md
+
+- Обновлена спецификация backend-контракта
+- В `IpsElementResp` и `IpsPostElementReq` добавлено поле `use_default_gw`
+- Для команды RouterOS update зафиксирован ответ `400 Bad Request`
+- Уточнены примеры и описания date-параметров
+
+#### IP адреса
+
+- `src/api/endpoints/ips.ts`: `getAll()` принимает `type?: number`
+- `src/api/types/ips.ts`: `use_default_gw` стал опциональным в response и create payload
+- `IpsPage` отображает `use_default_gw` отдельной колонкой
+- Значение `use_default_gw` выводится как `Да` / `Нет`
+
+### ✅ RouterOS IPv4-only режим
+
+- В командах RouterOS доступен только вариант `Только IPv4`
+- `Все типы IP` и `Только IPv6` отключены, потому что текущий API корректно возвращает ошибку для этих вариантов
+
+### ✅ UX пагинации
+
+- Доступные кнопки пагинации получили `cursor-pointer`
+- Disabled-кнопки и текущая страница используют обычный курсор
+- У disabled-кнопок убран hover-эффект фона
+- Поведение проверено для desktop и mobile режимов
+
+### ✅ Служебные правила и артефакты
+
+- `.cursor/rules/playwright.mdc` обновлен на сохранение скриншотов в `.agent/artifacts`
+- `.gitignore` игнорирует `.agent/`, `.playwright-mcp/` и текстовые Codex-артефакты
 
 ---
 
@@ -758,6 +906,7 @@ rendered_px = px × clamp(containerWidth / 800, 0.85, 1.4)
 ### Созданные/изменённые файлы (2026-03-05)
 
 **Новые файлы:**
+
 - `src/components/charts/LineChart.vue`
 - `src/components/charts/BarChart.vue`
 - `src/components/charts/PieChart.vue`
@@ -766,6 +915,7 @@ rendered_px = px × clamp(containerWidth / 800, 0.85, 1.4)
 - `src/api/types/stats.ts`
 
 **Изменённые файлы:**
+
 - `src/ui/tables/DataTable.vue` — сортировка
 - `src/pages/domains/DomainsPage.vue` — сортировка + statsApi
 - `src/pages/domains/DomainsListsPage.vue` — сортировка + statsApi
@@ -776,4 +926,24 @@ rendered_px = px × clamp(containerWidth / 800, 0.85, 1.4)
 
 ---
 
-Последнее обновление: 2026-03-05
+### Созданные/изменённые файлы (2026-04-29)
+
+**Изменённые файлы:**
+
+- `TARGET_OPENAPI.md` — актуализация backend-контракта
+- `.cursor/rules/playwright.mdc` — путь для Playwright-скриншотов
+- `.gitignore` — игнор agent и Playwright MCP артефактов
+- `src/ui/tables/DataTable.vue` — фильтры колонок
+- `src/ui/tables/PaginationControl.vue` — cursor и hover состояния кнопок
+- `src/ui/forms/BaseSelect.vue` — optional `disabled` у options
+- `src/api/endpoints/ips.ts` — параметр `type` для `/ips`
+- `src/api/types/ips.ts` — optional `use_default_gw`
+- `src/constants.ts` — актуализация placeholder IP адреса
+- `src/pages/domains/DomainsPage.vue` — display-aware фильтры и API reload
+- `src/pages/domains/DomainsListsPage.vue` — attempts фильтры через API где возможно
+- `src/pages/ips/IpsPage.vue` — type API filter, `use_default_gw`, display-aware фильтры
+- `src/pages/ips/IpsListsPage.vue` — attempts фильтры через API где возможно
+
+---
+
+Последнее обновление: 2026-04-29

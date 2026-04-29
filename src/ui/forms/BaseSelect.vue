@@ -10,7 +10,7 @@ import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
 interface SelectOption {
   value: string | number
   label: string
-  disabled: boolean
+  disabled?: boolean
 }
 
 interface Props {

@@ -13,6 +13,9 @@ interface Column<T> {
   label: string
   sortable?: boolean
   sortType?: SortType
+  filterable?: boolean
+  filterPlaceholder?: string
+  filterValue?: (row: T, value: unknown) => string
 }
 
 const isIPv4 = (s: string): boolean => /^\d{1,3}(\.\d{1,3}){3}$/.test(s)
@@ -66,6 +69,7 @@ const emit = defineEmits<{
 
 const sortKey = ref<string | null>(null)
 const sortDirection = ref<SortDirection>(null)
+const columnFilters = ref<Record<string, string>>({})
 
 const toggleSort = (column: Column<T>) => {
   if (!column.sortable) return
@@ -82,10 +86,45 @@ const toggleSort = (column: Column<T>) => {
   emit('sort', sortKey.value ?? key, sortDirection.value)
 }
 
+const getColumnKey = (column: Column<T>): string => String(column.key)
+
+const isFilterableColumn = (column: Column<T>): boolean => {
+  return column.filterable !== false && getColumnKey(column) !== 'actions'
+}
+
+const normalizeFilterValue = (value: unknown): string => {
+  if (value == null) return ''
+  if (Array.isArray(value)) return value.join(' ')
+  return String(value)
+}
+
+const getFilterValue = (row: T, column: Column<T>): string => {
+  const value = row[column.key as keyof T]
+  return column.filterValue ? column.filterValue(row, value) : normalizeFilterValue(value)
+}
+
+const filteredData = computed(() => {
+  const activeFilters = props.columns
+    .map((column) => ({
+      column,
+      query: (columnFilters.value[getColumnKey(column)] ?? '').trim().toLocaleLowerCase('ru'),
+    }))
+    .filter(({ column, query }) => isFilterableColumn(column) && query.length > 0)
+
+  if (activeFilters.length === 0) return props.data
+
+  return props.data.filter((row) =>
+    activeFilters.every(({ column, query }) => {
+      const value = getFilterValue(row, column).toLocaleLowerCase('ru')
+      return value.includes(query)
+    }),
+  )
+})
+
 const sortedData = computed(() => {
-  if (!sortKey.value || !sortDirection.value) return props.data
+  if (!sortKey.value || !sortDirection.value) return filteredData.value
   const column = props.columns.find((c) => String(c.key) === sortKey.value)
-  return [...props.data].sort((a, b) => {
+  return [...filteredData.value].sort((a, b) => {
     const aVal = a[sortKey.value!]
     const bVal = b[sortKey.value!]
     if (aVal == null && bVal == null) return 0
@@ -115,14 +154,16 @@ const sortedData = computed(() => {
         <tr>
           <th
             v-for="column in columns"
-            :key="String(column.key)"
+            :key="getColumnKey(column)"
             class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400"
           >
             <button
               v-if="column.sortable"
               type="button"
-              class="inline-flex items-center gap-1 select-none hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-              :aria-sort="sortKey === String(column.key) ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'"
+              class="inline-flex items-center gap-1 transition-colors select-none hover:text-gray-700 dark:hover:text-gray-200"
+              :aria-sort="
+                sortKey === getColumnKey(column) ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'
+              "
               @click="toggleSort(column)"
             >
               {{ column.label }}
@@ -130,7 +171,11 @@ const sortedData = computed(() => {
                 <svg
                   viewBox="0 0 10 6"
                   class="h-2 w-2 transition-opacity"
-                  :class="sortKey === String(column.key) && sortDirection === 'asc' ? 'opacity-100 text-blue-500' : 'opacity-30'"
+                  :class="
+                    sortKey === getColumnKey(column) && sortDirection === 'asc'
+                      ? 'text-blue-500 opacity-100'
+                      : 'opacity-30'
+                  "
                   fill="currentColor"
                 >
                   <path d="M5 0L10 6H0z" />
@@ -138,7 +183,11 @@ const sortedData = computed(() => {
                 <svg
                   viewBox="0 0 10 6"
                   class="h-2 w-2 transition-opacity"
-                  :class="sortKey === String(column.key) && sortDirection === 'desc' ? 'opacity-100 text-blue-500' : 'opacity-30'"
+                  :class="
+                    sortKey === getColumnKey(column) && sortDirection === 'desc'
+                      ? 'text-blue-500 opacity-100'
+                      : 'opacity-30'
+                  "
                   fill="currentColor"
                 >
                   <path d="M5 6L0 0H10z" />
@@ -146,6 +195,19 @@ const sortedData = computed(() => {
               </span>
             </button>
             <span v-else>{{ column.label }}</span>
+          </th>
+        </tr>
+        <tr class="border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+          <th v-for="column in columns" :key="`${getColumnKey(column)}-filter`" class="px-6 py-2 text-left">
+            <input
+              v-if="isFilterableColumn(column)"
+              v-model="columnFilters[getColumnKey(column)]"
+              type="search"
+              :aria-label="`Фильтр: ${column.label}`"
+              :placeholder="column.filterPlaceholder || column.label"
+              class="block w-full min-w-24 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-normal text-gray-900 placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+              @click.stop
+            />
           </th>
         </tr>
       </thead>
@@ -165,7 +227,7 @@ const sortedData = computed(() => {
             </div>
           </td>
         </tr>
-        <tr v-else-if="data.length === 0">
+        <tr v-else-if="sortedData.length === 0">
           <td :colspan="columns.length" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
             {{ emptyMessage }}
           </td>

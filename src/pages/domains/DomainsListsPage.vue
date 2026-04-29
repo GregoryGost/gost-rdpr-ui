@@ -24,6 +24,21 @@ import { errorHandler } from '@/utils/errorHandler'
 const searchQuery = ref('')
 const attemptsFilter = ref<'all' | 'success' | 'errors' | 'critical'>('all')
 
+/**
+ * Map exact attempts filter to the API query parameter.
+ */
+const getAttemptsFilterParam = () => (attemptsFilter.value === 'success' ? 0 : undefined)
+
+/**
+ * Apply attempts ranges that are not available as API query parameters.
+ */
+const applyAttemptsFilter = (items: DomainsList[]) => {
+  if (attemptsFilter.value === 'success') return items.filter((item) => item.attempts === 0)
+  if (attemptsFilter.value === 'errors') return items.filter((item) => item.attempts > 0 && item.attempts < 3)
+  if (attemptsFilter.value === 'critical') return items.filter((item) => item.attempts >= 3)
+  return items
+}
+
 // Statistics
 const totalLists = ref(0)
 const totalWithErrors = ref(0)
@@ -39,17 +54,11 @@ const {
   goToPage,
   changePageSize,
 } = usePaginatedData<DomainsList>(async (params) => {
-  const response = await domainsListsApi.getAll(params)
-
-  // Apply client-side filtering by attempts
-  let filtered = response.payload
-  if (attemptsFilter.value === 'success') {
-    filtered = filtered.filter((item) => item.attempts === 0)
-  } else if (attemptsFilter.value === 'errors') {
-    filtered = filtered.filter((item) => item.attempts > 0 && item.attempts < 3)
-  } else if (attemptsFilter.value === 'critical') {
-    filtered = filtered.filter((item) => item.attempts >= 3)
-  }
+  const response = await domainsListsApi.getAll({
+    ...params,
+    attempts: getAttemptsFilterParam(),
+  })
+  const filtered = applyAttemptsFilter(response.payload)
   return { ...response, payload: filtered }
 }, 20)
 
@@ -78,7 +87,17 @@ const TABLE_COLUMNS = [
   { key: 'url', label: UI_TEXTS.URL, sortable: true },
   { key: 'description', label: UI_TEXTS.DESCRIPTION, sortable: true },
   { key: 'elements_count', label: DOMAINS_LISTS_TEXTS.COLUMN_DOMAINS_COUNT, sortable: true },
-  { key: 'attempts', label: DOMAINS_LISTS_TEXTS.COLUMN_ATTEMPTS, sortable: true },
+  {
+    key: 'attempts',
+    label: DOMAINS_LISTS_TEXTS.COLUMN_ATTEMPTS,
+    sortable: true,
+    filterValue: (_row: DomainsList, value: unknown) => {
+      const attempts = Number(value)
+      if (attempts === 0) return '0 без ошибок success'
+      if (attempts > 0 && attempts < 3) return `${attempts} с ошибками errors`
+      return `${attempts} критические critical`
+    },
+  },
   { key: 'created_at_hum', label: UI_TEXTS.CREATED, sortable: true },
   { key: 'actions', label: UI_TEXTS.ACTIONS },
 ]
@@ -105,19 +124,10 @@ const searchLists = async () => {
       const response = await domainsListsApi.search(searchQuery.value, {
         limit: pagination.pageSize.value,
         offset: pagination.offset.value,
+        attempts: getAttemptsFilterParam(),
       })
 
-      // Apply client-side filtering by attempts
-      let filtered = response.payload
-      if (attemptsFilter.value === 'success') {
-        filtered = filtered.filter((item) => item.attempts === 0)
-      } else if (attemptsFilter.value === 'errors') {
-        filtered = filtered.filter((item) => item.attempts > 0 && item.attempts < 3)
-      } else if (attemptsFilter.value === 'critical') {
-        filtered = filtered.filter((item) => item.attempts >= 3)
-      }
-
-      lists.value = filtered
+      lists.value = applyAttemptsFilter(response.payload)
       pagination.totalItems.value = response.total
 
       // Show search results notification

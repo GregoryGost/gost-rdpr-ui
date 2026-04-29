@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { domainsApi } from '@/api/endpoints/domains'
 import { statsApi } from '@/api/endpoints/stats'
 import type { Domain, DomainCreateData } from '@/api/types/domains'
-import { PAGINATION } from '@/constants'
+import { PAGINATION, SEARCH } from '@/constants'
 import DataTable from '@/ui/tables/DataTable.vue'
 import PaginationControl from '@/ui/tables/PaginationControl.vue'
 import BaseButton from '@/ui/buttons/BaseButton.vue'
@@ -71,8 +71,19 @@ const formErrors = ref<Record<string, string>>({})
 const TABLE_COLUMNS = [
   { key: 'id', label: 'ID', sortable: true },
   { key: 'name', label: 'Домен', sortable: true },
-  { key: 'domains_list_id', label: 'Список', sortable: true },
-  { key: 'resolved', label: 'Статус', sortable: true },
+  {
+    key: 'domains_list_id',
+    label: 'Список',
+    sortable: true,
+    filterValue: (_row: Domain, value: unknown) => (value ? `список ${value}` : 'без списка'),
+  },
+  {
+    key: 'resolved',
+    label: 'Статус',
+    sortable: true,
+    filterValue: (_row: Domain, value: unknown) =>
+      value ? 'определен определён resolved true да yes 1' : 'не определен не определён unresolved false нет no 0',
+  },
   { key: 'ips_v4', label: 'IPv4' },
   { key: 'ips_v6', label: 'IPv6' },
   { key: 'ros_comment', label: 'Комментарий', sortable: true },
@@ -137,6 +148,58 @@ const loadDomainsWithStats = async () => {
 }
 
 /**
+ * Whether search should be delegated to API.
+ */
+const hasActiveSearch = () => Boolean(searchQuery.value && searchQuery.value.length >= SEARCH.MIN_LENGTH)
+
+/**
+ * Search domains immediately with current pagination and filters.
+ */
+const runSearchDomains = async () => {
+  if (!hasActiveSearch()) {
+    await loadDomainsWithStats()
+    return
+  }
+
+  isLoading.value = true
+  try {
+    const response = await domainsApi.search(searchQuery.value, {
+      limit: pageSize.value,
+      offset: offset.value,
+      resolved: resolvedFilter.value,
+    })
+    allDomains.value = response.payload
+    domains.value = applyListFilter(response.payload)
+    totalItems.value = response.total_query
+
+    if (response.total_query === 0) {
+      showInfo(`По запросу "${searchQuery.value}" ничего не найдено`, 'Результаты поиска')
+    } else {
+      showInfo(`Найдено доменов: ${response.total_query}`, 'Результаты поиска')
+    }
+  } catch (error) {
+    errorHandler.handleError(error, {
+      action: 'searchDomains',
+      component: 'DomainsPage',
+      query: searchQuery.value,
+    })
+    domains.value = []
+    allDomains.value = []
+    totalItems.value = 0
+  } finally {
+    isLoading.value = false
+  }
+}
+
+/**
+ * Load domains through the active data source.
+ */
+const loadActiveDomains = () => {
+  if (hasActiveSearch()) return runSearchDomains()
+  return loadDomainsWithStats()
+}
+
+/**
  * Refresh domains and global stats (after create/delete)
  */
 const refreshDomains = () => {
@@ -149,7 +212,7 @@ const refreshDomains = () => {
  */
 const goToPage = (page: number) => {
   currentPage.value = page
-  loadDomainsWithStats()
+  loadActiveDomains()
 }
 
 /**
@@ -158,7 +221,7 @@ const goToPage = (page: number) => {
 const changePageSize = (size: number) => {
   pageSize.value = size
   currentPage.value = 1
-  loadDomainsWithStats()
+  loadActiveDomains()
 }
 
 /**
@@ -172,41 +235,7 @@ const searchDomains = async () => {
 
   searchTimeout = setTimeout(async () => {
     currentPage.value = 1 // Reset to first page
-
-    if (!searchQuery.value || searchQuery.value.length < 3) {
-      loadDomainsWithStats()
-      return
-    }
-
-    isLoading.value = true
-    try {
-      const response = await domainsApi.search(searchQuery.value, {
-        limit: pageSize.value,
-        offset: offset.value,
-        resolved: resolvedFilter.value,
-      })
-      allDomains.value = response.payload
-      domains.value = applyListFilter(response.payload)
-      totalItems.value = response.total_query
-
-      // Show search results notification
-      if (response.total_query === 0) {
-        showInfo(`По запросу "${searchQuery.value}" ничего не найдено`, 'Результаты поиска')
-      } else {
-        showInfo(`Найдено доменов: ${response.total_query}`, 'Результаты поиска')
-      }
-    } catch (error) {
-      errorHandler.handleError(error, {
-        action: 'searchDomains',
-        component: 'DomainsPage',
-        query: searchQuery.value,
-      })
-      domains.value = []
-      allDomains.value = []
-      totalItems.value = 0
-    } finally {
-      isLoading.value = false
-    }
+    await loadActiveDomains()
   }, 300) // Debounce 300ms
 }
 
@@ -216,18 +245,16 @@ const searchDomains = async () => {
 const filterByResolved = (value: boolean | undefined) => {
   resolvedFilter.value = value
   currentPage.value = 1 // Reset to first page
-  loadDomainsWithStats()
+  loadActiveDomains()
 }
 
 /**
  * Filter by list presence
  */
-const filterByList = (value: 'all' | 'with-list' | 'without-list') => {
+const filterByList = async (value: 'all' | 'with-list' | 'without-list') => {
   listFilter.value = value
   currentPage.value = 1 // Reset to first page
-  // Re-apply filter to already loaded domains
-  domains.value = applyListFilter(allDomains.value)
-  totalItems.value = domains.value.length
+  await loadActiveDomains()
 
   // Show filter notification
   const filterLabels = {

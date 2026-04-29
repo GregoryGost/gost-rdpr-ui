@@ -73,11 +73,32 @@ const formErrors = ref<Record<string, string>>({})
  */
 const TABLE_COLUMNS = [
   { key: 'id', label: UI_TEXTS.ID, sortable: true },
-  { key: 'type', label: IPS_TEXTS.COLUMN_TYPE, sortable: true },
+  {
+    key: 'type',
+    label: IPS_TEXTS.COLUMN_TYPE,
+    sortable: true,
+    filterValue: (_row: IpAddress, value: unknown) => (value === 4 ? 'ipv4 4' : 'ipv6 6'),
+  },
   { key: 'addr', label: IPS_TEXTS.COLUMN_ADDR, sortable: true, sortType: 'ip' as const },
-  { key: 'ip_list_name', label: IPS_TEXTS.COLUMN_IP_LIST, sortable: true },
-  { key: 'domain_name', label: IPS_TEXTS.COLUMN_DOMAIN, sortable: true },
+  {
+    key: 'ip_list_name',
+    label: IPS_TEXTS.COLUMN_IP_LIST,
+    sortable: true,
+    filterValue: (row: IpAddress, value: unknown) => (value ? `${value} ${row.ip_list_id}` : 'без списка'),
+  },
+  {
+    key: 'domain_name',
+    label: IPS_TEXTS.COLUMN_DOMAIN,
+    sortable: true,
+    filterValue: (row: IpAddress, value: unknown) => (value ? `${value} ${row.domain_id}` : 'без домена'),
+  },
   { key: 'ros_comment', label: IPS_TEXTS.COLUMN_ROS_COMMENT, sortable: true },
+  {
+    key: 'use_default_gw',
+    label: IPS_TEXTS.COLUMN_USE_DEFAULT_GATEWAY,
+    sortable: true,
+    filterValue: (_row: IpAddress, value: unknown) => (value ? 'да yes true 1' : 'нет no false 0'),
+  },
   { key: 'created_at_hum', label: UI_TEXTS.CREATED, sortable: true },
   { key: 'actions', label: UI_TEXTS.ACTIONS },
 ]
@@ -113,6 +134,20 @@ const applyFilters = (ipsToFilter: IpAddress[]): IpAddress[] => {
 }
 
 /**
+ * Map active type filter to the API query parameter.
+ */
+const getTypeFilterParam = () => {
+  if (typeFilter.value === 'ipv4') return 4
+  if (typeFilter.value === 'ipv6') return 6
+  return undefined
+}
+
+/**
+ * Whether search should be delegated to API.
+ */
+const hasActiveSearch = () => Boolean(searchQuery.value && searchQuery.value.length >= SEARCH.MIN_LENGTH)
+
+/**
  * Load IPs with stats
  */
 const loadIpsWithStats = async () => {
@@ -121,6 +156,7 @@ const loadIpsWithStats = async () => {
     const response = await ipsApi.getAll({
       limit: pageSize.value,
       offset: offset.value,
+      type: getTypeFilterParam(),
     })
 
     allIps.value = response.payload
@@ -139,6 +175,53 @@ const loadIpsWithStats = async () => {
 }
 
 /**
+ * Search IPs immediately with current pagination and filters.
+ */
+const runSearchIps = async () => {
+  if (!hasActiveSearch()) {
+    await loadIpsWithStats()
+    return
+  }
+
+  isLoading.value = true
+  try {
+    const response = await ipsApi.search(searchQuery.value, {
+      limit: pageSize.value,
+      offset: offset.value,
+    })
+
+    allIps.value = response.payload
+    totalItems.value = response.total
+    ips.value = applyFilters(allIps.value)
+
+    if (ips.value.length === 0) {
+      showInfo(
+        `${IPS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
+        UI_TEXTS.SEARCH_RESULTS,
+      )
+    } else {
+      showInfo(`${IPS_TEXTS.SEARCH_FOUND_PREFIX} ${ips.value.length}`, UI_TEXTS.SEARCH_RESULTS)
+    }
+  } catch (error) {
+    errorHandler.handleError(error, {
+      action: 'searchIps',
+      component: 'IpsPage',
+      query: searchQuery.value,
+    })
+  } finally {
+    isLoading.value = false
+  }
+}
+
+/**
+ * Load IPs through the active data source.
+ */
+const loadActiveIps = () => {
+  if (hasActiveSearch()) return runSearchIps()
+  return loadIpsWithStats()
+}
+
+/**
  * Search IPs with debounce
  */
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
@@ -149,43 +232,7 @@ const searchIps = async () => {
 
   searchTimeout = setTimeout(async () => {
     currentPage.value = 1 // Reset to first page
-
-    if (!searchQuery.value || searchQuery.value.length < SEARCH.MIN_LENGTH) {
-      loadIpsWithStats()
-      return
-    }
-
-    isLoading.value = true
-    try {
-      const response = await ipsApi.search(searchQuery.value, {
-        limit: pageSize.value,
-        offset: offset.value,
-      })
-
-      allIps.value = response.payload
-      totalItems.value = response.total
-
-      // Apply filters
-      ips.value = applyFilters(allIps.value)
-
-      // Show search results notification
-      if (ips.value.length === 0) {
-        showInfo(
-          `${IPS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
-          UI_TEXTS.SEARCH_RESULTS,
-        )
-      } else {
-        showInfo(`${IPS_TEXTS.SEARCH_FOUND_PREFIX} ${ips.value.length}`, UI_TEXTS.SEARCH_RESULTS)
-      }
-    } catch (error) {
-      errorHandler.handleError(error, {
-        action: 'searchIps',
-        component: 'IpsPage',
-        query: searchQuery.value,
-      })
-    } finally {
-      isLoading.value = false
-    }
+    await loadActiveIps()
   }, 300) // Debounce 300ms
 }
 
@@ -209,7 +256,8 @@ const loadGlobalStats = async () => {
  */
 const filterByType = (value: 'all' | 'ipv4' | 'ipv6') => {
   typeFilter.value = value
-  ips.value = applyFilters(allIps.value)
+  currentPage.value = 1 // Reset to first page
+  loadActiveIps()
 }
 
 /**
@@ -217,7 +265,8 @@ const filterByType = (value: 'all' | 'ipv4' | 'ipv6') => {
  */
 const filterByList = (value: 'all' | 'with-list' | 'without-list') => {
   listFilter.value = value
-  ips.value = applyFilters(allIps.value)
+  currentPage.value = 1 // Reset to first page
+  loadActiveIps()
 }
 
 /**
@@ -225,7 +274,8 @@ const filterByList = (value: 'all' | 'with-list' | 'without-list') => {
  */
 const filterByDomain = (value: 'all' | 'with-domain' | 'without-domain') => {
   domainFilter.value = value
-  ips.value = applyFilters(allIps.value)
+  currentPage.value = 1 // Reset to first page
+  loadActiveIps()
 }
 
 /**
@@ -353,7 +403,7 @@ const deleteIp = async () => {
  */
 const goToPage = (page: number) => {
   currentPage.value = page
-  loadIpsWithStats()
+  loadActiveIps()
 }
 
 /**
@@ -362,7 +412,7 @@ const goToPage = (page: number) => {
 const changePageSize = (size: number) => {
   pageSize.value = size
   currentPage.value = 1
-  loadIpsWithStats()
+  loadActiveIps()
 }
 
 onMounted(() => {
@@ -530,6 +580,19 @@ onMounted(() => {
 
       <template #cell-ros_comment="{ value }">
         <span class="text-sm">{{ value || '-' }}</span>
+      </template>
+
+      <template #cell-use_default_gw="{ value }">
+        <span
+          class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium"
+          :class="
+            value
+              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+              : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+          "
+        >
+          {{ value ? 'Да' : 'Нет' }}
+        </span>
       </template>
 
       <template #cell-actions="{ row }">
