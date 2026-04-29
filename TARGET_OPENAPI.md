@@ -2538,6 +2538,28 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "description": "Date from which you want to end sampling. Example `2024-04-24 23:59:59`"
           },
           {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "IP address type v4 or v6",
+              "description": "IP address type filter parameter",
+              "examples": [
+                4,
+                6
+              ]
+            },
+            "description": "IP address type filter parameter"
+          },
+          {
             "name": "text",
             "in": "query",
             "required": true,
@@ -5299,7 +5321,7 @@ For project: <https://github.com/GregoryGost/gost-rdpr>
             "type": "number",
             "title": "Duration",
             "description": "Time taken to compute the response",
-            "default": 0.0
+            "default": 0
           }
         },
         "type": "object",
