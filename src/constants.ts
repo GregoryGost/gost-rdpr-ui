@@ -110,6 +110,7 @@ export const UI_TEXTS = {
   DELETE: 'Удалить',
   SEARCH_RESULTS: 'Результаты поиска',
   NOTHING_FOUND: 'ничего не найдено',
+  RESET_FILTERS: 'Сбросить',
 }
 
 /**
@@ -239,6 +240,8 @@ export const IPS_TEXTS = {
   FILTER_WITHOUT_LIST: 'Без списка',
   FILTER_WITH_DOMAIN: 'С доменом',
   FILTER_WITHOUT_DOMAIN: 'Без домена',
+  FILTER_DEFAULT_GATEWAY: 'Default GW',
+  FILTER_VPN_GATEWAY: 'VPN GW',
   STATS_TOTAL_HINT: 'Общее количество IP адресов в системе',
   STATS_IPV4_HINT: 'Количество IPv4 адресов (type = 4)',
   STATS_IPV6_HINT: 'Количество IPv6 адресов (type = 6)',

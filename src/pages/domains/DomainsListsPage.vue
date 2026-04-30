@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { domainsListsApi } from '@/api/endpoints/domains-lists'
 import { statsApi } from '@/api/endpoints/stats'
 import type { DomainsList, DomainsListCreateData } from '@/api/types/domains'
@@ -12,7 +12,7 @@ import BaseModal from '@/ui/modals/BaseModal.vue'
 import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
 import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
-import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, TrashIcon, MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
 import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
@@ -23,6 +23,7 @@ import { errorHandler } from '@/utils/errorHandler'
  */
 const searchQuery = ref('')
 const attemptsFilter = ref<'all' | 'success' | 'errors' | 'critical'>('all')
+const hasActiveButtonFilters = computed(() => attemptsFilter.value !== 'all')
 
 /**
  * Map exact attempts filter to the API query parameter.
@@ -152,6 +153,17 @@ const searchLists = async () => {
 }
 
 /**
+ * Load lists through the active data source.
+ */
+const loadActiveLists = () => {
+  if (searchQuery.value && searchQuery.value.length >= SEARCH.MIN_LENGTH) {
+    searchLists()
+  } else {
+    loadLists()
+  }
+}
+
+/**
  * Load global statistics from the dedicated statistics API endpoint
  */
 const loadGlobalStats = async () => {
@@ -171,13 +183,16 @@ const loadGlobalStats = async () => {
 const filterByAttempts = (value: 'all' | 'success' | 'errors' | 'critical') => {
   attemptsFilter.value = value
   pagination.currentPage.value = 1 // Reset to first page
+  loadActiveLists()
+}
 
-  // Reload data with new filter
-  if (searchQuery.value && searchQuery.value.length >= SEARCH.MIN_LENGTH) {
-    searchLists()
-  } else {
-    loadLists()
-  }
+/**
+ * Reset button filters to default values
+ */
+const resetButtonFilters = () => {
+  attemptsFilter.value = 'all'
+  pagination.currentPage.value = 1
+  loadActiveLists()
 }
 
 /**
@@ -396,6 +411,17 @@ onMounted(() => {
             {{ DOMAINS_LISTS_TEXTS.FILTER_CRITICAL }}
           </BaseButton>
         </div>
+
+        <BaseButton
+          @click="resetButtonFilters"
+          variant="secondary"
+          size="sm"
+          :is-disabled="!hasActiveButtonFilters"
+          :title="UI_TEXTS.RESET_FILTERS"
+        >
+          <ArrowPathIcon class="mr-2 h-4 w-4" />
+          {{ UI_TEXTS.RESET_FILTERS }}
+        </BaseButton>
       </div>
 
       <!-- Add Button -->

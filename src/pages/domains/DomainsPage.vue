@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { domainsApi } from '@/api/endpoints/domains'
 import { statsApi } from '@/api/endpoints/stats'
 import type { Domain, DomainCreateData } from '@/api/types/domains'
-import { PAGINATION, SEARCH } from '@/constants'
+import { PAGINATION, SEARCH, UI_TEXTS } from '@/constants'
 import DataTable from '@/ui/tables/DataTable.vue'
 import PaginationControl from '@/ui/tables/PaginationControl.vue'
 import BaseButton from '@/ui/buttons/BaseButton.vue'
@@ -11,7 +11,14 @@ import BaseModal from '@/ui/modals/BaseModal.vue'
 import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
 import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
-import { PlusIcon, TrashIcon, MagnifyingGlassIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/outline'
+import {
+  PlusIcon,
+  TrashIcon,
+  MagnifyingGlassIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ArrowPathIcon,
+} from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
 import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
@@ -48,6 +55,8 @@ const pagination = {
   offset,
   PAGE_SIZE_OPTIONS: PAGINATION.PAGE_SIZE_OPTIONS,
 }
+
+const hasActiveButtonFilters = computed(() => resolvedFilter.value !== undefined || listFilter.value !== 'all')
 
 // Modals
 const isAddModalOpen = ref(false)
@@ -265,6 +274,16 @@ const filterByList = async (value: 'all' | 'with-list' | 'without-list') => {
   if (domains.value.length === 0) {
     showInfo(`Нет доменов для фильтра: ${filterLabels[value]}`, 'Фильтрация')
   }
+}
+
+/**
+ * Reset button filters to default values
+ */
+const resetButtonFilters = () => {
+  resolvedFilter.value = undefined
+  listFilter.value = 'all'
+  currentPage.value = 1
+  loadActiveDomains()
 }
 
 /**
@@ -490,6 +509,17 @@ onMounted(() => {
             Без списка
           </BaseButton>
         </div>
+
+        <BaseButton
+          @click="resetButtonFilters"
+          variant="secondary"
+          size="sm"
+          :is-disabled="!hasActiveButtonFilters"
+          :title="UI_TEXTS.RESET_FILTERS"
+        >
+          <ArrowPathIcon class="mr-2 h-4 w-4" />
+          {{ UI_TEXTS.RESET_FILTERS }}
+        </BaseButton>
       </div>
 
       <!-- Add Button -->

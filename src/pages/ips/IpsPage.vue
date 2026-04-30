@@ -11,7 +11,7 @@ import BaseModal from '@/ui/modals/BaseModal.vue'
 import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
 import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
-import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, TrashIcon, MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
 import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
@@ -24,6 +24,7 @@ const searchQuery = ref('')
 const typeFilter = ref<'all' | 'ipv4' | 'ipv6'>('all')
 const listFilter = ref<'all' | 'with-list' | 'without-list'>('all')
 const domainFilter = ref<'all' | 'with-domain' | 'without-domain'>('all')
+const gatewayFilter = ref<'all' | 'default-gateway' | 'vpn-gateway'>('all')
 
 // Data management
 const ips = ref<IpAddress[]>([])
@@ -49,6 +50,14 @@ const pagination = {
   offset,
   PAGE_SIZE_OPTIONS: PAGINATION.PAGE_SIZE_OPTIONS,
 }
+
+const hasActiveButtonFilters = computed(
+  () =>
+    typeFilter.value !== 'all' ||
+    listFilter.value !== 'all' ||
+    domainFilter.value !== 'all' ||
+    gatewayFilter.value !== 'all',
+)
 
 // Modals
 const isAddModalOpen = ref(false)
@@ -130,6 +139,13 @@ const applyFilters = (ipsToFilter: IpAddress[]): IpAddress[] => {
     filtered = filtered.filter((ip) => ip.domain_id == null)
   }
 
+  // Gateway filter
+  if (gatewayFilter.value === 'default-gateway') {
+    filtered = filtered.filter((ip) => ip.use_default_gw === true)
+  } else if (gatewayFilter.value === 'vpn-gateway') {
+    filtered = filtered.filter((ip) => ip.use_default_gw !== true)
+  }
+
   return filtered
 }
 
@@ -139,6 +155,15 @@ const applyFilters = (ipsToFilter: IpAddress[]): IpAddress[] => {
 const getTypeFilterParam = () => {
   if (typeFilter.value === 'ipv4') return 4
   if (typeFilter.value === 'ipv6') return 6
+  return undefined
+}
+
+/**
+ * Map active gateway filter to the API query parameter.
+ */
+const getGatewayFilterParam = () => {
+  if (gatewayFilter.value === 'default-gateway') return true
+  if (gatewayFilter.value === 'vpn-gateway') return false
   return undefined
 }
 
@@ -157,6 +182,7 @@ const loadIpsWithStats = async () => {
       limit: pageSize.value,
       offset: offset.value,
       type: getTypeFilterParam(),
+      default_gw: getGatewayFilterParam(),
     })
 
     allIps.value = response.payload
@@ -188,6 +214,8 @@ const runSearchIps = async () => {
     const response = await ipsApi.search(searchQuery.value, {
       limit: pageSize.value,
       offset: offset.value,
+      type: getTypeFilterParam(),
+      default_gw: getGatewayFilterParam(),
     })
 
     allIps.value = response.payload
@@ -275,6 +303,27 @@ const filterByList = (value: 'all' | 'with-list' | 'without-list') => {
 const filterByDomain = (value: 'all' | 'with-domain' | 'without-domain') => {
   domainFilter.value = value
   currentPage.value = 1 // Reset to first page
+  loadActiveIps()
+}
+
+/**
+ * Filter by gateway usage
+ */
+const filterByGateway = (value: 'default-gateway' | 'vpn-gateway') => {
+  gatewayFilter.value = value
+  currentPage.value = 1 // Reset to first page
+  loadActiveIps()
+}
+
+/**
+ * Reset button filters to default values
+ */
+const resetButtonFilters = () => {
+  typeFilter.value = 'all'
+  listFilter.value = 'all'
+  domainFilter.value = 'all'
+  gatewayFilter.value = 'all'
+  currentPage.value = 1
   loadActiveIps()
 }
 
@@ -528,6 +577,35 @@ onMounted(() => {
               {{ IPS_TEXTS.FILTER_WITHOUT_DOMAIN }}
             </BaseButton>
           </div>
+
+          <!-- Gateway Filter -->
+          <div class="flex gap-1">
+            <BaseButton
+              @click="filterByGateway('default-gateway')"
+              :variant="gatewayFilter === 'default-gateway' ? 'primary' : 'ghost'"
+              size="sm"
+            >
+              {{ IPS_TEXTS.FILTER_DEFAULT_GATEWAY }}
+            </BaseButton>
+            <BaseButton
+              @click="filterByGateway('vpn-gateway')"
+              :variant="gatewayFilter === 'vpn-gateway' ? 'primary' : 'ghost'"
+              size="sm"
+            >
+              {{ IPS_TEXTS.FILTER_VPN_GATEWAY }}
+            </BaseButton>
+          </div>
+
+          <BaseButton
+            @click="resetButtonFilters"
+            variant="secondary"
+            size="sm"
+            :is-disabled="!hasActiveButtonFilters"
+            :title="UI_TEXTS.RESET_FILTERS"
+          >
+            <ArrowPathIcon class="mr-2 h-4 w-4" />
+            {{ UI_TEXTS.RESET_FILTERS }}
+          </BaseButton>
         </div>
       </div>
 
