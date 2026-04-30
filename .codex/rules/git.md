@@ -4,6 +4,7 @@ When requested to provide a Git commit, it must be:
 
 * the commit must be in markdown format
 * the title must not be in Markdown style
+* must be output as a code block
 * include changes since the last Git commit
 * display in Russian in the chat
 * do not use the infinitive
