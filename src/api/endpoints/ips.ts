@@ -2,12 +2,17 @@ import { apiRequest } from '../client'
 import type { IpAddress, IpAddressCreateData } from '../types/ips'
 import type { PaginatedResponse, PaginationParams, OkResponse } from '../types/common'
 
+interface IpsFilterParams extends PaginationParams {
+  type?: number
+  default_gw?: boolean
+}
+
 /**
  * Convert pagination params to URLSearchParams
- * @param {PaginationParams & { type?: number }} params - Pagination and filter parameters
+ * @param {IpsFilterParams} params - Pagination and filter parameters
  * @returns {URLSearchParams}
  */
-function toSearchParams(params: PaginationParams & { type?: number }): URLSearchParams {
+function toSearchParams(params: IpsFilterParams): URLSearchParams {
   const searchParams = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
@@ -23,10 +28,10 @@ function toSearchParams(params: PaginationParams & { type?: number }): URLSearch
 export const ipsApi = {
   /**
    * Get all IP addresses
-   * @param {PaginationParams & { type?: number }} [params] - Pagination and filter parameters
+   * @param {IpsFilterParams} [params] - Pagination and filter parameters
    * @returns {Promise<PaginatedResponse<IpAddress>>}
    */
-  getAll: (params?: PaginationParams & { type?: number }) => {
+  getAll: (params?: IpsFilterParams) => {
     const queryString = params ? `?${toSearchParams(params)}` : ''
     return apiRequest<PaginatedResponse<IpAddress>>(`/ips${queryString}`)
   },
@@ -65,10 +70,10 @@ export const ipsApi = {
   /**
    * Search IP addresses by text
    * @param {string} text - Search text
-   * @param {PaginationParams} [params] - Pagination parameters
+   * @param {IpsFilterParams} [params] - Pagination and filter parameters
    * @returns {Promise<PaginatedResponse<IpAddress>>}
    */
-  search: (text: string, params?: PaginationParams) => {
+  search: (text: string, params?: IpsFilterParams) => {
     const searchParams = new URLSearchParams({ text })
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
