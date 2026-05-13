@@ -6,6 +6,7 @@ import { APP_NAME, APP_DESCRIPTION, APP_AUTHOR, AUTHOR_GITHUB, AUTHOR_BLOG, AUTH
  * @component AppFooter
  */
 const currentYear = new Date().getFullYear()
+const APP_VERSION = __APP_VERSION__
 
 const socialLinks = [
   {
@@ -31,7 +32,7 @@ const socialLinks = [
     class="border-t bg-white px-6 py-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
   >
     <div class="flex items-center justify-center gap-6">
-      <p>Ⓒ {{ currentYear }} {{ APP_AUTHOR }} · {{ APP_NAME }} {{ APP_DESCRIPTION }}</p>
+      <p>Ⓒ {{ currentYear }} {{ APP_AUTHOR }} · {{ APP_NAME }} {{ APP_DESCRIPTION }} · v{{ APP_VERSION }}</p>
       <div class="flex items-center gap-4">
         <a
           v-for="link in socialLinks"
