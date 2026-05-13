@@ -102,11 +102,7 @@ const barItems = computed(() => {
 
 <template>
   <div ref="containerRef" class="w-full">
-    <svg
-      :viewBox="`0 0 ${WIDTH} ${svgHeight}`"
-      class="w-full"
-      aria-label="Столбчатый график"
-    >
+    <svg :viewBox="`0 0 ${WIDTH} ${svgHeight}`" class="w-full" aria-label="Столбчатый график">
       <g v-if="bars.length">
         <g v-for="(bar, i) in barItems" :key="i">
           <text

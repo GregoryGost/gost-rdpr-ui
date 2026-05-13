@@ -165,7 +165,7 @@ const formatServerTime = (timestamp: number): string => {
         </span>
         <span
           :class="[
-            'break-words font-medium md:text-right',
+            'font-medium break-words md:text-right',
             shouldShowError ? 'text-red-800 dark:text-red-200' : 'text-gray-900 dark:text-gray-100',
           ]"
         >

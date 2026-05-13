@@ -85,9 +85,7 @@ const toX = (index: number) => {
 const toY = (value: number) =>
   PADDING.top + chartHeight.value - (value / (yTicks.value[yTicks.value.length - 1] || 1)) * chartHeight.value
 
-const polylinePoints = computed(() =>
-  props.points.map((p, i) => `${toX(i)},${toY(p.count)}`).join(' '),
-)
+const polylinePoints = computed(() => props.points.map((p, i) => `${toX(i)},${toY(p.count)}`).join(' '))
 
 const areaPoints = computed(() => {
   if (!props.points.length) return ''
@@ -114,9 +112,7 @@ const labelY = (i: number): number => {
 const singlePoint = computed(() => props.points[0] ?? { date: '', count: 0 })
 
 const hoveredIndex = ref<number | null>(null)
-const hoveredPoint = computed(() =>
-  hoveredIndex.value !== null ? (props.points[hoveredIndex.value] ?? null) : null,
-)
+const hoveredPoint = computed(() => (hoveredIndex.value !== null ? (props.points[hoveredIndex.value] ?? null) : null))
 const axisBottom = computed(() => PADDING.top + chartHeight.value)
 
 const baseDotPx = computed(() => {
@@ -198,12 +194,7 @@ const lineStrokeWidth = computed(() => {
 
         <!-- Single point -->
         <g v-if="isSinglePoint">
-          <circle
-            :cx="toX(0)"
-            :cy="toY(singlePoint.count)"
-            :r="s(7)"
-            :fill="color"
-          />
+          <circle :cx="toX(0)" :cy="toY(singlePoint.count)" :r="s(7)" :fill="color" />
           <text
             :x="toX(0)"
             :y="toY(singlePoint.count) - s(16)"
@@ -227,10 +218,7 @@ const lineStrokeWidth = computed(() => {
 
         <!-- Multiple points -->
         <g v-else>
-          <polygon
-            :points="areaPoints"
-            :fill="`url(#area-grad-${color.replace('#', '')})`"
-          />
+          <polygon :points="areaPoints" :fill="`url(#area-grad-${color.replace('#', '')})`" />
           <polyline
             :points="polylinePoints"
             fill="none"
@@ -262,13 +250,7 @@ const lineStrokeWidth = computed(() => {
             @mouseleave="hoveredIndex = null"
           >
             <!-- Invisible hit area for hover -->
-            <circle
-              :cx="toX(i)"
-              :cy="toY(p.count)"
-              :r="hitRadius"
-              fill="transparent"
-              pointer-events="all"
-            />
+            <circle :cx="toX(i)" :cy="toY(p.count)" :r="hitRadius" fill="transparent" pointer-events="all" />
 
             <!-- Value label -->
             <text

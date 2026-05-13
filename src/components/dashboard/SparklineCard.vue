@@ -77,7 +77,9 @@ const trend = computed<number>(() => {
 
 // Reactive clock — ticks every minute so visiblePoints recomputes even when offline
 const nowTs = ref(Date.now())
-const clockId = setInterval(() => { nowTs.value = Date.now() }, 60_000)
+const clockId = setInterval(() => {
+  nowTs.value = Date.now()
+}, 60_000)
 onUnmounted(() => clearInterval(clockId))
 
 // Sliding window: keep only points within the last hour from *now*
@@ -101,9 +103,7 @@ const toX = (i: number) => {
 }
 const toY = (v: number) => PAD.top + chartH - (v / maxVal.value) * chartH
 
-const polyline = computed(() =>
-  visiblePoints.value.map((p, i) => `${toX(i)},${toY(p.count)}`).join(' '),
-)
+const polyline = computed(() => visiblePoints.value.map((p, i) => `${toX(i)},${toY(p.count)}`).join(' '))
 
 const area = computed(() => {
   if (!visiblePoints.value.length) return ''
@@ -156,7 +156,7 @@ onMounted(load)
     <div class="mb-1 flex items-center justify-between">
       <p
         :class="[
-          'text-xs font-semibold uppercase tracking-wide',
+          'text-xs font-semibold tracking-wide uppercase',
           hasError ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400',
         ]"
       >
@@ -219,12 +219,7 @@ onMounted(load)
         <span class="text-base">⚡</span>
         <span>сервер недоступен</span>
       </div>
-      <svg
-        v-else-if="visiblePoints.length"
-        :viewBox="`0 0 ${W} ${H}`"
-        class="h-full w-full"
-        preserveAspectRatio="none"
-      >
+      <svg v-else-if="visiblePoints.length" :viewBox="`0 0 ${W} ${H}`" class="h-full w-full" preserveAspectRatio="none">
         <defs>
           <linearGradient :id="gradId" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" :stop-color="color" stop-opacity="0.35" />
@@ -241,10 +236,7 @@ onMounted(load)
           stroke-linecap="round"
         />
       </svg>
-      <div
-        v-else
-        class="flex h-full items-center justify-center text-xs text-gray-400 dark:text-gray-500"
-      >
+      <div v-else class="flex h-full items-center justify-center text-xs text-gray-400 dark:text-gray-500">
         нет данных
       </div>
     </div>
@@ -252,18 +244,13 @@ onMounted(load)
     <!-- Footer -->
     <div class="mt-2 flex items-center justify-between gap-2">
       <div class="flex items-center gap-1.5">
-        <p
-          :class="[
-            'text-xs',
-            hasError ? 'text-orange-500 dark:text-orange-400' : 'text-gray-400 dark:text-gray-500',
-          ]"
-        >
+        <p :class="['text-xs', hasError ? 'text-orange-500 dark:text-orange-400' : 'text-gray-400 dark:text-gray-500']">
           {{ hasError ? 'повтор через:' : 'обновление:' }}
         </p>
         <select
           v-model.number="selectedInterval"
           :class="[
-            'rounded border py-0 pl-1 pr-5 text-xs focus:outline-none',
+            'rounded border py-0 pr-5 pl-1 text-xs focus:outline-none',
             hasError
               ? 'border-orange-300 bg-transparent text-orange-500 focus:border-orange-400 dark:border-orange-700 dark:text-orange-400'
               : 'border-gray-200 bg-transparent text-gray-500 focus:border-gray-400 dark:border-gray-600 dark:text-gray-400',
@@ -278,7 +265,7 @@ onMounted(load)
       <div v-if="updatedLabel && !hasError" class="flex shrink-0 items-center gap-1.5">
         <span
           v-if="durationLabel"
-          class="rounded bg-gray-100 px-1 py-0.5 text-xs tabular-nums text-gray-400 dark:bg-gray-700 dark:text-gray-500"
+          class="rounded bg-gray-100 px-1 py-0.5 text-xs text-gray-400 tabular-nums dark:bg-gray-700 dark:text-gray-500"
           :title="'Время вычисления ответа'"
         >
           {{ durationLabel }}

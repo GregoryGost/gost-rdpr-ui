@@ -65,9 +65,7 @@ const DATE_FIELDS: { value: GrowthDateField; label: string; onlyFor?: GrowthEnti
   { value: 'last_resolved_at', label: STATS_TEXTS.DATE_FIELD_RESOLVED, onlyFor: 'domains' },
 ]
 
-const availableDateFields = computed(() =>
-  DATE_FIELDS.filter((f) => !f.onlyFor || f.onlyFor === selectedEntity.value),
-)
+const availableDateFields = computed(() => DATE_FIELDS.filter((f) => !f.onlyFor || f.onlyFor === selectedEntity.value))
 
 const chartColor = computed(() => {
   const map: Record<GrowthEntity, string> = {
@@ -163,10 +161,7 @@ const loadGrowth = async () => {
       granularity: selectedGranularity.value,
       start_date: startDate.value || defaultStartDate(selectedGranularity.value),
       end_date: endDate.value || null,
-      ip_subtype:
-        selectedEntity.value === 'ips' && ipSubtype.value !== ''
-          ? Number(ipSubtype.value)
-          : null,
+      ip_subtype: selectedEntity.value === 'ips' && ipSubtype.value !== '' ? Number(ipSubtype.value) : null,
       date_filter_field: selectedDateField.value,
     })
   } catch (error) {
@@ -292,24 +287,9 @@ onMounted(() => {
         {{ STATS_TEXTS.SECTION_LIVE }}
       </h2>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <SparklineCard
-          entity="domains"
-          :label="STATS_TEXTS.ENTITY_DOMAINS"
-          color="#6366f1"
-          date-field="updated_at"
-        />
-        <SparklineCard
-          entity="lists"
-          :label="STATS_TEXTS.ENTITY_LISTS"
-          color="#14b8a6"
-          date-field="updated_at"
-        />
-        <SparklineCard
-          entity="ips"
-          :label="STATS_TEXTS.ENTITY_IPS"
-          color="#a855f7"
-          date-field="updated_at"
-        />
+        <SparklineCard entity="domains" :label="STATS_TEXTS.ENTITY_DOMAINS" color="#6366f1" date-field="updated_at" />
+        <SparklineCard entity="lists" :label="STATS_TEXTS.ENTITY_LISTS" color="#14b8a6" date-field="updated_at" />
+        <SparklineCard entity="ips" :label="STATS_TEXTS.ENTITY_IPS" color="#a855f7" date-field="updated_at" />
       </div>
     </section>
 
@@ -430,13 +410,9 @@ onMounted(() => {
         <div class="mb-4 flex items-center justify-between">
           <div>
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">
-              {{
-                ENTITIES.find((e) => e.value === selectedEntity)?.label ?? selectedEntity
-              }}
+              {{ ENTITIES.find((e) => e.value === selectedEntity)?.label ?? selectedEntity }}
               —
-              {{
-                GRANULARITIES.find((g) => g.value === selectedGranularity)?.label ?? selectedGranularity
-              }}
+              {{ GRANULARITIES.find((g) => g.value === selectedGranularity)?.label ?? selectedGranularity }}
             </h3>
             <p v-if="growth" class="text-sm text-gray-500 dark:text-gray-400">
               {{ STATS_TEXTS.TOTAL_IN_PERIOD }}: {{ growth.total_in_period }}
@@ -452,12 +428,7 @@ onMounted(() => {
           {{ STATS_TEXTS.NO_DATA }}
         </div>
 
-        <LineChart
-          v-else
-          :points="growthPoints"
-          :height="280"
-          :color="chartColor"
-        />
+        <LineChart v-else :points="growthPoints" :height="280" :color="chartColor" />
       </div>
     </section>
 
@@ -494,12 +465,7 @@ onMounted(() => {
           <div v-if="domainsBarData.length === 0" class="py-8 text-center text-gray-400">
             {{ STATS_TEXTS.NO_DATA }}
           </div>
-          <BarChart
-            v-else
-            :bars="domainsBarData"
-            :height="EMPTY_BAR_HEIGHT"
-            default-color="#6366f1"
-          />
+          <BarChart v-else :bars="domainsBarData" :height="EMPTY_BAR_HEIGHT" default-color="#6366f1" />
         </div>
 
         <!-- IPs per list -->
@@ -528,12 +494,7 @@ onMounted(() => {
           <div v-if="ipsBarData.length === 0" class="py-8 text-center text-gray-400">
             {{ STATS_TEXTS.NO_DATA }}
           </div>
-          <BarChart
-            v-else
-            :bars="ipsBarData"
-            :height="EMPTY_BAR_HEIGHT"
-            default-color="#a855f7"
-          />
+          <BarChart v-else :bars="ipsBarData" :height="EMPTY_BAR_HEIGHT" default-color="#a855f7" />
         </div>
       </div>
     </section>

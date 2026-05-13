@@ -116,10 +116,10 @@ const systemConfig = computed(() => {
         <div
           v-for="(value, key) in appConfig"
           :key="key"
-          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 dark:border-gray-700 md:flex-row md:items-center md:justify-between md:gap-4"
+          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="break-words font-mono text-sm font-medium text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -134,10 +134,10 @@ const systemConfig = computed(() => {
         <div
           v-for="(value, key) in databaseConfig"
           :key="key"
-          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 dark:border-gray-700 md:flex-row md:items-center md:justify-between md:gap-4"
+          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="break-all font-mono text-sm font-medium text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium break-all text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -152,10 +152,10 @@ const systemConfig = computed(() => {
         <div
           v-for="(value, key) in queueConfig"
           :key="key"
-          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 dark:border-gray-700 md:flex-row md:items-center md:justify-between md:gap-4"
+          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="break-words font-mono text-sm font-medium text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -170,10 +170,10 @@ const systemConfig = computed(() => {
         <div
           v-for="(value, key) in requestConfig"
           :key="key"
-          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 dark:border-gray-700 md:flex-row md:items-center md:justify-between md:gap-4"
+          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="break-words font-mono text-sm font-medium text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -188,10 +188,10 @@ const systemConfig = computed(() => {
         <div
           v-for="(value, key) in domainsConfig"
           :key="key"
-          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 dark:border-gray-700 md:flex-row md:items-center md:justify-between md:gap-4"
+          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="break-words font-mono text-sm font-medium text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -206,10 +206,10 @@ const systemConfig = computed(() => {
         <div
           v-for="(value, key) in listsConfig"
           :key="key"
-          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 dark:border-gray-700 md:flex-row md:items-center md:justify-between md:gap-4"
+          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="break-words font-mono text-sm font-medium text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -224,10 +224,10 @@ const systemConfig = computed(() => {
         <div
           v-for="(value, key) in ipConfig"
           :key="key"
-          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 dark:border-gray-700 md:flex-row md:items-center md:justify-between md:gap-4"
+          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="break-words font-mono text-sm font-medium text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -242,10 +242,10 @@ const systemConfig = computed(() => {
         <div
           v-for="(value, key) in rosConfig"
           :key="key"
-          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 dark:border-gray-700 md:flex-row md:items-center md:justify-between md:gap-4"
+          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="break-words font-mono text-sm font-medium text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -260,10 +260,10 @@ const systemConfig = computed(() => {
         <div
           v-for="(value, key) in systemConfig"
           :key="key"
-          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 dark:border-gray-700 md:flex-row md:items-center md:justify-between md:gap-4"
+          class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="break-all font-mono text-sm font-medium text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium break-all text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>

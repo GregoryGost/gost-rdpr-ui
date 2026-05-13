@@ -18,13 +18,13 @@ defineProps<Props>()
     <div class="space-y-3">
       <div class="flex flex-col gap-1 md:flex-row md:items-center md:justify-between md:gap-4">
         <span class="text-sm text-gray-600 dark:text-gray-400">Название:</span>
-        <span class="break-words font-medium text-gray-900 md:text-right dark:text-gray-100">
+        <span class="font-medium break-words text-gray-900 md:text-right dark:text-gray-100">
           {{ config?.static.app_title || '—' }}
         </span>
       </div>
       <div class="flex flex-col gap-1 md:flex-row md:items-center md:justify-between md:gap-4">
         <span class="text-sm text-gray-600 dark:text-gray-400">Версия:</span>
-        <span class="break-words font-medium text-gray-900 md:text-right dark:text-gray-100">
+        <span class="font-medium break-words text-gray-900 md:text-right dark:text-gray-100">
           {{ config?.static.app_version || '—' }}
         </span>
       </div>

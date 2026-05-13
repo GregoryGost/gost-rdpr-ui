@@ -18,7 +18,7 @@ const total = computed(() => props.slices.reduce((s, sl) => s + sl.value, 0))
 
 <template>
   <div class="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
-    <p class="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+    <p class="mb-3 text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
       {{ title }}
     </p>
 
@@ -35,11 +35,7 @@ const total = computed(() => props.slices.reduce((s, sl) => s + sl.value, 0))
       </div>
 
       <div class="min-w-0 flex-1 space-y-1.5">
-        <div
-          v-for="sl in slices"
-          :key="sl.label"
-          class="flex items-center justify-between gap-2 text-sm"
-        >
+        <div v-for="sl in slices" :key="sl.label" class="flex items-center justify-between gap-2 text-sm">
           <div class="flex min-w-0 items-center gap-1.5">
             <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-full" :style="{ background: sl.color }" />
             <span class="truncate text-gray-700 dark:text-gray-300">{{ sl.label }}</span>

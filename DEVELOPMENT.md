@@ -35,7 +35,7 @@
 ### 4. Components ✅
 
 - **General:** `AppLogo`, `ErrorNotification`
-- **Dashboard:** `HealthStatusCard`, `VersionInfoCard`, `QuickActionsCard`, `ConnectionAlert`, `PollingSettings`, `ConfigurationCard`
+- **Dashboard:** `HealthStatusCard`, `VersionInfoCard`, `ConnectionAlert`, `PollingSettings`, `ConfigurationCard`, `SparklineCard`, `StatsMetricCard`, `StatsPieCard`
 - **Charts:** `LineChart`, `BarChart`, `PieChart`
 
 ### 5. Layout ✅
@@ -193,6 +193,7 @@ const TABLE_COLUMNS = [
 pnpm dev          # Запуск dev сервера
 pnpm build        # Сборка для продакшена
 pnpm type-check   # Проверка TypeScript
+pnpm lint-dry-run # Проверка ESLint без записи исправлений
 pnpm format       # Форматирование кода
 ```
 
@@ -235,10 +236,9 @@ SEARCH { MIN_LENGTH }
 VALIDATION { MIN_NAME_LENGTH, MIN_URL_LENGTH }
 
 // UI тексты по доменам
-UI_TEXTS, PAGE_TITLES, PAGE_DESCRIPTIONS,
-DOMAIN_TEXTS, DOMAINS_LISTS_TEXTS,
-DNS_TEXTS, IPS_TEXTS, IPS_LISTS_TEXTS,
-ROS_TEXTS, COMMANDS_TEXTS, ERROR_MESSAGES
+UI_TEXTS, COMMANDS_TEXTS, DOMAINS_LISTS_TEXTS,
+IPS_TEXTS, IPS_LISTS_TEXTS, STATS_TEXTS,
+ROS_TEXTS, ERROR_MESSAGES
 ```
 
 **Правила использования:**
@@ -264,12 +264,15 @@ timeout: 5000
 - **ResizeObserver + requestAnimationFrame** для адаптивных SVG-чартов
 - **statsApi.getStats()** для точных глобальных метрик (не из пагинации)
 - **Фильтры над таблицами** перезагружают данные через API там, где backend поддерживает параметры фильтрации; неподдерживаемые условия применяются локально после загрузки свежей страницы данных
+- **Commands API** разделяет определение новых доменов (`resolveNewDomains`) и устаревших доменов (`resolveStaleDomains`)
+- **OpenAPI контракт** берётся из backend-репозитория `gost-rdpr/docs/OPENAPI.json`; локальный `TARGET_OPENAPI.*` не используется как источник документации
 
 ---
 
 ## Полезная документация
 
 - [Документация Composables](src/composables/README.md)
+- [OpenAPI спецификация backend](https://github.com/GregoryGost/gost-rdpr/blob/master/docs/OPENAPI.json)
 - [Vue 3 Composition API](https://vuejs.org/api/composition-api-setup.html)
 - [TypeScript в Vue](https://vuejs.org/guide/typescript/overview.html)
 - [Tailwind CSS v4](https://tailwindcss.com/docs)

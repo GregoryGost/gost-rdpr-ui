@@ -55,16 +55,16 @@ pnpm format     # форматирование кода
 
 | Категория             | Технология                                     |
 | --------------------- | ---------------------------------------------- |
-| Framework             | Vue 3.5.33 (Composition API, `<script setup>`) |
+| Framework             | Vue 3.5.34 (Composition API, `<script setup>`) |
 | Язык                  | TypeScript 6.0.3                               |
-| Сборщик               | Vite 8.0.10                                    |
-| Стили                 | Tailwind CSS 4.2.4                             |
+| Сборщик               | Vite 8.0.12                                    |
+| Стили                 | Tailwind CSS 4.3.0                             |
 | UI-компоненты         | Headless UI 1.7.23, Heroicons 2.2.0            |
-| Роутинг               | Vue Router 5.0.6                               |
+| Роутинг               | Vue Router 5.0.7                               |
 | Управление состоянием | Pinia 3.0.4                                    |
-| Линтинг               | ESLint 10.2.1 + Prettier 3.8.3                 |
+| Линтинг               | ESLint 10.3.0 + Prettier 3.8.3                 |
 
-**Требования:** Node.js `^20.19.0 || >=24.13.0`, пакетный менеджер `pnpm`.
+**Требования:** Node.js `^20.19.0 || >=24.13.0`, пакетный менеджер `pnpm 11.1.1`.
 
 ## Разделы
 
@@ -75,7 +75,7 @@ pnpm format     # форматирование кода
 - **Списки IP** — источники IP-адресов, IPv4 / IPv6, попытки загрузки
 - **IP Адреса** — адреса (IPv4 / IPv6), связи со списками и доменами, базовый Gateway
 - **Конфигурации RoS** — конфигурации RouterOS для BGP, firewall и маршрутизации
-- **Команды** — загрузка списков, резолвинг доменов, обновление RouterOS в IPv4-only режиме
+- **Команды** — загрузка списков, определение новых и устаревших доменов, обновление RouterOS в IPv4-only режиме
 - **Статистика** — обзор, live-активность, динамика роста, разбивка по спискам
 
 ## Рекомендуемая IDE
@@ -85,7 +85,7 @@ pnpm format     # форматирование кода
 ## Документация
 
 - [Руководство по разработке](DEVELOPMENT.md)
-- [OpenAPI спецификация](TARGET_OPENAPI.md)
+- [OpenAPI спецификация backend](https://github.com/GregoryGost/gost-rdpr/blob/master/docs/OPENAPI.json)
 - [Документация composables](src/composables/README.md)
 
 ## Лицензия

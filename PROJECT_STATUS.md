@@ -40,10 +40,12 @@
 | AppLogo           | `src/components/AppLogo.vue`                     |
 | HealthStatusCard  | `src/components/dashboard/HealthStatusCard.vue`  |
 | VersionInfoCard   | `src/components/dashboard/VersionInfoCard.vue`   |
-| QuickActionsCard  | `src/components/dashboard/QuickActionsCard.vue`  |
 | ConnectionAlert   | `src/components/dashboard/ConnectionAlert.vue`   |
 | PollingSettings   | `src/components/dashboard/PollingSettings.vue`   |
 | ConfigurationCard | `src/components/dashboard/ConfigurationCard.vue` |
+| SparklineCard     | `src/components/dashboard/SparklineCard.vue`     |
+| StatsMetricCard   | `src/components/dashboard/StatsMetricCard.vue`   |
+| StatsPieCard      | `src/components/dashboard/StatsPieCard.vue`      |
 | **Charts**        |                                                  |
 | LineChart         | `src/components/charts/LineChart.vue`            |
 | BarChart          | `src/components/charts/BarChart.vue`             |
@@ -135,10 +137,11 @@
 
 ### 🔁 Актуализация OpenAPI и UI-контракта (100%)
 
-- ✅ `TARGET_OPENAPI.md` обновлен под актуальный backend-контракт
+- ✅ OpenAPI-контракт берётся из backend-репозитория `gost-rdpr/docs/OPENAPI.json`
 - ✅ `ipsApi.getAll()` поддерживает параметр `type`
 - ✅ `use_default_gw` учтен как опциональное поле IP адреса и payload создания
 - ✅ На странице IP адресов `use_default_gw` отображается как `Да` / `Нет`
+- ✅ Команда определения доменов разделена на `resolveNewDomains()` и `resolveStaleDomains()`
 - ✅ Команды RouterOS оставлены в IPv4-only режиме: `Все типы IP` и `Только IPv6` отключены
 - ✅ Пагинация использует `cursor-pointer` только для доступных кнопок; disabled и текущая страница остаются с обычным курсором и без hover-эффекта
 
@@ -153,7 +156,7 @@
 | `PROJECT_HISTORY.md`        | Детальная история всех изменений |
 | `DEVELOPMENT.md`            | Руководство для разработчиков    |
 | `src/composables/README.md` | Документация по composables      |
-| `TARGET_OPENAPI.md`         | Спецификация REST API backend    |
+| Backend OpenAPI             | `gost-rdpr/docs/OPENAPI.json`    |
 
 ---
 
@@ -206,16 +209,17 @@
 
 | Технология   | Версия |
 | ------------ | ------ |
-| Vue          | 3.5.x  |
-| TypeScript   | ~5.9.x |
-| Vite         | 7.x    |
-| Tailwind CSS | v4     |
+| Vue          | 3.5.34 |
+| TypeScript   | 6.0.3  |
+| Vite         | 8.0.12 |
+| Tailwind CSS | 4.3.0  |
 | Pinia        | 3.x    |
-| Vue Router   | 4.x    |
+| Vue Router   | 5.0.7  |
 | Headless UI  | 1.7.x  |
 | Heroicons    | 2.x    |
 
-- Node.js: `^20.19.0 || >=22.12.0`
+- Node.js: `^20.19.0 || >=24.13.0`
+- pnpm: `11.1.1`
 - Браузеры: современные (ES2020+)
 
 ---
@@ -229,9 +233,10 @@
 | 2026-02-15 | Проверка адаптивности, скриншоты в README, реструктуризация документации   |
 | 2026-03-05 | StatisticsPage + чарты, сортировка таблиц, statsApi, адаптивные SVG        |
 | 2026-04-29 | Фильтры колонок, API-перезагрузка фильтров, `use_default_gw`, UX пагинации |
+| 2026-05-13 | Обновление зависимостей, внешний OpenAPI-контракт, split-команды доменов   |
 
 Детальная история: [PROJECT_HISTORY.md](PROJECT_HISTORY.md)
 
 ---
 
-Последнее обновление: 2026-04-29
+Последнее обновление: 2026-05-13

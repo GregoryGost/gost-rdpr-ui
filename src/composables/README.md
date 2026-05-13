@@ -225,18 +225,22 @@ import type { PaginationParams, PaginatedResponse } from '@/composables'
 Все композаблы используют централизованные константы из `src/constants.ts`:
 
 ### Константы пагинации (usePaginatedData)
+
 - **`PAGINATION.DEFAULT_PAGE_SIZE`** - размер страницы по умолчанию (20)
 - **`PAGINATION.PAGE_SIZE_OPTIONS`** - доступные размеры страниц `[10, 20, 50, 100]`
 
 ### Константы поиска (используются в страницах с поиском)
+
 - **`SEARCH.MIN_LENGTH`** - минимальная длина поискового запроса (3)
 
 ### Константы API (useApi, usePaginatedData)
+
 - **`API.TIMEOUT`** - timeout для API запросов (5000 мс)
 - **`API.FALLBACK_BASE_URL`** - fallback URL для production
 - **`API.HEADERS.CONTENT_TYPE`** - Content-Type заголовок
 
 ### Константы Store (usePolling)
+
 - **`STORES.DEFAULT_POLLING_INTERVAL`** - интервал polling по умолчанию (3000 мс)
 - **`STORES.HEALTH_CACHE_TTL`** - TTL кеша health data (10000 мс)
 
@@ -246,7 +250,7 @@ import type { PaginationParams, PaginatedResponse } from '@/composables'
 // Пример: изменить размер страницы по умолчанию
 const { data, pagination } = usePaginatedData<DnsServer>(
   async (params) => dnsApi.getAll(params),
-  50 // использовать 50 вместо значения по умолчанию
+  50, // использовать 50 вместо значения по умолчанию
 )
 ```
 
@@ -260,12 +264,12 @@ const { data, pagination } = usePaginatedData<DnsServer>(
 
 ### Уровни серьезности ошибок
 
-| Severity | Описание | Длительность |
-|----------|----------|--------------|
-| `INFO` | Информационные сообщения | 3 секунды |
-| `WARNING` | Предупреждения | 5 секунд |
-| `ERROR` | Ошибки | 7 секунд |
-| `CRITICAL` | Критические ошибки | 10 секунд |
+| Severity   | Описание                 | Длительность |
+| ---------- | ------------------------ | ------------ |
+| `INFO`     | Информационные сообщения | 3 секунды    |
+| `WARNING`  | Предупреждения           | 5 секунд     |
+| `ERROR`    | Ошибки                   | 7 секунд     |
+| `CRITICAL` | Критические ошибки       | 10 секунд    |
 
 ### Как это работает
 
@@ -277,9 +281,7 @@ const { data, pagination } = usePaginatedData<DnsServer>(
 
 ```typescript
 // Ошибки обрабатываются автоматически
-const { data, isLoading, load } = usePaginatedData<DnsServer>(
-  async (params) => dnsApi.getAll(params)
-)
+const { data, isLoading, load } = usePaginatedData<DnsServer>(async (params) => dnsApi.getAll(params))
 
 // Если запрос упадет, пользователь увидит уведомление
 await load() // Ошибка будет перехвачена и показана автоматически
@@ -290,8 +292,8 @@ await load() // Ошибка будет перехвачена и показан
 - [Основная документация проекта](../../README.md) - общая информация, установка, функциональность
 - [Статус проекта](../../PROJECT_STATUS.md) - детальный статус разработки, история изменений
 - [Руководство по разработке](../../DEVELOPMENT.md) - шаблоны и best practices
-- [OpenAPI спецификация](../../TARGET_OPENAPI.md) - документация REST API backend
+- [OpenAPI спецификация backend](https://github.com/GregoryGost/gost-rdpr/blob/master/docs/OPENAPI.json) - документация REST API backend
 
 ---
 
-**Последнее обновление:** 2026-02-15
+**Последнее обновление:** 2026-05-13

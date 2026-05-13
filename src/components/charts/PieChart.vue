@@ -97,7 +97,7 @@ const sliceData = computed(() => {
     class="overflow-visible"
   >
     <g v-if="sliceData.length">
-        <path
+      <path
         v-for="(sl, i) in sliceData"
         :key="i"
         :d="sl.path"
@@ -116,7 +116,7 @@ const sliceData = computed(() => {
         :y="cy - 8"
         text-anchor="middle"
         dominant-baseline="middle"
-        class="pointer-events-none select-none fill-gray-900 dark:fill-gray-100"
+        class="pointer-events-none fill-gray-900 select-none dark:fill-gray-100"
         font-size="20"
         font-weight="700"
       >
@@ -127,7 +127,7 @@ const sliceData = computed(() => {
         :y="cy + 12"
         text-anchor="middle"
         dominant-baseline="middle"
-        class="pointer-events-none select-none fill-gray-500 dark:fill-gray-400"
+        class="pointer-events-none fill-gray-500 select-none dark:fill-gray-400"
         font-size="10"
       >
         {{ hoveredIndex !== null ? sliceData[hoveredIndex]?.pct + '%' : 'всего' }}

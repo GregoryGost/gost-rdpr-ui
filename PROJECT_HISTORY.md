@@ -901,6 +901,61 @@ rendered_px = px × clamp(containerWidth / 800, 0.85, 1.4)
 
 ---
 
+## 📝 Обновления (2026-05-13)
+
+### ✅ Обновление frontend toolchain
+
+- Обновлены версии runtime и dev-зависимостей:
+  - `vue` до `3.5.34`
+  - `vue-router` до `5.0.7`
+  - `vite` до `8.0.12`
+  - `tailwindcss`, `@tailwindcss/postcss`, `@tailwindcss/vite` до `4.3.0`
+  - `eslint` до `10.3.0`
+  - `vite-plugin-vue-devtools` до `8.1.2`
+  - `vue-tsc` до `3.2.9`
+- Добавлен `packageManager: pnpm@11.1.1`
+- `pnpm-workspace.yaml` переведен на `allowBuilds` для `@parcel/watcher` и `esbuild`
+- `pnpm-lock.yaml` обновлен под актуальный dependency graph
+
+### ✅ Актуализация источника OpenAPI
+
+- В проектных правилах добавлен ключ проекта `GRU`
+- Локальный `TARGET_OPENAPI.json` удален из рабочей копии
+- Источник OpenAPI зафиксирован как `docs/OPENAPI.json` в backend-репозитории `gost-rdpr`
+- Если ветка backend не указана явно, базовым источником считается `master`
+
+### ✅ GRU-1: разделение команды определения доменов
+
+Backend `gost-rdpr/develop` разделил старый endpoint `POST /commands/domains/resolve` на два отдельных endpoint:
+
+- `POST /commands/domains/resolve/new`
+- `POST /commands/domains/resolve/stale`
+
+#### API Layer
+
+- `commandsApi.resolveDomains()` удален
+- Добавлен `commandsApi.resolveNewDomains()`
+- Добавлен `commandsApi.resolveStaleDomains()`
+
+#### CommandsPage
+
+- Старое единое действие определения доменов заменено двумя явными действиями:
+  - `Определить новые домены`
+  - `Определить устаревшие домены`
+- Для stale-режима добавлено предупреждение о редком запуске и возможном долгом выполнении
+- Confirmation dialog, progress notification, success message и `errorHandler` context теперь учитывают выбранный режим
+- RouterOS IPv4-only поведение не изменено
+
+#### Проверка
+
+- `pnpm format`
+- `pnpm run type-check`
+- `pnpm lint-dry-run`
+- `pnpm build`
+- Playwright проверил страницу `/#/commands`, confirm-тексты и запросы на новые endpoint через route interception
+
+---
+
 ## 📊 Обновлённая статистика
 
 ### Созданные/изменённые файлы (2026-03-05)
@@ -946,4 +1001,22 @@ rendered_px = px × clamp(containerWidth / 800, 0.85, 1.4)
 
 ---
 
-Последнее обновление: 2026-04-29
+### Созданные/изменённые файлы (2026-05-13)
+
+**Изменённые файлы:**
+
+- `.codex/rules/project.md` — ключ проекта и источник OpenAPI
+- `package.json` — актуальные версии зависимостей и `packageManager`
+- `pnpm-lock.yaml` — обновленный lockfile
+- `pnpm-workspace.yaml` — `allowBuilds` для сборочных зависимостей
+- `src/api/endpoints/commands.ts` — split методов определения доменов
+- `src/constants.ts` — тексты split-команд доменов
+- `src/pages/commands/CommandsPage.vue` — UI для новых и устаревших доменов
+
+**Удалённые файлы:**
+
+- `TARGET_OPENAPI.json` — локальная копия OpenAPI больше не используется
+
+---
+
+Последнее обновление: 2026-05-13
