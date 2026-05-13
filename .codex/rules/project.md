@@ -1,5 +1,7 @@
 # Project Overview
 
+Project key - GRU
+
 - Vue 3.5 project using Composition API with `<script setup lang="ts">`
 - Do not import new libraries without approval
 - Use ES imports, not require()
@@ -21,7 +23,7 @@
 ### Project description
 
 The project implements a responsive administrative panel for the REST API Python project <https://github.com/GregoryGost/gost-rdpr>
-The `openapi.json` description is in the file `TARGET_OPENAPI.md`
+The `openapi.json` description is in the file <https://github.com/GregoryGost/gost-rdpr/blob/master/docs/OPENAPI.json> (If the user does not specify a specific branch, then search in the `master` branch)
 
 No authorization
 

@@ -114,6 +114,26 @@ export const UI_TEXTS = {
 }
 
 /**
+ * Commands texts
+ */
+export const COMMANDS_TEXTS = {
+  DOMAIN_RESOLVE_NEW_BUTTON: 'Определить новые домены',
+  DOMAIN_RESOLVE_STALE_BUTTON: 'Определить устаревшие домены',
+  DOMAIN_RESOLVE_STALE_WARNING:
+    'Команду для устаревших доменов стоит запускать редко: набор может быть большим, выполнение может занять больше времени.',
+  DOMAIN_RESOLVE_NEW_CONFIRM_TITLE: 'Определить новые домены',
+  DOMAIN_RESOLVE_NEW_CONFIRM_MESSAGE:
+    'Будут определены только новые домены, которые ещё не обрабатывались. Продолжить?',
+  DOMAIN_RESOLVE_STALE_CONFIRM_TITLE: 'Определить устаревшие домены',
+  DOMAIN_RESOLVE_STALE_CONFIRM_MESSAGE:
+    'Будут определены устаревшие домены. Эта команда может выполняться долго и должна запускаться редко. Продолжить?',
+  DOMAIN_RESOLVE_NEW_PROGRESS: 'Определение новых доменов...',
+  DOMAIN_RESOLVE_STALE_PROGRESS: 'Определение устаревших доменов... Это может занять больше времени.',
+  DOMAIN_RESOLVE_NEW_SUCCESS: 'Новые домены успешно определены в IP адреса',
+  DOMAIN_RESOLVE_STALE_SUCCESS: 'Устаревшие домены успешно определены в IP адреса',
+}
+
+/**
  * Domains Lists texts
  */
 export const DOMAINS_LISTS_TEXTS = {

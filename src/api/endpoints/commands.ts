@@ -18,11 +18,20 @@ export const commandsApi = {
   },
 
   /**
-   * Resolve all domains
+   * Resolve only new domains
    * @returns {Promise<OkResponse>}
    */
-  resolveDomains: () =>
-    apiRequest<OkResponse>('/commands/domains/resolve', {
+  resolveNewDomains: () =>
+    apiRequest<OkResponse>('/commands/domains/resolve/new', {
+      method: 'POST',
+    }),
+
+  /**
+   * Resolve stale domains
+   * @returns {Promise<OkResponse>}
+   */
+  resolveStaleDomains: () =>
+    apiRequest<OkResponse>('/commands/domains/resolve/stale', {
       method: 'POST',
     }),
 

@@ -1,29 +1,36 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { commandsApi } from '@/api/endpoints/commands'
+import { COMMANDS_TEXTS } from '@/constants'
 import BaseButton from '@/ui/buttons/BaseButton.vue'
 import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
 import BaseSelect from '@/ui/forms/BaseSelect.vue'
 import {
   ArrowPathIcon,
+  ClockIcon,
   GlobeAltIcon,
   ServerIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
+  SparklesIcon,
 } from '@heroicons/vue/24/outline'
 import { showSuccess, showInfo } from '@/utils/notifications'
 import { errorHandler } from '@/utils/errorHandler'
+
+type CommandType = 'lists' | 'domains-new' | 'domains-stale' | 'ros'
+type DomainResolveCommand = 'domains-new' | 'domains-stale'
 
 /**
  * Commands execution page
  * @component CommandsPage
  */
 const isLoadingLists = ref(false)
-const isLoadingDomains = ref(false)
+const isLoadingNewDomains = ref(false)
+const isLoadingStaleDomains = ref(false)
 const isLoadingRouterOS = ref(false)
 
 const isConfirmOpen = ref(false)
-const confirmCommand = ref<'lists' | 'domains' | 'ros' | null>(null)
+const confirmCommand = ref<CommandType | null>(null)
 const confirmTitle = ref('')
 const confirmMessage = ref('')
 
@@ -38,10 +45,30 @@ const IP_TYPE_OPTIONS = [
   { value: 6, label: 'Только IPv6', disabled: true },
 ]
 
+const DOMAIN_RESOLVE_COMMAND_CONFIG = {
+  'domains-new': {
+    mode: 'new',
+    confirmTitle: COMMANDS_TEXTS.DOMAIN_RESOLVE_NEW_CONFIRM_TITLE,
+    confirmMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_NEW_CONFIRM_MESSAGE,
+    progressMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_NEW_PROGRESS,
+    successMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_NEW_SUCCESS,
+  },
+  'domains-stale': {
+    mode: 'stale',
+    confirmTitle: COMMANDS_TEXTS.DOMAIN_RESOLVE_STALE_CONFIRM_TITLE,
+    confirmMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_STALE_CONFIRM_MESSAGE,
+    progressMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_STALE_PROGRESS,
+    successMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_STALE_SUCCESS,
+  },
+} as const
+
+const isDomainResolveCommand = (command: CommandType): command is DomainResolveCommand =>
+  command === 'domains-new' || command === 'domains-stale'
+
 /**
  * Open confirmation dialog
  */
-const openConfirm = (command: 'lists' | 'domains' | 'ros') => {
+const openConfirm = (command: CommandType) => {
   confirmCommand.value = command
   lastResult.value = null
 
@@ -52,9 +79,10 @@ const openConfirm = (command: 'lists' | 'domains' | 'ros') => {
         ? 'Списки доменов и IP адресов будут принудительно перезагружены. Продолжить?'
         : 'Списки доменов и IP адресов будут загружены (только если изменились). Продолжить?'
       break
-    case 'domains':
-      confirmTitle.value = 'Определить домены'
-      confirmMessage.value = 'Все домены будут определены в IP адреса. Это может занять время. Продолжить?'
+    case 'domains-new':
+    case 'domains-stale':
+      confirmTitle.value = DOMAIN_RESOLVE_COMMAND_CONFIG[command].confirmTitle
+      confirmMessage.value = DOMAIN_RESOLVE_COMMAND_CONFIG[command].confirmMessage
       break
     case 'ros':
       confirmTitle.value = 'Обновить RouterOS'
@@ -85,12 +113,24 @@ const executeCommand = async () => {
           'Команда выполнена',
         )
         break
-      case 'domains':
-        isLoadingDomains.value = true
-        showInfo('Определение доменов... Это может занять время.', 'Выполнение команды')
-        await commandsApi.resolveDomains()
-        lastResult.value = { type: 'success', message: 'Домены успешно определены' }
-        showSuccess('Все домены успешно определены в IP адреса', 'Команда выполнена')
+      case 'domains-new':
+      case 'domains-stale':
+        if (command === 'domains-new') {
+          isLoadingNewDomains.value = true
+        } else {
+          isLoadingStaleDomains.value = true
+        }
+
+        showInfo(DOMAIN_RESOLVE_COMMAND_CONFIG[command].progressMessage, 'Выполнение команды')
+
+        if (command === 'domains-new') {
+          await commandsApi.resolveNewDomains()
+        } else {
+          await commandsApi.resolveStaleDomains()
+        }
+
+        lastResult.value = { type: 'success', message: DOMAIN_RESOLVE_COMMAND_CONFIG[command].successMessage }
+        showSuccess(DOMAIN_RESOLVE_COMMAND_CONFIG[command].successMessage, 'Команда выполнена')
         break
       case 'ros':
         isLoadingRouterOS.value = true
@@ -110,12 +150,14 @@ const executeCommand = async () => {
       action: 'executeCommand',
       component: 'CommandsPage',
       command,
+      domainResolveMode: isDomainResolveCommand(command) ? DOMAIN_RESOLVE_COMMAND_CONFIG[command].mode : undefined,
       forcedReload: command === 'lists' ? forcedReload.value : undefined,
       rosIpType: command === 'ros' ? rosIpType.value : undefined,
     })
   } finally {
     isLoadingLists.value = false
-    isLoadingDomains.value = false
+    isLoadingNewDomains.value = false
+    isLoadingStaleDomains.value = false
     isLoadingRouterOS.value = false
     isConfirmOpen.value = false
     confirmCommand.value = null
@@ -199,14 +241,32 @@ const executeCommand = async () => {
           по очереди. Дополнительно для доменов определяются CNAME и они тоже попадают в базу и по ним определяются IP
           адреса.
         </p>
-        <BaseButton
-          @click="openConfirm('domains')"
-          variant="primary"
-          class="mt-10 w-full"
-          :is-loading="isLoadingDomains"
-        >
-          Отправить команду
-        </BaseButton>
+        <div class="grid gap-3">
+          <BaseButton
+            @click="openConfirm('domains-new')"
+            variant="primary"
+            class="w-full"
+            :is-loading="isLoadingNewDomains"
+          >
+            <SparklesIcon class="mr-2 h-5 w-5" />
+            <span>{{ COMMANDS_TEXTS.DOMAIN_RESOLVE_NEW_BUTTON }}</span>
+          </BaseButton>
+          <BaseButton
+            @click="openConfirm('domains-stale')"
+            variant="secondary"
+            class="w-full"
+            :is-loading="isLoadingStaleDomains"
+          >
+            <ClockIcon class="mr-2 h-5 w-5" />
+            <span>{{ COMMANDS_TEXTS.DOMAIN_RESOLVE_STALE_BUTTON }}</span>
+          </BaseButton>
+        </div>
+        <div class="mt-3 flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
+          <ExclamationCircleIcon class="mt-0.5 h-5 w-5 flex-shrink-0" />
+          <p>
+            {{ COMMANDS_TEXTS.DOMAIN_RESOLVE_STALE_WARNING }}
+          </p>
+        </div>
       </div>
 
       <!-- Update RouterOS Command -->
@@ -256,7 +316,7 @@ const executeCommand = async () => {
       confirm-text="Выполнить"
       cancel-text="Отмена"
       variant="primary"
-      :is-loading="isLoadingLists || isLoadingDomains || isLoadingRouterOS"
+      :is-loading="isLoadingLists || isLoadingNewDomains || isLoadingStaleDomains || isLoadingRouterOS"
       @confirm="executeCommand"
       @cancel="isConfirmOpen = false"
     />
