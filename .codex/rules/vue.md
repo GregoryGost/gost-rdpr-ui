@@ -1,6 +1,6 @@
 # Rules for Vue.JS style and Instruments
 
-Apply only to `vue`, `js` and `ts` files in /src project folder.
+Apply only to `vue`, `js` and `ts` files in `/src` project folder.
 
 You are an expert in TypeScript, Node.js, Vue 3, Vue Router, Pinia store, VueUse, and Tailwind CSS.
 
@@ -15,7 +15,7 @@ You are an expert in TypeScript, Node.js, Vue 3, Vue Router, Pinia store, VueUse
 - Follow src directory structure (e.g., pages/, components/, css/, layouts/, composables/, router/, stores/, /ui).
 - The Vue file must always follow a basic template, which must contain 3 parts: script, template, and style.
 - Use semantic HTML elements for use Vue components in `<template>` block.
-- Follow the sequence in your files, from top to bottom the `<script>`, then the `<template>`, then the `<style>`.
+- Follow the sequence in your files, from top to bottom the `<script setup lang="ts">`, then the `<template>`, then the `<style lang="scss" scoped>`.
 - Write detailed explanatory comments for complex functions, classes and methods, use semantics with @return, @params, and other docs fields. Comments are in English only.
 - There's no need to create constants that aren't used in the project. Only those that are truly necessary should be created.
 
@@ -56,6 +56,7 @@ You are an expert in TypeScript, Node.js, Vue 3, Vue Router, Pinia store, VueUse
 - Implement custom theme extensions in tailwind.config.cjs when necessary.
 - Check the Tailwind documentation for the version you are using in your project. Prefer direct utility classes in HTML.
 - Tailwind CSS v4 does not require a JS/TS file configuration anymore but it's still useful for advanced configuration and IntelliSense support in IDEs.
+- When you change the code in a `.vue` file, check it for compliance with the requirements for this style, and if there are any discrepancies, fix them immediately.
 
 ## Performance Optimization
 

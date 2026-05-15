@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { ipsListsApi } from '@/api/endpoints/ips-lists'
 import { statsApi } from '@/api/endpoints/stats'
 import type { IpsList, IpsListCreateData } from '@/api/types/ips'
-import { usePaginatedData } from '@/composables'
+import { useDebouncedTask, usePaginatedData } from '@/composables'
 import { IPS_LISTS_TEXTS, UI_TEXTS, SEARCH, VALIDATION, ERROR_MESSAGES } from '@/constants'
 import DataTable from '@/ui/tables/DataTable.vue'
 import PaginationControl from '@/ui/tables/PaginationControl.vue'
@@ -16,29 +16,24 @@ import { PlusIcon, TrashIcon, MagnifyingGlassIcon, ArrowPathIcon } from '@heroic
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
 import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
+import { loadAttemptsFilteredPage, type AttemptsFilter } from '@/utils/attemptsPagination'
+import {
+  hasColumnFilters,
+  matchesColumnFilters,
+  type TableColumn,
+  type TableColumnFilters,
+} from '@/ui/tables/columnFilters'
 
 /**
  * IPs Lists management page
  * @component IpsListsPage
  */
 const searchQuery = ref('')
-const attemptsFilter = ref<'all' | 'success' | 'errors' | 'critical'>('all')
+const attemptsFilter = ref<AttemptsFilter>('all')
+const columnFilters = ref<TableColumnFilters>({})
 const hasActiveButtonFilters = computed(() => attemptsFilter.value !== 'all')
-
-/**
- * Map exact attempts filter to the API query parameter.
- */
-const getAttemptsFilterParam = () => (attemptsFilter.value === 'success' ? 0 : undefined)
-
-/**
- * Apply attempts ranges that are not available as API query parameters.
- */
-const applyAttemptsFilter = (items: IpsList[]) => {
-  if (attemptsFilter.value === 'success') return items.filter((item) => item.attempts === 0)
-  if (attemptsFilter.value === 'errors') return items.filter((item) => item.attempts > 0 && item.attempts < 3)
-  if (attemptsFilter.value === 'critical') return items.filter((item) => item.attempts >= 3)
-  return items
-}
+const hasActiveSearch = computed(() => searchQuery.value.length >= SEARCH.MIN_LENGTH)
+const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.value))
 
 // Statistics
 const totalLists = ref(0)
@@ -51,16 +46,17 @@ const {
   isLoading,
   pagination,
   load: loadLists,
-  refresh: refreshLists,
-  goToPage,
-  changePageSize,
 } = usePaginatedData<IpsList>(async (params) => {
-  const response = await ipsListsApi.getAll({
-    ...params,
-    attempts: getAttemptsFilterParam(),
-  })
-  const filtered = applyAttemptsFilter(response.payload)
-  return { ...response, payload: filtered }
+  return loadAttemptsFilteredPage(
+    ipsListsApi.getAll,
+    params,
+    attemptsFilter.value,
+    hasActiveColumnFilters.value
+      ? {
+          filterItem: matchesListColumnFilters,
+        }
+      : false,
+  )
 }, 20)
 
 // Modals
@@ -82,7 +78,7 @@ const formErrors = ref<Record<string, string>>({})
 /**
  * Table columns configuration
  */
-const TABLE_COLUMNS = [
+const TABLE_COLUMNS: TableColumn<IpsList>[] = [
   { key: 'id', label: UI_TEXTS.ID, sortable: true },
   { key: 'name', label: UI_TEXTS.NAME, sortable: true },
   { key: 'url', label: UI_TEXTS.URL, sortable: true },
@@ -105,64 +101,107 @@ const TABLE_COLUMNS = [
   { key: 'actions', label: UI_TEXTS.ACTIONS },
 ]
 
+function matchesListColumnFilters(list: IpsList): boolean {
+  return matchesColumnFilters(list, TABLE_COLUMNS, columnFilters.value)
+}
+
 /**
- * Search IPs lists with debounce
+ * Search IPs lists
  */
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
-const searchLists = async () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
+const showSearchResults = (total: number) => {
+  if (total === 0) {
+    showInfo(
+      `${IPS_LISTS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
+      UI_TEXTS.SEARCH_RESULTS,
+    )
+    return
   }
 
-  searchTimeout = setTimeout(async () => {
-    pagination.currentPage.value = 1 // Reset to first page
+  showInfo(`${IPS_LISTS_TEXTS.SEARCH_FOUND_PREFIX} ${total}`, UI_TEXTS.SEARCH_RESULTS)
+}
 
-    if (!searchQuery.value || searchQuery.value.length < SEARCH.MIN_LENGTH) {
-      loadLists()
-      return
-    }
-
-    isLoading.value = true
-    try {
-      const response = await ipsListsApi.search(searchQuery.value, {
+const loadSearchResults = async (shouldNotify = false) => {
+  isLoading.value = true
+  try {
+    const response = await loadAttemptsFilteredPage(
+      (params) => ipsListsApi.search(searchQuery.value, params),
+      {
         limit: pagination.pageSize.value,
         offset: pagination.offset.value,
-        attempts: getAttemptsFilterParam(),
-      })
+      },
+      attemptsFilter.value,
+      {
+        forceClientPagination: true,
+        filterItem: hasActiveColumnFilters.value ? matchesListColumnFilters : undefined,
+      },
+    )
 
-      lists.value = applyAttemptsFilter(response.payload)
-      pagination.totalItems.value = response.total
+    lists.value = response.payload
+    pagination.totalItems.value = response.total
 
-      // Show search results notification
-      if (response.total === 0) {
-        showInfo(
-          `${IPS_LISTS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
-          UI_TEXTS.SEARCH_RESULTS,
-        )
-      } else {
-        showInfo(`${IPS_LISTS_TEXTS.SEARCH_FOUND_PREFIX} ${response.total}`, UI_TEXTS.SEARCH_RESULTS)
-      }
-    } catch (error) {
-      errorHandler.handleError(error, {
-        action: 'searchLists',
-        component: 'IpsListsPage',
-        query: searchQuery.value,
-      })
-    } finally {
-      isLoading.value = false
-    }
-  }, 300) // Debounce 300ms
+    if (shouldNotify) showSearchResults(response.total)
+  } catch (error) {
+    errorHandler.handleError(error, {
+      action: 'searchLists',
+      component: 'IpsListsPage',
+      query: searchQuery.value,
+    })
+  } finally {
+    isLoading.value = false
+  }
 }
 
 /**
  * Load lists through the active data source.
  */
-const loadActiveLists = () => {
-  if (searchQuery.value && searchQuery.value.length >= SEARCH.MIN_LENGTH) {
-    searchLists()
+const loadActiveLists = async (shouldNotifySearch = false) => {
+  if (hasActiveSearch.value) {
+    await loadSearchResults(shouldNotifySearch)
   } else {
-    loadLists()
+    await loadLists()
   }
+}
+
+const { run: runSearchListsDebounced, cancel: cancelSearchListsDebounce } = useDebouncedTask(async () => {
+  pagination.currentPage.value = 1 // Reset to first page
+
+  if (!hasActiveSearch.value) {
+    await loadLists()
+    return
+  }
+
+  await loadSearchResults(true)
+})
+
+const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = useDebouncedTask(async () => {
+  await loadActiveLists()
+})
+
+const cancelPendingInputLoads = () => {
+  cancelSearchListsDebounce()
+  cancelColumnFiltersDebounce()
+}
+
+const searchLists = () => {
+  runSearchListsDebounced()
+}
+
+const goToActivePage = async (page: number) => {
+  cancelPendingInputLoads()
+  pagination.goToPage(page)
+  await loadActiveLists()
+}
+
+const changeActivePageSize = async (size: number) => {
+  cancelPendingInputLoads()
+  pagination.changePageSize(size)
+  await loadActiveLists()
+}
+
+const updateColumnFilters = (filters: TableColumnFilters) => {
+  columnFilters.value = filters
+  pagination.currentPage.value = 1
+  runColumnFiltersDebounced()
 }
 
 /**
@@ -182,19 +221,21 @@ const loadGlobalStats = async () => {
 /**
  * Filter by attempts status
  */
-const filterByAttempts = (value: 'all' | 'success' | 'errors' | 'critical') => {
+const filterByAttempts = async (value: AttemptsFilter) => {
+  cancelPendingInputLoads()
   attemptsFilter.value = value
   pagination.currentPage.value = 1 // Reset to first page
-  loadActiveLists()
+  await loadActiveLists(true)
 }
 
 /**
  * Reset button filters to default values
  */
-const resetButtonFilters = () => {
+const resetButtonFilters = async () => {
+  cancelPendingInputLoads()
   attemptsFilter.value = 'all'
   pagination.currentPage.value = 1
-  loadActiveLists()
+  await loadActiveLists(true)
 }
 
 /**
@@ -259,13 +300,14 @@ const closeAddModal = () => {
 const createList = async () => {
   if (!validateForm()) return
 
+  cancelPendingInputLoads()
   isLoading.value = true
   try {
     await ipsListsApi.create([formData.value])
     closeAddModal()
     showSuccess(`${IPS_LISTS_TEXTS.LIST_PREFIX} "${formData.value.name}" ${IPS_LISTS_TEXTS.SUCCESS_CREATED}`)
     await delay()
-    await refreshLists()
+    await loadActiveLists()
     await loadGlobalStats()
   } catch (error) {
     errorHandler.handleError(error, {
@@ -292,6 +334,7 @@ const openDeleteConfirm = (id: number) => {
 const deleteList = async () => {
   if (!listToDelete.value) return
 
+  cancelPendingInputLoads()
   const listId = listToDelete.value
   isLoading.value = true
   try {
@@ -302,12 +345,12 @@ const deleteList = async () => {
 
     // Reload data after deletion
     await delay()
-    await refreshLists()
+    await loadActiveLists()
     await loadGlobalStats()
 
     // Check if we need to go to previous page (if current page is now empty)
     if (lists.value.length === 0 && pagination.currentPage.value > 1) {
-      goToPage(pagination.currentPage.value - 1)
+      await goToActivePage(pagination.currentPage.value - 1)
     }
   } catch (error) {
     errorHandler.handleError(error, {
@@ -438,7 +481,9 @@ onMounted(() => {
       :data="lists"
       :columns="TABLE_COLUMNS"
       :is-loading="isLoading"
+      :column-filters="columnFilters"
       :empty-message="IPS_LISTS_TEXTS.EMPTY_MESSAGE"
+      @update:column-filters="updateColumnFilters"
       @row-click="openViewModal"
     >
       <template #cell-name="{ value }">
@@ -509,8 +554,8 @@ onMounted(() => {
       :total-items="pagination.totalItems.value"
       :page-size="pagination.pageSize.value"
       :page-size-options="pagination.PAGE_SIZE_OPTIONS"
-      @update:current-page="goToPage"
-      @update:page-size="changePageSize"
+      @update:current-page="goToActivePage"
+      @update:page-size="changeActivePageSize"
     />
 
     <!-- Add Modal -->

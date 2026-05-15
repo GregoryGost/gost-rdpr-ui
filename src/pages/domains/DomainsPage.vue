@@ -22,6 +22,14 @@ import {
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
 import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
+import { loadClientFilteredPage } from '@/utils/clientPagination'
+import { useDebouncedTask } from '@/composables'
+import {
+  hasColumnFilters,
+  matchesColumnFilters,
+  type TableColumn,
+  type TableColumnFilters,
+} from '@/ui/tables/columnFilters'
 
 /**
  * Domains management page
@@ -29,16 +37,20 @@ import { errorHandler } from '@/utils/errorHandler'
  */
 const searchQuery = ref('')
 const resolvedFilter = ref<boolean | undefined>(undefined)
-const listFilter = ref<'all' | 'with-list' | 'without-list'>('all')
+type DomainListFilter = 'all' | 'with-list' | 'without-list'
+const listFilter = ref<DomainListFilter>('all')
+const columnFilters = ref<TableColumnFilters>({})
 
 // Data management
 const domains = ref<Domain[]>([])
-const allDomains = ref<Domain[]>([]) // All loaded domains before list filter
 const isLoading = ref(false)
 
 // Global stats (always unfiltered — used for stat cards)
 const globalTotalResolved = ref(0)
 const globalTotalQuery = ref(0)
+const globalWithListTotal = ref(0)
+const globalWithListResolved = ref(0)
+const globalWithListUnresolved = ref(0)
 
 // Pagination counters (change with active filter)
 const totalItems = ref(0)
@@ -57,6 +69,8 @@ const pagination = {
 }
 
 const hasActiveButtonFilters = computed(() => resolvedFilter.value !== undefined || listFilter.value !== 'all')
+const isGlobalStatsLoaded = computed(() => globalTotalQuery.value > 0)
+const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.value))
 
 // Modals
 const isAddModalOpen = ref(false)
@@ -77,7 +91,7 @@ const formErrors = ref<Record<string, string>>({})
 /**
  * Table columns configuration
  */
-const TABLE_COLUMNS = [
+const TABLE_COLUMNS: TableColumn<Domain>[] = [
   { key: 'id', label: 'ID', sortable: true },
   { key: 'name', label: 'Домен', sortable: true },
   {
@@ -101,16 +115,54 @@ const TABLE_COLUMNS = [
   { key: 'actions', label: 'Действия' },
 ]
 
+const matchesListFilter = (domain: Domain): boolean => {
+  if (listFilter.value === 'with-list') return domain.domains_list_id != null
+  if (listFilter.value === 'without-list') return domain.domains_list_id == null
+  return true
+}
+
+const matchesActiveDomainFilters = (domain: Domain): boolean => {
+  return matchesListFilter(domain) && matchesColumnFilters(domain, TABLE_COLUMNS, columnFilters.value)
+}
+
 /**
- * Apply list filter to domains
+ * Whether search should be delegated to API.
  */
-const applyListFilter = (domainsToFilter: Domain[]): Domain[] => {
-  if (listFilter.value === 'with-list') {
-    return domainsToFilter.filter((d) => d.domains_list_id != null)
-  } else if (listFilter.value === 'without-list') {
-    return domainsToFilter.filter((d) => d.domains_list_id == null)
+const hasActiveSearch = () => Boolean(searchQuery.value && searchQuery.value.length >= SEARCH.MIN_LENGTH)
+
+const getColumnFilterQuery = (key: string): string | undefined => {
+  const query = columnFilters.value[key]?.trim()
+  return query && query.length > 0 ? query : undefined
+}
+
+const getApiSearchQuery = (): string | undefined => {
+  if (hasActiveSearch()) return searchQuery.value
+  return getColumnFilterQuery('name')
+}
+
+const getKnownListFilterTotal = (): number | undefined => {
+  if (listFilter.value === 'all' || hasActiveSearch() || hasActiveColumnFilters.value) return undefined
+
+  const withListTotals = {
+    all: globalWithListTotal.value,
+    resolved: globalWithListResolved.value,
+    unresolved: globalWithListUnresolved.value,
   }
-  return domainsToFilter
+  const withoutListTotals = {
+    all: globalTotalQuery.value - globalWithListTotal.value,
+    resolved: globalTotalResolved.value - globalWithListResolved.value,
+    unresolved: globalTotalQuery.value - globalTotalResolved.value - globalWithListUnresolved.value,
+  }
+
+  if (resolvedFilter.value === true) {
+    return listFilter.value === 'with-list' ? withListTotals.resolved : withoutListTotals.resolved
+  }
+
+  if (resolvedFilter.value === false) {
+    return listFilter.value === 'with-list' ? withListTotals.unresolved : withoutListTotals.unresolved
+  }
+
+  return listFilter.value === 'with-list' ? withListTotals.all : withoutListTotals.all
 }
 
 /**
@@ -121,6 +173,9 @@ const loadGlobalStats = async () => {
     const stats = await statsApi.getStats()
     globalTotalResolved.value = stats.domains.resolved
     globalTotalQuery.value = stats.domains.total
+    globalWithListTotal.value = stats.domains.per_list.reduce((sum, list) => sum + list.total, 0)
+    globalWithListResolved.value = stats.domains.per_list.reduce((sum, list) => sum + list.resolved, 0)
+    globalWithListUnresolved.value = stats.domains.per_list.reduce((sum, list) => sum + list.unresolved, 0)
   } catch (error) {
     errorHandler.handleError(error, {
       action: 'loadGlobalStats',
@@ -135,13 +190,30 @@ const loadGlobalStats = async () => {
 const loadDomainsWithStats = async () => {
   isLoading.value = true
   try {
-    const response = await domainsApi.getAll({
-      limit: pageSize.value,
-      offset: offset.value,
-      resolved: resolvedFilter.value,
-    })
-    allDomains.value = response.payload
-    domains.value = applyListFilter(response.payload)
+    if (listFilter.value !== 'all' && !isGlobalStatsLoaded.value) {
+      await loadGlobalStats()
+    }
+
+    const knownListFilterTotal = getKnownListFilterTotal()
+    const response = await loadClientFilteredPage(
+      (params) =>
+        domainsApi.getAll({
+          ...params,
+          resolved: resolvedFilter.value,
+        }),
+      {
+        limit: pageSize.value,
+        offset: offset.value,
+      },
+      matchesActiveDomainFilters,
+      {
+        forceClientPagination: listFilter.value !== 'all' || hasActiveColumnFilters.value,
+        knownTotal: knownListFilterTotal,
+        stopWhenPageFilled: knownListFilterTotal !== undefined,
+      },
+    )
+
+    domains.value = response.payload
     totalItems.value = response.total_query
   } catch (error) {
     errorHandler.handleError(error, {
@@ -149,7 +221,6 @@ const loadDomainsWithStats = async () => {
       component: 'DomainsPage',
     })
     domains.value = []
-    allDomains.value = []
     totalItems.value = 0
   } finally {
     isLoading.value = false
@@ -157,34 +228,41 @@ const loadDomainsWithStats = async () => {
 }
 
 /**
- * Whether search should be delegated to API.
- */
-const hasActiveSearch = () => Boolean(searchQuery.value && searchQuery.value.length >= SEARCH.MIN_LENGTH)
-
-/**
  * Search domains immediately with current pagination and filters.
  */
 const runSearchDomains = async () => {
-  if (!hasActiveSearch()) {
+  const apiSearchQuery = getApiSearchQuery()
+
+  if (!apiSearchQuery) {
     await loadDomainsWithStats()
     return
   }
 
   isLoading.value = true
   try {
-    const response = await domainsApi.search(searchQuery.value, {
-      limit: pageSize.value,
-      offset: offset.value,
-      resolved: resolvedFilter.value,
-    })
-    allDomains.value = response.payload
-    domains.value = applyListFilter(response.payload)
+    const response = await loadClientFilteredPage(
+      (params) =>
+        domainsApi.search(apiSearchQuery, {
+          ...params,
+          resolved: resolvedFilter.value,
+        }),
+      {
+        limit: pageSize.value,
+        offset: offset.value,
+      },
+      matchesActiveDomainFilters,
+      listFilter.value !== 'all' || hasActiveColumnFilters.value,
+    )
+
+    domains.value = response.payload
     totalItems.value = response.total_query
 
-    if (response.total_query === 0) {
-      showInfo(`По запросу "${searchQuery.value}" ничего не найдено`, 'Результаты поиска')
-    } else {
-      showInfo(`Найдено доменов: ${response.total_query}`, 'Результаты поиска')
+    if (hasActiveSearch()) {
+      if (response.total_query === 0) {
+        showInfo(`По запросу "${searchQuery.value}" ничего не найдено`, 'Результаты поиска')
+      } else {
+        showInfo(`Найдено доменов: ${response.total_query}`, 'Результаты поиска')
+      }
     }
   } catch (error) {
     errorHandler.handleError(error, {
@@ -193,7 +271,6 @@ const runSearchDomains = async () => {
       query: searchQuery.value,
     })
     domains.value = []
-    allDomains.value = []
     totalItems.value = 0
   } finally {
     isLoading.value = false
@@ -204,7 +281,7 @@ const runSearchDomains = async () => {
  * Load domains through the active data source.
  */
 const loadActiveDomains = () => {
-  if (hasActiveSearch()) return runSearchDomains()
+  if (getApiSearchQuery()) return runSearchDomains()
   return loadDomainsWithStats()
 }
 
@@ -212,14 +289,30 @@ const loadActiveDomains = () => {
  * Refresh domains and global stats (after create/delete)
  */
 const refreshDomains = () => {
+  cancelPendingInputLoads()
   loadGlobalStats()
-  return loadDomainsWithStats()
+  return loadActiveDomains()
+}
+
+const { run: runSearchDomainsDebounced, cancel: cancelSearchDomainsDebounce } = useDebouncedTask(async () => {
+  currentPage.value = 1 // Reset to first page
+  await loadActiveDomains()
+})
+
+const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = useDebouncedTask(async () => {
+  await loadActiveDomains()
+})
+
+const cancelPendingInputLoads = () => {
+  cancelSearchDomainsDebounce()
+  cancelColumnFiltersDebounce()
 }
 
 /**
  * Go to specific page and load data
  */
 const goToPage = (page: number) => {
+  cancelPendingInputLoads()
   currentPage.value = page
   loadActiveDomains()
 }
@@ -228,30 +321,30 @@ const goToPage = (page: number) => {
  * Change page size and reload from first page
  */
 const changePageSize = (size: number) => {
+  cancelPendingInputLoads()
   pageSize.value = size
   currentPage.value = 1
   loadActiveDomains()
 }
 
+const updateColumnFilters = (filters: TableColumnFilters) => {
+  columnFilters.value = filters
+  currentPage.value = 1
+  runColumnFiltersDebounced()
+}
+
 /**
  * Search domains
  */
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
-const searchDomains = async () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
-  }
-
-  searchTimeout = setTimeout(async () => {
-    currentPage.value = 1 // Reset to first page
-    await loadActiveDomains()
-  }, 300) // Debounce 300ms
+const searchDomains = () => {
+  runSearchDomainsDebounced()
 }
 
 /**
  * Filter by resolved status
  */
 const filterByResolved = (value: boolean | undefined) => {
+  cancelPendingInputLoads()
   resolvedFilter.value = value
   currentPage.value = 1 // Reset to first page
   loadActiveDomains()
@@ -260,7 +353,8 @@ const filterByResolved = (value: boolean | undefined) => {
 /**
  * Filter by list presence
  */
-const filterByList = async (value: 'all' | 'with-list' | 'without-list') => {
+const filterByList = async (value: DomainListFilter) => {
+  cancelPendingInputLoads()
   listFilter.value = value
   currentPage.value = 1 // Reset to first page
   await loadActiveDomains()
@@ -280,6 +374,7 @@ const filterByList = async (value: 'all' | 'with-list' | 'without-list') => {
  * Reset button filters to default values
  */
 const resetButtonFilters = () => {
+  cancelPendingInputLoads()
   resolvedFilter.value = undefined
   listFilter.value = 'all'
   currentPage.value = 1
@@ -333,6 +428,7 @@ const closeAddModal = () => {
 const createDomain = async () => {
   if (!validateForm()) return
 
+  cancelPendingInputLoads()
   isLoading.value = true
   try {
     await domainsApi.create([formData.value])
@@ -373,6 +469,7 @@ const openDeleteConfirm = (id: number) => {
 const deleteDomain = async () => {
   if (!domainToDelete.value) return
 
+  cancelPendingInputLoads()
   const domainId = domainToDelete.value
   isLoading.value = true
   try {
@@ -388,7 +485,7 @@ const deleteDomain = async () => {
     // Check if we need to go to previous page (if current page is now empty)
     if (domains.value.length === 0 && currentPage.value > 1) {
       currentPage.value -= 1
-      await loadDomainsWithStats()
+      await loadActiveDomains()
     }
   } catch (error) {
     errorHandler.handleError(error, {
@@ -534,7 +631,9 @@ onMounted(() => {
       :data="domains"
       :columns="TABLE_COLUMNS"
       :is-loading="isLoading"
+      :column-filters="columnFilters"
       empty-message="Домены не найдены"
+      @update:column-filters="updateColumnFilters"
       @row-click="openViewModal"
     >
       <template #cell-name="{ value }">

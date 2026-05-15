@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { dnsApi } from '@/api/endpoints/dns'
 import type { DnsServer, DnsServerCreateData } from '@/api/types/dns'
-import { usePaginatedData } from '@/composables'
+import { useDebouncedTask, usePaginatedData } from '@/composables'
+import { SEARCH } from '@/constants'
 import DataTable from '@/ui/tables/DataTable.vue'
 import PaginationControl from '@/ui/tables/PaginationControl.vue'
 import BaseButton from '@/ui/buttons/BaseButton.vue'
@@ -14,12 +15,21 @@ import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outl
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
 import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
+import { loadClientFilteredPage } from '@/utils/clientPagination'
+import {
+  hasColumnFilters,
+  matchesColumnFilters,
+  type TableColumn,
+  type TableColumnFilters,
+} from '@/ui/tables/columnFilters'
 
 /**
  * DNS Servers management page
  * @component DnsServersPage
  */
 const searchQuery = ref('')
+const columnFilters = ref<TableColumnFilters>({})
+const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.value))
 
 // Paginated data management
 const {
@@ -27,9 +37,6 @@ const {
   isLoading,
   pagination,
   load: loadServers,
-  refresh: refreshServers,
-  goToPage,
-  changePageSize,
 } = usePaginatedData<DnsServer>(async (params) => dnsApi.getAll(params), 20)
 
 // Modals
@@ -49,7 +56,7 @@ const formErrors = ref<Record<string, string>>({})
 /**
  * Table columns configuration
  */
-const TABLE_COLUMNS = [
+const TABLE_COLUMNS: TableColumn<DnsServer>[] = [
   { key: 'id', label: 'ID', sortable: true },
   { key: 'server', label: 'DNS Server', sortable: true },
   { key: 'doh_server', label: 'DoH Server', sortable: true },
@@ -58,39 +65,129 @@ const TABLE_COLUMNS = [
   { key: 'actions', label: 'Действия' },
 ]
 
-/**
- * Search DNS servers
- */
-const searchServers = async () => {
-  if (!searchQuery.value || searchQuery.value.length < 3) {
-    loadServers()
+const hasActiveSearch = () => Boolean(searchQuery.value && searchQuery.value.length >= SEARCH.MIN_LENGTH)
+
+const matchesDnsColumnFilters = (server: DnsServer): boolean => {
+  return matchesColumnFilters(server, TABLE_COLUMNS, columnFilters.value)
+}
+
+const showSearchResults = (total: number) => {
+  if (total === 0) {
+    showInfo(`По запросу "${searchQuery.value}" ничего не найдено`, 'Результаты поиска')
     return
   }
 
+  showInfo(`Найдено серверов: ${total}`, 'Результаты поиска')
+}
+
+const loadSearchResults = async (shouldNotify = false) => {
   isLoading.value = true
   try {
-    const response = await dnsApi.search(searchQuery.value, {
-      limit: pagination.pageSize.value,
-      offset: pagination.offset.value,
-    })
+    const response = await loadClientFilteredPage(
+      (params) => dnsApi.search(searchQuery.value, params),
+      {
+        limit: pagination.pageSize.value,
+        offset: pagination.offset.value,
+      },
+      matchesDnsColumnFilters,
+    )
+
     servers.value = response.payload
     pagination.totalItems.value = response.total
 
-    // Show search results notification
-    if (servers.value.length === 0) {
-      showInfo(`По запросу "${searchQuery.value}" ничего не найдено`, 'Результаты поиска')
-    } else {
-      showInfo(`Найдено серверов: ${servers.value.length}`, 'Результаты поиска')
-    }
+    if (shouldNotify) showSearchResults(response.total)
   } catch (error) {
     errorHandler.handleError(error, {
       action: 'searchServers',
       component: 'DnsServersPage',
       query: searchQuery.value,
     })
+    servers.value = []
+    pagination.totalItems.value = 0
   } finally {
     isLoading.value = false
   }
+}
+
+const loadActiveServers = async (shouldNotifySearch = false) => {
+  if (hasActiveSearch()) {
+    await loadSearchResults(shouldNotifySearch)
+  } else if (hasActiveColumnFilters.value) {
+    await loadFilteredServers()
+  } else {
+    await loadServers()
+  }
+}
+
+const loadFilteredServers = async () => {
+  isLoading.value = true
+  try {
+    const response = await loadClientFilteredPage(
+      (params) => dnsApi.getAll(params),
+      {
+        limit: pagination.pageSize.value,
+        offset: pagination.offset.value,
+      },
+      matchesDnsColumnFilters,
+    )
+
+    servers.value = response.payload
+    pagination.totalItems.value = response.total
+  } catch (error) {
+    errorHandler.handleError(error, {
+      action: 'loadFilteredServers',
+      component: 'DnsServersPage',
+    })
+    servers.value = []
+    pagination.totalItems.value = 0
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const { run: runSearchServersDebounced, cancel: cancelSearchServersDebounce } = useDebouncedTask(async () => {
+  pagination.currentPage.value = 1 // Reset to first page
+
+  if (!hasActiveSearch()) {
+    await loadActiveServers()
+    return
+  }
+
+  await loadSearchResults(true)
+})
+
+const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = useDebouncedTask(async () => {
+  await loadActiveServers()
+})
+
+const cancelPendingInputLoads = () => {
+  cancelSearchServersDebounce()
+  cancelColumnFiltersDebounce()
+}
+
+const goToActivePage = async (page: number) => {
+  cancelPendingInputLoads()
+  pagination.goToPage(page)
+  await loadActiveServers()
+}
+
+const changeActivePageSize = async (size: number) => {
+  cancelPendingInputLoads()
+  pagination.changePageSize(size)
+  await loadActiveServers()
+}
+
+/**
+ * Search DNS servers
+ */
+const searchServers = () => {
+  runSearchServersDebounced()
+}
+
+const updateColumnFilters = (filters: TableColumnFilters) => {
+  columnFilters.value = filters
+  pagination.currentPage.value = 1
+  runColumnFiltersDebounced()
 }
 
 /**
@@ -156,6 +253,7 @@ const closeAddModal = () => {
 const createServer = async () => {
   if (!validateForm()) return
 
+  cancelPendingInputLoads()
   isLoading.value = true
   try {
     await dnsApi.create([formData.value])
@@ -163,7 +261,7 @@ const createServer = async () => {
     closeAddModal()
     showSuccess(`DNS сервер "${serverName}" успешно добавлен`)
     await delay()
-    await refreshServers()
+    await loadActiveServers()
   } catch (error) {
     errorHandler.handleError(error, {
       action: 'createServer',
@@ -189,6 +287,7 @@ const openDeleteConfirm = (id: number) => {
 const deleteServer = async () => {
   if (!serverToDelete.value) return
 
+  cancelPendingInputLoads()
   const serverId = serverToDelete.value
   isLoading.value = true
   try {
@@ -199,11 +298,11 @@ const deleteServer = async () => {
 
     // Reload data after deletion
     await delay()
-    await refreshServers()
+    await loadActiveServers()
 
     // Check if we need to go to previous page (if current page is now empty)
     if (servers.value.length === 0 && pagination.currentPage.value > 1) {
-      goToPage(pagination.currentPage.value - 1)
+      await goToActivePage(pagination.currentPage.value - 1)
     }
   } catch (error) {
     errorHandler.handleError(error, {
@@ -255,7 +354,14 @@ onMounted(() => {
     </div>
 
     <!-- Table -->
-    <DataTable :data="servers" :columns="TABLE_COLUMNS" :is-loading="isLoading" empty-message="DNS серверы не найдены">
+    <DataTable
+      :data="servers"
+      :columns="TABLE_COLUMNS"
+      :is-loading="isLoading"
+      :column-filters="columnFilters"
+      empty-message="DNS серверы не найдены"
+      @update:column-filters="updateColumnFilters"
+    >
       <template #cell-server="{ value }">
         <span class="font-mono text-sm">{{ value || '-' }}</span>
       </template>
@@ -283,8 +389,8 @@ onMounted(() => {
       :total-items="pagination.totalItems.value"
       :page-size="pagination.pageSize.value"
       :page-size-options="pagination.PAGE_SIZE_OPTIONS"
-      @update:current-page="goToPage"
-      @update:page-size="changePageSize"
+      @update:current-page="goToActivePage"
+      @update:page-size="changeActivePageSize"
     />
 
     <!-- Add Modal -->

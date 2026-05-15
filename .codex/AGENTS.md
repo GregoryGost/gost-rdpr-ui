@@ -27,6 +27,7 @@ To understand what you last did on this project, use the files in this folder an
 Please be sure to read all of the following rules:
 
 * [Project Overview](./rules/project.md)
+* [Workflow: Tasks](./rules/tasks.md)
 * [Rules for Vue.JS style and Instruments](./rules/vue.md)
 * [Image Generation Rules — Favicon](./rules/favicon_image.md)
 * [Markdown files](./rules/mark.md)

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { rosApi } from '@/api/endpoints/ros'
 import type { RosConfig, RosConfigCreateData } from '@/api/types/ros'
-import { usePaginatedData } from '@/composables'
+import { useDebouncedTask, usePaginatedData } from '@/composables'
 import { ROS_TEXTS, UI_TEXTS, SEARCH, VALIDATION, ERROR_MESSAGES } from '@/constants'
 import DataTable from '@/ui/tables/DataTable.vue'
 import PaginationControl from '@/ui/tables/PaginationControl.vue'
@@ -15,12 +15,21 @@ import { PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outl
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
 import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
+import { loadClientFilteredPage } from '@/utils/clientPagination'
+import {
+  hasColumnFilters,
+  matchesColumnFilters,
+  type TableColumn,
+  type TableColumnFilters,
+} from '@/ui/tables/columnFilters'
 
 /**
  * RouterOS Configs management page
  * @component RosConfigsPage
  */
 const searchQuery = ref('')
+const columnFilters = ref<TableColumnFilters>({})
+const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.value))
 
 // Paginated data management
 const {
@@ -28,9 +37,6 @@ const {
   isLoading,
   pagination,
   load: loadConfigs,
-  refresh: refreshConfigs,
-  goToPage,
-  changePageSize,
 } = usePaginatedData<RosConfig>(async (params) => {
   return await rosApi.getAll(params)
 }, 20)
@@ -56,7 +62,7 @@ const formErrors = ref<Record<string, string>>({})
 /**
  * Table columns configuration
  */
-const TABLE_COLUMNS = [
+const TABLE_COLUMNS: TableColumn<RosConfig>[] = [
   { key: 'id', label: UI_TEXTS.ID, sortable: true },
   { key: 'host', label: ROS_TEXTS.COLUMN_HOST, sortable: true },
   { key: 'user', label: ROS_TEXTS.COLUMN_USER, sortable: true },
@@ -66,52 +72,132 @@ const TABLE_COLUMNS = [
   { key: 'actions', label: UI_TEXTS.ACTIONS },
 ]
 
-/**
- * Search configs with debounce
- */
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
-const searchConfigs = async () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
+const hasActiveSearch = () => Boolean(searchQuery.value && searchQuery.value.length >= SEARCH.MIN_LENGTH)
+
+const matchesRosColumnFilters = (config: RosConfig): boolean => {
+  return matchesColumnFilters(config, TABLE_COLUMNS, columnFilters.value)
+}
+
+const showSearchResults = (total: number) => {
+  if (total === 0) {
+    showInfo(
+      `${ROS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
+      UI_TEXTS.SEARCH_RESULTS,
+    )
+    return
   }
 
-  searchTimeout = setTimeout(async () => {
-    pagination.currentPage.value = 1 // Reset to first page
+  showInfo(`${ROS_TEXTS.SEARCH_FOUND_PREFIX} ${total}`, UI_TEXTS.SEARCH_RESULTS)
+}
 
-    if (!searchQuery.value || searchQuery.value.length < SEARCH.MIN_LENGTH) {
-      loadConfigs()
-      return
-    }
-
-    isLoading.value = true
-    try {
-      const response = await rosApi.search(searchQuery.value, {
+const loadSearchResults = async (shouldNotify = false) => {
+  isLoading.value = true
+  try {
+    const response = await loadClientFilteredPage(
+      (params) => rosApi.search(searchQuery.value, params),
+      {
         limit: pagination.pageSize.value,
         offset: pagination.offset.value,
-      })
+      },
+      matchesRosColumnFilters,
+    )
 
-      configs.value = response.payload
-      pagination.totalItems.value = response.total
+    configs.value = response.payload
+    pagination.totalItems.value = response.total
 
-      // Show search results notification
-      if (configs.value.length === 0) {
-        showInfo(
-          `${ROS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
-          UI_TEXTS.SEARCH_RESULTS,
-        )
-      } else {
-        showInfo(`${ROS_TEXTS.SEARCH_FOUND_PREFIX} ${configs.value.length}`, UI_TEXTS.SEARCH_RESULTS)
-      }
-    } catch (error) {
-      errorHandler.handleError(error, {
-        action: 'searchConfigs',
-        component: 'RosConfigsPage',
-        query: searchQuery.value,
-      })
-    } finally {
-      isLoading.value = false
-    }
-  }, 300) // Debounce 300ms
+    if (shouldNotify) showSearchResults(response.total)
+  } catch (error) {
+    errorHandler.handleError(error, {
+      action: 'searchConfigs',
+      component: 'RosConfigsPage',
+      query: searchQuery.value,
+    })
+    configs.value = []
+    pagination.totalItems.value = 0
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const loadActiveConfigs = async (shouldNotifySearch = false) => {
+  if (hasActiveSearch()) {
+    await loadSearchResults(shouldNotifySearch)
+  } else if (hasActiveColumnFilters.value) {
+    await loadFilteredConfigs()
+  } else {
+    await loadConfigs()
+  }
+}
+
+const loadFilteredConfigs = async () => {
+  isLoading.value = true
+  try {
+    const response = await loadClientFilteredPage(
+      (params) => rosApi.getAll(params),
+      {
+        limit: pagination.pageSize.value,
+        offset: pagination.offset.value,
+      },
+      matchesRosColumnFilters,
+    )
+
+    configs.value = response.payload
+    pagination.totalItems.value = response.total
+  } catch (error) {
+    errorHandler.handleError(error, {
+      action: 'loadFilteredConfigs',
+      component: 'RosConfigsPage',
+    })
+    configs.value = []
+    pagination.totalItems.value = 0
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const { run: runSearchConfigsDebounced, cancel: cancelSearchConfigsDebounce } = useDebouncedTask(async () => {
+  pagination.currentPage.value = 1 // Reset to first page
+
+  if (!hasActiveSearch()) {
+    await loadActiveConfigs()
+    return
+  }
+
+  await loadSearchResults(true)
+})
+
+const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = useDebouncedTask(async () => {
+  await loadActiveConfigs()
+})
+
+const cancelPendingInputLoads = () => {
+  cancelSearchConfigsDebounce()
+  cancelColumnFiltersDebounce()
+}
+
+const goToActivePage = async (page: number) => {
+  cancelPendingInputLoads()
+  pagination.goToPage(page)
+  await loadActiveConfigs()
+}
+
+const changeActivePageSize = async (size: number) => {
+  cancelPendingInputLoads()
+  pagination.changePageSize(size)
+  await loadActiveConfigs()
+}
+
+/**
+ * Search configs
+ */
+const searchConfigs = () => {
+  runSearchConfigsDebounced()
+}
+
+const updateColumnFilters = (filters: TableColumnFilters) => {
+  columnFilters.value = filters
+  pagination.currentPage.value = 1
+  runColumnFiltersDebounced()
 }
 
 /**
@@ -179,13 +265,14 @@ const closeAddModal = () => {
 const createConfig = async () => {
   if (!validateForm()) return
 
+  cancelPendingInputLoads()
   isLoading.value = true
   try {
     await rosApi.create([formData.value])
     closeAddModal()
     showSuccess(`${ROS_TEXTS.CONFIG_PREFIX} "${formData.value.host}" ${ROS_TEXTS.SUCCESS_CREATED}`)
     await delay()
-    await refreshConfigs()
+    await loadActiveConfigs()
   } catch (error) {
     errorHandler.handleError(error, {
       action: 'createConfig',
@@ -211,6 +298,7 @@ const openDeleteConfirm = (id: number) => {
 const deleteConfig = async () => {
   if (!configToDelete.value) return
 
+  cancelPendingInputLoads()
   const configId = configToDelete.value
   isLoading.value = true
   try {
@@ -221,11 +309,11 @@ const deleteConfig = async () => {
 
     // Reload data after deletion
     await delay()
-    await refreshConfigs()
+    await loadActiveConfigs()
 
     // Check if we need to go to previous page (if current page is now empty)
     if (configs.value.length === 0 && pagination.currentPage.value > 1) {
-      goToPage(pagination.currentPage.value - 1)
+      await goToActivePage(pagination.currentPage.value - 1)
     }
   } catch (error) {
     errorHandler.handleError(error, {
@@ -292,7 +380,9 @@ onMounted(() => {
       :data="configs"
       :columns="TABLE_COLUMNS"
       :is-loading="isLoading"
+      :column-filters="columnFilters"
       :empty-message="ROS_TEXTS.EMPTY_MESSAGE"
+      @update:column-filters="updateColumnFilters"
       @row-click="openViewModal"
     >
       <template #cell-host="{ value }">
@@ -326,8 +416,8 @@ onMounted(() => {
       :total-items="pagination.totalItems.value"
       :page-size="pagination.pageSize.value"
       :page-size-options="pagination.PAGE_SIZE_OPTIONS"
-      @update:current-page="goToPage"
-      @update:page-size="changePageSize"
+      @update:current-page="goToActivePage"
+      @update:page-size="changeActivePageSize"
     />
 
     <!-- Add Modal -->

@@ -5,6 +5,7 @@ export const APP_NAME = 'GOST-RDPR'
 export const APP_TITLE = 'GOST-RDPR Ui'
 export const APP_DESCRIPTION = 'Admin Panel'
 export const APP_AUTHOR = 'GregoryGost'
+export const APP_VERSION = __APP_VERSION__
 
 /**
  * Storage keys
@@ -33,6 +34,7 @@ export const PAGINATION = {
  * Search settings
  */
 export const SEARCH = {
+  DEBOUNCE_MS: 500,
   MIN_LENGTH: 3,
 }
 
@@ -48,7 +50,7 @@ export const VALIDATION = {
  * API configuration
  */
 export const API = {
-  TIMEOUT: 5000, // milliseconds
+  TIMEOUT: 5000, // milliseconds  (5 seconds)
   // Use relative path to avoid CORS issues in production (nginx proxy)
   FALLBACK_BASE_URL: '/api',
   HEADERS: {

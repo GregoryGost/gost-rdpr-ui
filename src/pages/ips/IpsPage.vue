@@ -15,25 +15,42 @@ import { PlusIcon, TrashIcon, MagnifyingGlassIcon, ArrowPathIcon } from '@heroic
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
 import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
+import { loadClientFilteredPage } from '@/utils/clientPagination'
+import { useDebouncedTask } from '@/composables'
+import {
+  hasColumnFilters,
+  matchesColumnFilters,
+  type TableColumn,
+  type TableColumnFilters,
+} from '@/ui/tables/columnFilters'
 
 /**
  * IPs management page
  * @component IpsPage
  */
 const searchQuery = ref('')
-const typeFilter = ref<'all' | 'ipv4' | 'ipv6'>('all')
-const listFilter = ref<'all' | 'with-list' | 'without-list'>('all')
-const domainFilter = ref<'all' | 'with-domain' | 'without-domain'>('all')
-const gatewayFilter = ref<'all' | 'default-gateway' | 'vpn-gateway'>('all')
+type IpTypeFilter = 'all' | 'ipv4' | 'ipv6'
+type IpListFilter = 'all' | 'with-list' | 'without-list'
+type IpDomainFilter = 'all' | 'with-domain' | 'without-domain'
+type IpGatewayFilter = 'all' | 'default-gateway' | 'vpn-gateway'
+
+const typeFilter = ref<IpTypeFilter>('all')
+const listFilter = ref<IpListFilter>('all')
+const domainFilter = ref<IpDomainFilter>('all')
+const gatewayFilter = ref<IpGatewayFilter>('all')
+const columnFilters = ref<TableColumnFilters>({})
 
 // Data management
 const ips = ref<IpAddress[]>([])
-const allIps = ref<IpAddress[]>([]) // All loaded IPs before filters
 const isLoading = ref(false)
+const totalIps = ref(0)
 const totalIpv4 = ref(0)
 const totalIpv6 = ref(0)
 const totalWithList = ref(0)
+const totalWithListIpv4 = ref(0)
+const totalWithListIpv6 = ref(0)
 const totalWithDomain = ref(0)
+const totalDefaultGateway = ref<number | undefined>(undefined)
 
 // Pagination
 const pageSize = ref(PAGINATION.DEFAULT_PAGE_SIZE)
@@ -58,6 +75,7 @@ const hasActiveButtonFilters = computed(
     domainFilter.value !== 'all' ||
     gatewayFilter.value !== 'all',
 )
+const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.value))
 
 // Modals
 const isAddModalOpen = ref(false)
@@ -80,7 +98,7 @@ const formErrors = ref<Record<string, string>>({})
 /**
  * Table columns configuration
  */
-const TABLE_COLUMNS = [
+const TABLE_COLUMNS: TableColumn<IpAddress>[] = [
   { key: 'id', label: UI_TEXTS.ID, sortable: true },
   {
     key: 'type',
@@ -112,41 +130,20 @@ const TABLE_COLUMNS = [
   { key: 'actions', label: UI_TEXTS.ACTIONS },
 ]
 
-/**
- * Apply filters to IPs
- */
-const applyFilters = (ipsToFilter: IpAddress[]): IpAddress[] => {
-  let filtered = [...ipsToFilter]
+const matchesIpFilters = (ip: IpAddress): boolean => {
+  if (typeFilter.value === 'ipv4' && ip.type !== 4) return false
+  if (typeFilter.value === 'ipv6' && ip.type !== 6) return false
+  if (listFilter.value === 'with-list' && ip.ip_list_id == null) return false
+  if (listFilter.value === 'without-list' && ip.ip_list_id != null) return false
+  if (domainFilter.value === 'with-domain' && ip.domain_id == null) return false
+  if (domainFilter.value === 'without-domain' && ip.domain_id != null) return false
+  if (gatewayFilter.value === 'default-gateway' && ip.use_default_gw !== true) return false
+  if (gatewayFilter.value === 'vpn-gateway' && ip.use_default_gw === true) return false
+  return true
+}
 
-  // Type filter
-  if (typeFilter.value === 'ipv4') {
-    filtered = filtered.filter((ip) => ip.type === 4)
-  } else if (typeFilter.value === 'ipv6') {
-    filtered = filtered.filter((ip) => ip.type === 6)
-  }
-
-  // List filter
-  if (listFilter.value === 'with-list') {
-    filtered = filtered.filter((ip) => ip.ip_list_id != null)
-  } else if (listFilter.value === 'without-list') {
-    filtered = filtered.filter((ip) => ip.ip_list_id == null)
-  }
-
-  // Domain filter
-  if (domainFilter.value === 'with-domain') {
-    filtered = filtered.filter((ip) => ip.domain_id != null)
-  } else if (domainFilter.value === 'without-domain') {
-    filtered = filtered.filter((ip) => ip.domain_id == null)
-  }
-
-  // Gateway filter
-  if (gatewayFilter.value === 'default-gateway') {
-    filtered = filtered.filter((ip) => ip.use_default_gw === true)
-  } else if (gatewayFilter.value === 'vpn-gateway') {
-    filtered = filtered.filter((ip) => ip.use_default_gw !== true)
-  }
-
-  return filtered
+const matchesActiveIpFilters = (ip: IpAddress): boolean => {
+  return matchesIpFilters(ip) && matchesColumnFilters(ip, TABLE_COLUMNS, columnFilters.value)
 }
 
 /**
@@ -172,29 +169,134 @@ const getGatewayFilterParam = () => {
  */
 const hasActiveSearch = () => Boolean(searchQuery.value && searchQuery.value.length >= SEARCH.MIN_LENGTH)
 
+const getColumnFilterQuery = (key: string): string | undefined => {
+  const query = columnFilters.value[key]?.trim()
+  return query && query.length > 0 ? query : undefined
+}
+
+const getApiSearchQuery = (): string | undefined => {
+  if (hasActiveSearch()) return searchQuery.value
+  return getColumnFilterQuery('addr')
+}
+
+const shouldUseClientPagination = () =>
+  hasActiveSearch() || hasActiveButtonFilters.value || hasActiveColumnFilters.value
+
+const loadDefaultGatewayTotal = async () => {
+  if (totalDefaultGateway.value !== undefined) return
+
+  const response = await loadClientFilteredPage<IpAddress>(
+    (params) =>
+      ipsApi.getAll({
+        ...params,
+        default_gw: true,
+      }),
+    {
+      limit: 1,
+      offset: 0,
+    },
+    (ip) => ip.use_default_gw === true,
+  )
+
+  totalDefaultGateway.value = response.total
+}
+
+const getKnownIpFilterTotal = (): number | undefined => {
+  if (hasActiveSearch() || hasActiveColumnFilters.value) return undefined
+
+  if (
+    gatewayFilter.value !== 'all' &&
+    typeFilter.value === 'all' &&
+    listFilter.value === 'all' &&
+    domainFilter.value === 'all' &&
+    totalDefaultGateway.value !== undefined
+  ) {
+    return gatewayFilter.value === 'default-gateway'
+      ? totalDefaultGateway.value
+      : totalIps.value - totalDefaultGateway.value
+  }
+
+  if (
+    domainFilter.value !== 'all' &&
+    typeFilter.value === 'all' &&
+    listFilter.value === 'all' &&
+    gatewayFilter.value === 'all'
+  ) {
+    return domainFilter.value === 'with-domain' ? totalWithDomain.value : totalIps.value - totalWithDomain.value
+  }
+
+  if (listFilter.value !== 'all' && domainFilter.value === 'all' && gatewayFilter.value === 'all') {
+    if (typeFilter.value === 'ipv4') {
+      return listFilter.value === 'with-list' ? totalWithListIpv4.value : totalIpv4.value - totalWithListIpv4.value
+    }
+
+    if (typeFilter.value === 'ipv6') {
+      return listFilter.value === 'with-list' ? totalWithListIpv6.value : totalIpv6.value - totalWithListIpv6.value
+    }
+
+    return listFilter.value === 'with-list' ? totalWithList.value : totalIps.value - totalWithList.value
+  }
+
+  if (
+    typeFilter.value !== 'all' &&
+    listFilter.value === 'all' &&
+    domainFilter.value === 'all' &&
+    gatewayFilter.value === 'all'
+  ) {
+    return typeFilter.value === 'ipv4' ? totalIpv4.value : totalIpv6.value
+  }
+
+  return undefined
+}
+
 /**
  * Load IPs with stats
  */
 const loadIpsWithStats = async () => {
   isLoading.value = true
   try {
-    const response = await ipsApi.getAll({
-      limit: pageSize.value,
-      offset: offset.value,
-      type: getTypeFilterParam(),
-      default_gw: getGatewayFilterParam(),
-    })
+    if (hasActiveButtonFilters.value && totalIps.value === 0) {
+      await loadGlobalStats()
+    }
 
-    allIps.value = response.payload
+    if (
+      gatewayFilter.value !== 'all' &&
+      typeFilter.value === 'all' &&
+      listFilter.value === 'all' &&
+      domainFilter.value === 'all'
+    ) {
+      await loadDefaultGatewayTotal()
+    }
+
+    const knownFilterTotal = getKnownIpFilterTotal()
+    const response = await loadClientFilteredPage(
+      (params) =>
+        ipsApi.getAll({
+          ...params,
+          type: getTypeFilterParam(),
+          default_gw: getGatewayFilterParam(),
+        }),
+      {
+        limit: pageSize.value,
+        offset: offset.value,
+      },
+      matchesActiveIpFilters,
+      {
+        forceClientPagination: shouldUseClientPagination(),
+        knownTotal: knownFilterTotal,
+        stopWhenPageFilled: knownFilterTotal !== undefined,
+      },
+    )
+
     totalItems.value = response.total
-
-    // Apply filters
-    ips.value = applyFilters(allIps.value)
+    ips.value = response.payload
   } catch (error) {
     errorHandler.handleError(error, {
       action: 'loadIpsWithStats',
       component: 'IpsPage',
     })
+    ips.value = []
+    totalItems.value = 0
   } finally {
     isLoading.value = false
   }
@@ -204,31 +306,41 @@ const loadIpsWithStats = async () => {
  * Search IPs immediately with current pagination and filters.
  */
 const runSearchIps = async () => {
-  if (!hasActiveSearch()) {
+  const apiSearchQuery = getApiSearchQuery()
+
+  if (!apiSearchQuery) {
     await loadIpsWithStats()
     return
   }
 
   isLoading.value = true
   try {
-    const response = await ipsApi.search(searchQuery.value, {
-      limit: pageSize.value,
-      offset: offset.value,
-      type: getTypeFilterParam(),
-      default_gw: getGatewayFilterParam(),
-    })
+    const response = await loadClientFilteredPage(
+      (params) =>
+        ipsApi.search(apiSearchQuery, {
+          ...params,
+          type: getTypeFilterParam(),
+          default_gw: getGatewayFilterParam(),
+        }),
+      {
+        limit: pageSize.value,
+        offset: offset.value,
+      },
+      matchesActiveIpFilters,
+    )
 
-    allIps.value = response.payload
     totalItems.value = response.total
-    ips.value = applyFilters(allIps.value)
+    ips.value = response.payload
 
-    if (ips.value.length === 0) {
-      showInfo(
-        `${IPS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
-        UI_TEXTS.SEARCH_RESULTS,
-      )
-    } else {
-      showInfo(`${IPS_TEXTS.SEARCH_FOUND_PREFIX} ${ips.value.length}`, UI_TEXTS.SEARCH_RESULTS)
+    if (hasActiveSearch()) {
+      if (response.total === 0) {
+        showInfo(
+          `${IPS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
+          UI_TEXTS.SEARCH_RESULTS,
+        )
+      } else {
+        showInfo(`${IPS_TEXTS.SEARCH_FOUND_PREFIX} ${response.total}`, UI_TEXTS.SEARCH_RESULTS)
+      }
     }
   } catch (error) {
     errorHandler.handleError(error, {
@@ -236,6 +348,8 @@ const runSearchIps = async () => {
       component: 'IpsPage',
       query: searchQuery.value,
     })
+    ips.value = []
+    totalItems.value = 0
   } finally {
     isLoading.value = false
   }
@@ -245,23 +359,29 @@ const runSearchIps = async () => {
  * Load IPs through the active data source.
  */
 const loadActiveIps = () => {
-  if (hasActiveSearch()) return runSearchIps()
+  if (getApiSearchQuery()) return runSearchIps()
   return loadIpsWithStats()
 }
 
 /**
- * Search IPs with debounce
+ * Search IPs
  */
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
-const searchIps = async () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
-  }
+const { run: runSearchIpsDebounced, cancel: cancelSearchIpsDebounce } = useDebouncedTask(async () => {
+  currentPage.value = 1 // Reset to first page
+  await loadActiveIps()
+})
 
-  searchTimeout = setTimeout(async () => {
-    currentPage.value = 1 // Reset to first page
-    await loadActiveIps()
-  }, 300) // Debounce 300ms
+const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = useDebouncedTask(async () => {
+  await loadActiveIps()
+})
+
+const cancelPendingInputLoads = () => {
+  cancelSearchIpsDebounce()
+  cancelColumnFiltersDebounce()
+}
+
+const searchIps = () => {
+  runSearchIpsDebounced()
 }
 
 /**
@@ -270,9 +390,12 @@ const searchIps = async () => {
 const loadGlobalStats = async () => {
   try {
     const stats = await statsApi.getStats()
+    totalIps.value = stats.ips.total
     totalIpv4.value = stats.ips.v4_total
     totalIpv6.value = stats.ips.v6_total
     totalWithList.value = stats.ips.per_list.reduce((sum, l) => sum + l.total, 0)
+    totalWithListIpv4.value = stats.ips.per_list.reduce((sum, l) => sum + l.v4_count, 0)
+    totalWithListIpv6.value = stats.ips.per_list.reduce((sum, l) => sum + l.v6_count, 0)
     totalWithDomain.value = stats.ips.linked_to_domain
   } catch (error) {
     errorHandler.handleError(error, { action: 'loadGlobalStats', component: 'IpsPage' })
@@ -282,7 +405,8 @@ const loadGlobalStats = async () => {
 /**
  * Filter by type
  */
-const filterByType = (value: 'all' | 'ipv4' | 'ipv6') => {
+const filterByType = (value: IpTypeFilter) => {
+  cancelPendingInputLoads()
   typeFilter.value = value
   currentPage.value = 1 // Reset to first page
   loadActiveIps()
@@ -291,7 +415,8 @@ const filterByType = (value: 'all' | 'ipv4' | 'ipv6') => {
 /**
  * Filter by list
  */
-const filterByList = (value: 'all' | 'with-list' | 'without-list') => {
+const filterByList = (value: IpListFilter) => {
+  cancelPendingInputLoads()
   listFilter.value = value
   currentPage.value = 1 // Reset to first page
   loadActiveIps()
@@ -300,7 +425,8 @@ const filterByList = (value: 'all' | 'with-list' | 'without-list') => {
 /**
  * Filter by domain
  */
-const filterByDomain = (value: 'all' | 'with-domain' | 'without-domain') => {
+const filterByDomain = (value: IpDomainFilter) => {
+  cancelPendingInputLoads()
   domainFilter.value = value
   currentPage.value = 1 // Reset to first page
   loadActiveIps()
@@ -309,7 +435,8 @@ const filterByDomain = (value: 'all' | 'with-domain' | 'without-domain') => {
 /**
  * Filter by gateway usage
  */
-const filterByGateway = (value: 'default-gateway' | 'vpn-gateway') => {
+const filterByGateway = (value: Exclude<IpGatewayFilter, 'all'>) => {
+  cancelPendingInputLoads()
   gatewayFilter.value = value
   currentPage.value = 1 // Reset to first page
   loadActiveIps()
@@ -319,6 +446,7 @@ const filterByGateway = (value: 'default-gateway' | 'vpn-gateway') => {
  * Reset button filters to default values
  */
 const resetButtonFilters = () => {
+  cancelPendingInputLoads()
   typeFilter.value = 'all'
   listFilter.value = 'all'
   domainFilter.value = 'all'
@@ -384,13 +512,14 @@ const closeAddModal = () => {
 const createIp = async () => {
   if (!validateForm()) return
 
+  cancelPendingInputLoads()
   isLoading.value = true
   try {
     await ipsApi.create([formData.value])
     closeAddModal()
     showSuccess(`${IPS_TEXTS.IP_PREFIX} "${formData.value.addr}" ${IPS_TEXTS.SUCCESS_CREATED}`)
     await delay()
-    await loadIpsWithStats()
+    await loadActiveIps()
     await loadGlobalStats()
   } catch (error) {
     errorHandler.handleError(error, {
@@ -417,6 +546,7 @@ const openDeleteConfirm = (id: number) => {
 const deleteIp = async () => {
   if (!ipToDelete.value) return
 
+  cancelPendingInputLoads()
   const ipId = ipToDelete.value
   isLoading.value = true
   try {
@@ -427,7 +557,7 @@ const deleteIp = async () => {
 
     // Reload data after deletion
     await delay()
-    await loadIpsWithStats()
+    await loadActiveIps()
     await loadGlobalStats()
 
     // Check if we need to go to previous page (if current page is now empty)
@@ -451,6 +581,7 @@ const deleteIp = async () => {
  * Go to specific page
  */
 const goToPage = (page: number) => {
+  cancelPendingInputLoads()
   currentPage.value = page
   loadActiveIps()
 }
@@ -459,9 +590,16 @@ const goToPage = (page: number) => {
  * Change page size
  */
 const changePageSize = (size: number) => {
+  cancelPendingInputLoads()
   pageSize.value = size
   currentPage.value = 1
   loadActiveIps()
+}
+
+const updateColumnFilters = (filters: TableColumnFilters) => {
+  columnFilters.value = filters
+  currentPage.value = 1
+  runColumnFiltersDebounced()
 }
 
 onMounted(() => {
@@ -484,7 +622,7 @@ onMounted(() => {
     <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-5">
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">Всего IP</div>
-        <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ totalItems }}</div>
+        <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ totalIps }}</div>
         <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">{{ IPS_TEXTS.STATS_TOTAL_HINT }}</p>
       </div>
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
@@ -621,7 +759,9 @@ onMounted(() => {
       :data="ips"
       :columns="TABLE_COLUMNS"
       :is-loading="isLoading"
+      :column-filters="columnFilters"
       :empty-message="IPS_TEXTS.EMPTY_MESSAGE"
+      @update:column-filters="updateColumnFilters"
       @row-click="openViewModal"
     >
       <template #cell-type="{ value }">
