@@ -4,19 +4,15 @@
  * @component DataTable
  */
 import { ref, computed } from 'vue'
-
-type SortDirection = 'asc' | 'desc' | null
-type SortType = 'default' | 'ip'
-
-interface Column<T> {
-  key: keyof T | string
-  label: string
-  sortable?: boolean
-  sortType?: SortType
-  filterable?: boolean
-  filterPlaceholder?: string
-  filterValue?: (row: T, value: unknown) => string
-}
+import {
+  getColumnKey,
+  hasColumnFilters,
+  isFilterableColumn,
+  matchesColumnFilters,
+  type SortDirection,
+  type TableColumn,
+  type TableColumnFilters,
+} from '@/ui/tables/columnFilters'
 
 const isIPv4 = (s: string): boolean => /^\d{1,3}(\.\d{1,3}){3}$/.test(s)
 const isIPv6 = (s: string): boolean => s.includes(':')
@@ -52,26 +48,33 @@ const compareIp = (a: string, b: string): number => {
 
 interface Props<T> {
   data: T[]
-  columns: Column<T>[]
+  columns: TableColumn<T>[]
   isLoading?: boolean
   emptyMessage?: string
+  isColumnFilteringEnabled?: boolean
+  columnFilters?: TableColumnFilters
 }
 
 const props = withDefaults(defineProps<Props<T>>(), {
   isLoading: false,
   emptyMessage: 'Нет данных',
+  isColumnFilteringEnabled: true,
 })
 
 const emit = defineEmits<{
   rowClick: [row: T]
   sort: [key: string, direction: SortDirection]
+  'update:columnFilters': [filters: TableColumnFilters]
 }>()
 
 const sortKey = ref<string | null>(null)
 const sortDirection = ref<SortDirection>(null)
-const columnFilters = ref<Record<string, string>>({})
+const localColumnFilters = ref<TableColumnFilters>({})
 
-const toggleSort = (column: Column<T>) => {
+const externalColumnFilters = computed(() => props.columnFilters !== undefined)
+const activeColumnFilters = computed(() => props.columnFilters ?? localColumnFilters.value)
+
+const toggleSort = (column: TableColumn<T>) => {
   if (!column.sortable) return
   const key = String(column.key)
   if (sortKey.value !== key) {
@@ -86,39 +89,38 @@ const toggleSort = (column: Column<T>) => {
   emit('sort', sortKey.value ?? key, sortDirection.value)
 }
 
-const getColumnKey = (column: Column<T>): string => String(column.key)
-
-const isFilterableColumn = (column: Column<T>): boolean => {
-  return column.filterable !== false && getColumnKey(column) !== 'actions'
+const getColumnFilterValue = (column: TableColumn<T>): string => {
+  return activeColumnFilters.value[getColumnKey(column)] ?? ''
 }
 
-const normalizeFilterValue = (value: unknown): string => {
-  if (value == null) return ''
-  if (Array.isArray(value)) return value.join(' ')
-  return String(value)
-}
+const updateColumnFilter = (column: TableColumn<T>, value: string) => {
+  const key = getColumnKey(column)
+  const nextFilters = {
+    ...activeColumnFilters.value,
+    [key]: value,
+  }
 
-const getFilterValue = (row: T, column: Column<T>): string => {
-  const value = row[column.key as keyof T]
-  return column.filterValue ? column.filterValue(row, value) : normalizeFilterValue(value)
+  if (value.trim().length === 0) {
+    delete nextFilters[key]
+  }
+
+  if (externalColumnFilters.value) {
+    emit('update:columnFilters', nextFilters)
+    return
+  }
+
+  localColumnFilters.value = nextFilters
 }
 
 const filteredData = computed(() => {
-  const activeFilters = props.columns
-    .map((column) => ({
-      column,
-      query: (columnFilters.value[getColumnKey(column)] ?? '').trim().toLocaleLowerCase('ru'),
-    }))
-    .filter(({ column, query }) => isFilterableColumn(column) && query.length > 0)
+  if (!props.isColumnFilteringEnabled || externalColumnFilters.value) return props.data
+  if (!hasColumnFilters(activeColumnFilters.value)) return props.data
 
-  if (activeFilters.length === 0) return props.data
+  return props.data.filter((row) => matchesColumnFilters(row, props.columns, activeColumnFilters.value))
+})
 
-  return props.data.filter((row) =>
-    activeFilters.every(({ column, query }) => {
-      const value = getFilterValue(row, column).toLocaleLowerCase('ru')
-      return value.includes(query)
-    }),
-  )
+const hasFilterableColumns = computed(() => {
+  return props.isColumnFilteringEnabled && props.columns.some((column) => isFilterableColumn(column))
 })
 
 const sortedData = computed(() => {
@@ -197,16 +199,17 @@ const sortedData = computed(() => {
             <span v-else>{{ column.label }}</span>
           </th>
         </tr>
-        <tr class="border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+        <tr v-if="hasFilterableColumns" class="border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
           <th v-for="column in columns" :key="`${getColumnKey(column)}-filter`" class="px-6 py-2 text-left">
             <input
               v-if="isFilterableColumn(column)"
-              v-model="columnFilters[getColumnKey(column)]"
+              :value="getColumnFilterValue(column)"
               type="search"
               :aria-label="`Фильтр: ${column.label}`"
               :placeholder="column.filterPlaceholder || column.label"
               class="block w-full min-w-24 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-normal text-gray-900 placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
               @click.stop
+              @input="updateColumnFilter(column, ($event.target as HTMLInputElement).value)"
             />
           </th>
         </tr>

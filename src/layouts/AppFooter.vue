@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { APP_NAME, APP_DESCRIPTION, APP_AUTHOR, AUTHOR_GITHUB, AUTHOR_BLOG, AUTHOR_TELEGRAM } from '@/constants'
+import {
+  APP_NAME,
+  APP_DESCRIPTION,
+  APP_AUTHOR,
+  AUTHOR_GITHUB,
+  AUTHOR_BLOG,
+  AUTHOR_TELEGRAM,
+  APP_VERSION,
+} from '@/constants'
 
 /**
  * Application footer component
  * @component AppFooter
  */
 const currentYear = new Date().getFullYear()
-const APP_VERSION = __APP_VERSION__
 
 const socialLinks = [
   {
