@@ -1,6 +1,7 @@
 import { apiRequest } from '../client'
-import type { Domain, DomainCreateData } from '../types/domains'
+import type { Domain, DomainCreateData, DomainResolveCheckRequest, DomainResolveCheckResponse } from '../types/domains'
 import type { PaginatedResponse, PaginationParams, OkResponse } from '../types/common'
+import { API } from '@/constants'
 
 /**
  * Convert pagination params to URLSearchParams
@@ -69,6 +70,21 @@ export const domainsApi = {
    * @returns {Promise<OkResponse>}
    */
   deleteAll: () => apiRequest<OkResponse>('/domains', { method: 'DELETE' }),
+
+  /**
+   * Resolve a domain once without saving results
+   * @param {DomainResolveCheckRequest} data - Domain name or existing domain ID
+   * @returns {Promise<DomainResolveCheckResponse>}
+   */
+  resolveCheck: (data: DomainResolveCheckRequest) =>
+    apiRequest<DomainResolveCheckResponse>(
+      '/domains/resolve/check',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      API.DOMAIN_RESOLVE_CHECK_TIMEOUT,
+    ),
 
   /**
    * Search domains by text

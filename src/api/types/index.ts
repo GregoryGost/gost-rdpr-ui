@@ -10,7 +10,17 @@ export type { PaginationParams, PaginatedResponse, OkResponse, ErrorResponse } f
 export type { DnsServer, DnsServerCreateData } from './dns'
 
 // Domains types
-export type { DomainsList, Domain, DomainsListCreateData, DomainCreateData } from './domains'
+export type {
+  DomainsList,
+  Domain,
+  DomainsListCreateData,
+  DomainCreateData,
+  DomainResolveByNameRequest,
+  DomainResolveByIdRequest,
+  DomainResolveCheckRequest,
+  DnsServerResolveResult,
+  DomainResolveCheckResponse,
+} from './domains'
 
 // IPs types
 export type { IpsList, IpAddress, IpsListCreateData, IpAddressCreateData } from './ips'

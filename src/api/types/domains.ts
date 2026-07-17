@@ -55,3 +55,47 @@ export interface DomainCreateData {
   list_id?: number
   ros_comment?: string
 }
+
+/**
+ * One-time resolve request by domain name
+ * @interface DomainResolveByNameRequest
+ */
+export interface DomainResolveByNameRequest {
+  domain: string
+  id?: never
+}
+
+/**
+ * One-time resolve request by existing domain ID
+ * @interface DomainResolveByIdRequest
+ */
+export interface DomainResolveByIdRequest {
+  id: number
+  domain?: never
+}
+
+/**
+ * One-time resolve request with exactly one source
+ */
+export type DomainResolveCheckRequest = DomainResolveByNameRequest | DomainResolveByIdRequest
+
+/**
+ * Resolve result returned for one DNS server
+ * @interface DnsServerResolveResult
+ */
+export interface DnsServerResolveResult {
+  server: string
+  server_type: string
+  ips_v4: string[]
+  ips_v6: string[]
+  cnames: string[]
+}
+
+/**
+ * One-time domain resolve response
+ * @interface DomainResolveCheckResponse
+ */
+export interface DomainResolveCheckResponse {
+  domain: string
+  results: DnsServerResolveResult[]
+}
