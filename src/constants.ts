@@ -51,6 +51,7 @@ export const VALIDATION = {
  */
 export const API = {
   TIMEOUT: 5000, // milliseconds  (5 seconds)
+  DOMAIN_RESOLVE_CHECK_TIMEOUT: 35000, // 30-second backend read timeout plus transport overhead
   // Use relative path to avoid CORS issues in production (nginx proxy)
   FALLBACK_BASE_URL: '/api',
   HEADERS: {
@@ -133,6 +134,37 @@ export const COMMANDS_TEXTS = {
   DOMAIN_RESOLVE_STALE_PROGRESS: 'Определение устаревших доменов... Это может занять больше времени.',
   DOMAIN_RESOLVE_NEW_SUCCESS: 'Новые домены успешно определены в IP адреса',
   DOMAIN_RESOLVE_STALE_SUCCESS: 'Устаревшие домены успешно определены в IP адреса',
+}
+
+/**
+ * One-time domain resolve check texts
+ */
+export const DOMAIN_RESOLVE_CHECK_TEXTS = {
+  BUTTON: 'Проверить резолвинг',
+  ROW_BUTTON_TITLE: 'Проверить резолвинг домена',
+  MODAL_TITLE: 'Проверка резолвинга домена',
+  DOMAIN_LABEL: 'Доменное имя',
+  DOMAIN_PLACEHOLDER: 'example.com',
+  DOMAIN_REQUIRED: 'Укажите доменное имя',
+  DOMAIN_TOO_LONG: 'Доменное имя не должно превышать 253 символа',
+  DNS_SELECTION_TITLE: 'DNS-серверы для проверки',
+  DNS_AUTOMATIC: 'Все DNS-серверы (кроме default)',
+  DNS_AUTOMATIC_HINT:
+    'Проверка пройдет через все пользовательские DNS-серверы, либо через default DNS сервер, если не заведены пользовательские',
+  DNS_MANUAL: 'Выбрать вручную',
+  DNS_MANUAL_HINT: 'Проверка пройдет только через отмеченные серверы',
+  DNS_LIST_LOADING: 'Загрузка списка DNS-серверов...',
+  DNS_LIST_ERROR_TITLE: 'Список DNS-серверов недоступен',
+  DNS_LIST_ERROR: 'Не удалось загрузить список DNS-серверов',
+  DNS_LIST_RETRY: 'Повторить загрузку',
+  DNS_LIST_EMPTY: 'Доступные DNS-серверы не найдены',
+  DNS_MANUAL_REQUIRED: 'Выберите хотя бы один DNS-сервер',
+  DNS_SELECTION_INVALID: 'Выбран некорректный набор DNS-серверов',
+  LOADING: 'Проверка через настроенные DNS-серверы...',
+  RESULT_TITLE: 'Результат проверки',
+  EMPTY_RECORDS: 'Записей не получено',
+  RUN: 'Проверить',
+  CLOSE: 'Закрыть',
 }
 
 /**

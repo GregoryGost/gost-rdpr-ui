@@ -3,7 +3,8 @@ import { ref, onMounted, computed } from 'vue'
 import { domainsApi } from '@/api/endpoints/domains'
 import { statsApi } from '@/api/endpoints/stats'
 import type { Domain, DomainCreateData } from '@/api/types/domains'
-import { PAGINATION, SEARCH, UI_TEXTS } from '@/constants'
+import { DOMAIN_RESOLVE_CHECK_TEXTS, PAGINATION, SEARCH, UI_TEXTS } from '@/constants'
+import DomainResolveCheckModal from '@/components/domains/DomainResolveCheckModal.vue'
 import DataTable from '@/ui/tables/DataTable.vue'
 import PaginationControl from '@/ui/tables/PaginationControl.vue'
 import BaseButton from '@/ui/buttons/BaseButton.vue'
@@ -18,6 +19,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ArrowPathIcon,
+  GlobeAltIcon,
 } from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
 import { delay } from '@/utils/timers'
@@ -76,8 +78,10 @@ const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.val
 const isAddModalOpen = ref(false)
 const isViewModalOpen = ref(false)
 const isDeleteConfirmOpen = ref(false)
+const isResolveCheckModalOpen = ref(false)
 const domainToDelete = ref<number | null>(null)
 const selectedDomain = ref<Domain | null>(null)
+const domainToResolveCheck = ref<Domain | null>(null)
 
 // Form data
 const formData = ref<DomainCreateData>({
@@ -423,6 +427,31 @@ const closeAddModal = () => {
 }
 
 /**
+ * Open an editable one-time domain resolve check.
+ */
+const openDomainResolveCheck = () => {
+  domainToResolveCheck.value = null
+  isResolveCheckModalOpen.value = true
+}
+
+/**
+ * Open a one-time resolve check for an existing domain.
+ * @param {Domain} domain - Selected table row
+ */
+const openSavedDomainResolveCheck = (domain: Domain) => {
+  domainToResolveCheck.value = domain
+  isResolveCheckModalOpen.value = true
+}
+
+/**
+ * Close the one-time resolve check and clear its source.
+ */
+const closeDomainResolveCheck = () => {
+  isResolveCheckModalOpen.value = false
+  domainToResolveCheck.value = null
+}
+
+/**
  * Create new domain
  */
 const createDomain = async () => {
@@ -619,11 +648,17 @@ onMounted(() => {
         </BaseButton>
       </div>
 
-      <!-- Add Button -->
-      <BaseButton @click="openAddModal" variant="primary">
-        <PlusIcon class="mr-2 h-5 w-5" />
-        Добавить Домен
-      </BaseButton>
+      <!-- Page Actions -->
+      <div class="flex flex-col gap-2 sm:flex-row">
+        <BaseButton @click="openDomainResolveCheck" variant="secondary">
+          <GlobeAltIcon class="mr-2 h-5 w-5" />
+          {{ DOMAIN_RESOLVE_CHECK_TEXTS.BUTTON }}
+        </BaseButton>
+        <BaseButton @click="openAddModal" variant="primary">
+          <PlusIcon class="mr-2 h-5 w-5" />
+          Добавить Домен
+        </BaseButton>
+      </div>
     </div>
 
     <!-- Table -->
@@ -709,9 +744,20 @@ onMounted(() => {
       </template>
 
       <template #cell-actions="{ row }">
-        <BaseButton variant="danger" size="sm" @click.stop="openDeleteConfirm(row.id)">
-          <TrashIcon class="h-4 w-4" />
-        </BaseButton>
+        <div class="flex items-center gap-2">
+          <BaseButton
+            variant="secondary"
+            size="sm"
+            :title="DOMAIN_RESOLVE_CHECK_TEXTS.ROW_BUTTON_TITLE"
+            :aria-label="`${DOMAIN_RESOLVE_CHECK_TEXTS.ROW_BUTTON_TITLE}: ${row.name}`"
+            @click.stop="openSavedDomainResolveCheck(row)"
+          >
+            <GlobeAltIcon class="h-4 w-4" />
+          </BaseButton>
+          <BaseButton variant="danger" size="sm" aria-label="Удалить домен" @click.stop="openDeleteConfirm(row.id)">
+            <TrashIcon class="h-4 w-4" />
+          </BaseButton>
+        </div>
       </template>
     </DataTable>
 
@@ -754,6 +800,12 @@ onMounted(() => {
         </div>
       </form>
     </BaseModal>
+
+    <DomainResolveCheckModal
+      :is-open="isResolveCheckModalOpen"
+      :domain="domainToResolveCheck"
+      @close="closeDomainResolveCheck"
+    />
 
     <!-- View/Edit Domain Modal -->
     <BaseModal

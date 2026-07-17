@@ -1,6 +1,7 @@
 import { apiRequest } from '../client'
-import type { Domain, DomainCreateData } from '../types/domains'
+import type { Domain, DomainCreateData, DomainResolveCheckRequest, DomainResolveCheckResponse } from '../types/domains'
 import type { PaginatedResponse, PaginationParams, OkResponse } from '../types/common'
+import { API } from '@/constants'
 
 /**
  * Convert pagination params to URLSearchParams
@@ -15,6 +16,24 @@ function toSearchParams(params: PaginationParams): URLSearchParams {
     }
   })
   return searchParams
+}
+
+/**
+ * Validate optional DNS server IDs before sending a one-time resolve request.
+ * @param {DomainResolveCheckRequest} data - Resolve request payload
+ * @returns {void}
+ * @throws {TypeError} When DNS server IDs violate the backend contract
+ */
+function validateDnsServerIds(data: DomainResolveCheckRequest): void {
+  const dnsServerIds = data.dns_server_ids
+  if (dnsServerIds === undefined) return
+
+  const hasInvalidId = dnsServerIds.some((id) => !Number.isInteger(id) || id < 0)
+  const hasDuplicateIds = new Set(dnsServerIds).size !== dnsServerIds.length
+
+  if (dnsServerIds.length === 0 || hasInvalidId || hasDuplicateIds) {
+    throw new TypeError('dns_server_ids must contain unique non-negative integers')
+  }
 }
 
 /**
@@ -69,6 +88,23 @@ export const domainsApi = {
    * @returns {Promise<OkResponse>}
    */
   deleteAll: () => apiRequest<OkResponse>('/domains', { method: 'DELETE' }),
+
+  /**
+   * Resolve a domain once without saving results
+   * @param {DomainResolveCheckRequest} data - Domain name or existing domain ID
+   * @returns {Promise<DomainResolveCheckResponse>}
+   */
+  resolveCheck: (data: DomainResolveCheckRequest) => {
+    validateDnsServerIds(data)
+    return apiRequest<DomainResolveCheckResponse>(
+      '/domains/resolve/check',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      API.DOMAIN_RESOLVE_CHECK_TIMEOUT,
+    )
+  },
 
   /**
    * Search domains by text
