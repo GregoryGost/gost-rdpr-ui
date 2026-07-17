@@ -37,6 +37,18 @@ function validateDnsServerIds(data: DomainResolveCheckRequest): void {
 }
 
 /**
+ * Validate a stored domain ID before starting background resolving.
+ * @param {number} id - Stored domain ID
+ * @returns {void}
+ * @throws {TypeError} When the ID violates the backend path contract
+ */
+function validateStoredDomainId(id: number): void {
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new TypeError('Domain ID must be a positive integer')
+  }
+}
+
+/**
  * Domains API response with additional fields
  */
 export interface DomainsResponse extends PaginatedResponse<Domain> {
@@ -104,6 +116,16 @@ export const domainsApi = {
       },
       API.DOMAIN_RESOLVE_CHECK_TIMEOUT,
     )
+  },
+
+  /**
+   * Start background resolving for a stored domain.
+   * @param {number} id - Stored domain ID
+   * @returns {Promise<OkResponse>}
+   */
+  resolveNow: (id: number) => {
+    validateStoredDomainId(id)
+    return apiRequest<OkResponse>(`/domains/${id}/resolve`, { method: 'POST' })
   },
 
   /**

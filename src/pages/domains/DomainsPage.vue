@@ -3,8 +3,9 @@ import { ref, onMounted, computed } from 'vue'
 import { domainsApi } from '@/api/endpoints/domains'
 import { statsApi } from '@/api/endpoints/stats'
 import type { Domain, DomainCreateData } from '@/api/types/domains'
-import { DOMAIN_RESOLVE_CHECK_TEXTS, PAGINATION, SEARCH, UI_TEXTS } from '@/constants'
+import { DOMAIN_RESOLVE_CHECK_TEXTS, DOMAIN_RESOLVE_NOW_TEXTS, PAGINATION, SEARCH, UI_TEXTS } from '@/constants'
 import DomainResolveCheckModal from '@/components/domains/DomainResolveCheckModal.vue'
+import DomainResolveNowModal from '@/components/domains/DomainResolveNowModal.vue'
 import DataTable from '@/ui/tables/DataTable.vue'
 import PaginationControl from '@/ui/tables/PaginationControl.vue'
 import BaseButton from '@/ui/buttons/BaseButton.vue'
@@ -19,6 +20,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ArrowPathIcon,
+  BoltIcon,
   GlobeAltIcon,
 } from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
@@ -79,9 +81,11 @@ const isAddModalOpen = ref(false)
 const isViewModalOpen = ref(false)
 const isDeleteConfirmOpen = ref(false)
 const isResolveCheckModalOpen = ref(false)
+const isResolveNowModalOpen = ref(false)
 const domainToDelete = ref<number | null>(null)
 const selectedDomain = ref<Domain | null>(null)
 const domainToResolveCheck = ref<Domain | null>(null)
+const domainToResolveNow = ref<Domain | null>(null)
 
 // Form data
 const formData = ref<DomainCreateData>({
@@ -452,6 +456,32 @@ const closeDomainResolveCheck = () => {
 }
 
 /**
+ * Check whether a stored domain can use the resolve-by-ID endpoint.
+ * @param {number} id - Stored domain ID
+ * @returns {boolean}
+ */
+const canResolveDomainNow = (id: number): boolean => Number.isInteger(id) && id > 0
+
+/**
+ * Open background resolve confirmation for an existing domain.
+ * @param {Domain} domain - Selected table row
+ */
+const openDomainResolveNow = (domain: Domain): void => {
+  if (!canResolveDomainNow(domain.id)) return
+
+  domainToResolveNow.value = domain
+  isResolveNowModalOpen.value = true
+}
+
+/**
+ * Close background resolve confirmation and clear its source.
+ */
+const closeDomainResolveNow = (): void => {
+  isResolveNowModalOpen.value = false
+  domainToResolveNow.value = null
+}
+
+/**
  * Create new domain
  */
 const createDomain = async () => {
@@ -744,7 +774,25 @@ onMounted(() => {
       </template>
 
       <template #cell-actions="{ row }">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2" @click.stop>
+          <BaseButton
+            variant="primary"
+            size="sm"
+            :is-disabled="!canResolveDomainNow(row.id)"
+            :title="
+              canResolveDomainNow(row.id)
+                ? DOMAIN_RESOLVE_NOW_TEXTS.ROW_BUTTON_TITLE
+                : DOMAIN_RESOLVE_NOW_TEXTS.ROW_BUTTON_UNAVAILABLE
+            "
+            :aria-label="
+              canResolveDomainNow(row.id)
+                ? `${DOMAIN_RESOLVE_NOW_TEXTS.ROW_BUTTON_TITLE}: ${row.name}`
+                : `${DOMAIN_RESOLVE_NOW_TEXTS.ROW_BUTTON_UNAVAILABLE}: ${row.name}`
+            "
+            @click="openDomainResolveNow(row)"
+          >
+            <BoltIcon class="h-4 w-4" />
+          </BaseButton>
           <BaseButton
             variant="secondary"
             size="sm"
@@ -805,6 +853,12 @@ onMounted(() => {
       :is-open="isResolveCheckModalOpen"
       :domain="domainToResolveCheck"
       @close="closeDomainResolveCheck"
+    />
+
+    <DomainResolveNowModal
+      :is-open="isResolveNowModalOpen"
+      :domain="domainToResolveNow"
+      @close="closeDomainResolveNow"
     />
 
     <!-- View/Edit Domain Modal -->
