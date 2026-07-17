@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ApiError, NetworkError } from '@/api/client'
+import { dnsApi } from '@/api/endpoints/dns'
 import { domainsApi } from '@/api/endpoints/domains'
+import type { DnsServer } from '@/api/types/dns'
 import type {
   Domain,
   DomainResolveCheckRequest,
   DomainResolveCheckResponse,
+  DnsServerIds,
   DnsServerResolveResult,
 } from '@/api/types/domains'
 import { DOMAIN_RESOLVE_CHECK_TEXTS } from '@/constants'
@@ -31,33 +34,109 @@ const emit = defineEmits<{
   close: []
 }>()
 
+type DnsSelectionMode = 'automatic' | 'manual'
+
+const DNS_SERVER_PAGE_LIMIT = 100
 const domainName = ref('')
 const formError = ref('')
+const selectionError = ref('')
 const requestError = ref('')
 const isLoading = ref(false)
 const resolveResult = ref<DomainResolveCheckResponse | null>(null)
-let activeRequestId = 0
+const dnsSelectionMode = ref<DnsSelectionMode>('automatic')
+const selectedDnsServerIds = ref<number[]>([])
+const dnsServers = ref<DnsServer[]>([])
+const dnsListError = ref('')
+const isDnsListLoading = ref(false)
+let modalSessionId = 0
+let activeResolveRequestId = 0
+let activeDnsLoadId = 0
 
 const isSavedDomainMode = computed(() => props.domain !== null)
+const isManualDnsSelection = computed(() => dnsSelectionMode.value === 'manual')
 
 /**
- * Reset modal state and invalidate any pending request result.
- * @param {string} initialDomainName - Domain name displayed when the modal opens
+ * Invalidate the active resolve request and clear its displayed state.
  * @returns {void}
  */
-const resetState = (initialDomainName = ''): void => {
-  activeRequestId += 1
-  domainName.value = initialDomainName
-  formError.value = ''
+const clearResolveState = (): void => {
+  activeResolveRequestId += 1
   requestError.value = ''
   isLoading.value = false
   resolveResult.value = null
 }
 
+/**
+ * Reset modal state and invalidate pending list and resolve responses.
+ * @param {string} initialDomainName - Domain name displayed when the modal opens
+ * @returns {void}
+ */
+const resetState = (initialDomainName = ''): void => {
+  modalSessionId += 1
+  activeDnsLoadId += 1
+  clearResolveState()
+  domainName.value = initialDomainName
+  formError.value = ''
+  selectionError.value = ''
+  dnsSelectionMode.value = 'automatic'
+  selectedDnsServerIds.value = []
+  dnsServers.value = []
+  dnsListError.value = ''
+  isDnsListLoading.value = false
+}
+
+/**
+ * Convert a DNS list failure into selection-specific user text.
+ * @param {unknown} error - DNS list request failure
+ * @returns {string} User-facing error message
+ */
+const getDnsListErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message
+  return DOMAIN_RESOLVE_CHECK_TEXTS.DNS_LIST_ERROR
+}
+
+/**
+ * Load every available DNS server page for the manual selector.
+ * @returns {Promise<void>}
+ */
+const loadDnsServers = async (): Promise<void> => {
+  if (!props.isOpen || isDnsListLoading.value) return
+
+  const sessionId = modalSessionId
+  const loadId = ++activeDnsLoadId
+  const loadedServers = new Map<number, DnsServer>()
+  let nextOffset = 0
+
+  dnsListError.value = ''
+  dnsServers.value = []
+  isDnsListLoading.value = true
+
+  try {
+    while (true) {
+      const response = await dnsApi.getAll({ limit: DNS_SERVER_PAGE_LIMIT, offset: nextOffset })
+      if (sessionId !== modalSessionId || loadId !== activeDnsLoadId || !props.isOpen) return
+
+      response.payload.forEach((server) => loadedServers.set(server.id, server))
+      nextOffset += response.payload.length
+
+      if (response.payload.length === 0 || nextOffset >= response.total) break
+    }
+
+    if (sessionId !== modalSessionId || loadId !== activeDnsLoadId || !props.isOpen) return
+    dnsServers.value = [...loadedServers.values()].sort((first, second) => first.id - second.id)
+  } catch (error) {
+    if (sessionId !== modalSessionId || loadId !== activeDnsLoadId || !props.isOpen) return
+    dnsListError.value = getDnsListErrorMessage(error)
+  } finally {
+    if (sessionId === modalSessionId && loadId === activeDnsLoadId) isDnsListLoading.value = false
+  }
+}
+
 watch(
-  () => ({ isOpen: props.isOpen, domain: props.domain }),
-  ({ isOpen, domain }) => {
+  [() => props.isOpen, () => props.domain],
+  ([isOpen, domain]) => {
     resetState(isOpen ? (domain?.name ?? '') : '')
+    if (isOpen) void loadDnsServers()
   },
   { immediate: true },
 )
@@ -69,7 +148,9 @@ watch(
  */
 const getRequestErrorMessage = (error: unknown): string => {
   if (error instanceof ApiError) {
-    if (error.status === 404) return 'Домен с указанным ID не найден'
+    if (error.status === 404) {
+      return 'Сохраненный домен или один из выбранных DNS-серверов больше не существует'
+    }
     if (error.status === 422) return 'Проверьте доменное имя или ID и повторите запрос'
     if (error.status >= 500) {
       return 'Сервер не смог выполнить проверку. Убедитесь, что DNS-серверы настроены, и повторите запрос'
@@ -77,6 +158,7 @@ const getRequestErrorMessage = (error: unknown): string => {
     return error.message
   }
 
+  if (error instanceof TypeError) return DOMAIN_RESOLVE_CHECK_TEXTS.DNS_SELECTION_INVALID
   if (error instanceof NetworkError) return error.message
   if (error instanceof Error) return error.message
   return 'Не удалось выполнить проверку резолвинга'
@@ -104,35 +186,93 @@ const validateDomainName = (): string | null => {
 }
 
 /**
+ * Validate and normalize the optional manual DNS selection.
+ * @returns {DnsServerIds | undefined | null} IDs, automatic mode, or invalid selection
+ */
+const getDnsServerIds = (): DnsServerIds | undefined | null => {
+  selectionError.value = ''
+  if (!isManualDnsSelection.value) return undefined
+
+  const normalizedIds = [...new Set(selectedDnsServerIds.value)]
+  const hasInvalidId = normalizedIds.some((id) => !Number.isInteger(id) || id < 0)
+
+  if (normalizedIds.length === 0) {
+    selectionError.value = DOMAIN_RESOLVE_CHECK_TEXTS.DNS_MANUAL_REQUIRED
+    return null
+  }
+
+  if (hasInvalidId || normalizedIds.length !== selectedDnsServerIds.value.length) {
+    selectionError.value = DOMAIN_RESOLVE_CHECK_TEXTS.DNS_SELECTION_INVALID
+    return null
+  }
+
+  return normalizedIds as DnsServerIds
+}
+
+/**
  * Run a one-time resolve check for the selected source.
  * @returns {Promise<void>}
  */
 const runResolveCheck = async (): Promise<void> => {
+  if (isLoading.value) return
+
   let request: DomainResolveCheckRequest
+  const dnsServerIds = getDnsServerIds()
+  if (dnsServerIds === null) return
 
   if (props.domain) {
-    request = { id: props.domain.id }
+    request = dnsServerIds ? { id: props.domain.id, dns_server_ids: dnsServerIds } : { id: props.domain.id }
   } else {
     const value = validateDomainName()
     if (!value) return
-    request = { domain: value }
+    request = dnsServerIds ? { domain: value, dns_server_ids: dnsServerIds } : { domain: value }
   }
 
-  const requestId = ++activeRequestId
+  const sessionId = modalSessionId
+  const requestId = ++activeResolveRequestId
   requestError.value = ''
   resolveResult.value = null
   isLoading.value = true
 
   try {
     const result = await domainsApi.resolveCheck(request)
-    if (requestId !== activeRequestId || !props.isOpen) return
+    if (sessionId !== modalSessionId || requestId !== activeResolveRequestId || !props.isOpen) return
     resolveResult.value = result
   } catch (error) {
-    if (requestId !== activeRequestId || !props.isOpen) return
+    if (sessionId !== modalSessionId || requestId !== activeResolveRequestId || !props.isOpen) return
     requestError.value = getRequestErrorMessage(error)
   } finally {
-    if (requestId === activeRequestId) isLoading.value = false
+    if (sessionId === modalSessionId && requestId === activeResolveRequestId) isLoading.value = false
   }
+}
+
+/**
+ * Switch DNS selection mode and clear stale resolve output.
+ * @param {DnsSelectionMode} mode - Next selection mode
+ * @returns {void}
+ */
+const setDnsSelectionMode = (mode: DnsSelectionMode): void => {
+  if (dnsSelectionMode.value === mode) return
+
+  dnsSelectionMode.value = mode
+  if (mode === 'automatic') selectedDnsServerIds.value = []
+  selectionError.value = ''
+  clearResolveState()
+}
+
+/**
+ * Toggle one valid DNS server ID in the manual selection.
+ * @param {number} id - DNS server ID
+ * @returns {void}
+ */
+const toggleDnsServer = (id: number): void => {
+  const selectedIds = new Set(selectedDnsServerIds.value)
+  if (selectedIds.has(id)) selectedIds.delete(id)
+  else selectedIds.add(id)
+
+  selectedDnsServerIds.value = [...selectedIds]
+  selectionError.value = ''
+  clearResolveState()
 }
 
 /**
@@ -144,12 +284,21 @@ const closeModal = (): void => {
   emit('close')
 }
 
-const clearFormError = (): void => {
+const handleDomainInput = (): void => {
   formError.value = ''
+  clearResolveState()
 }
 
 const hasRecords = (result: DnsServerResolveResult): boolean => {
   return result.ips_v4.length > 0 || result.ips_v6.length > 0 || result.cnames.length > 0
+}
+
+const getDnsServerAddress = (server: DnsServer): string => {
+  return server.server ?? server.doh_server ?? 'Адрес не указан'
+}
+
+const getDnsServerType = (server: DnsServer): 'classic' | 'DoH' => {
+  return server.server ? 'classic' : 'DoH'
 }
 </script>
 
@@ -181,9 +330,116 @@ const hasRecords = (result: DnsServerResolveResult): boolean => {
           :error="formError"
           :is-disabled="isLoading"
           :is-required="true"
-          @update:model-value="clearFormError"
+          @update:model-value="handleDomainInput"
         />
       </div>
+
+      <fieldset class="space-y-3 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+        <legend class="px-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
+          {{ DOMAIN_RESOLVE_CHECK_TEXTS.DNS_SELECTION_TITLE }}
+        </legend>
+
+        <label class="flex cursor-pointer items-start gap-3">
+          <input
+            type="radio"
+            name="dns-selection-mode"
+            value="automatic"
+            class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
+            :checked="dnsSelectionMode === 'automatic'"
+            :disabled="isLoading"
+            @change="setDnsSelectionMode('automatic')"
+          />
+          <span>
+            <span class="block text-sm font-medium text-gray-900 dark:text-gray-100">
+              {{ DOMAIN_RESOLVE_CHECK_TEXTS.DNS_AUTOMATIC }}
+            </span>
+            <span class="block text-xs text-gray-500 dark:text-gray-400">
+              {{ DOMAIN_RESOLVE_CHECK_TEXTS.DNS_AUTOMATIC_HINT }}
+            </span>
+          </span>
+        </label>
+
+        <label class="flex cursor-pointer items-start gap-3">
+          <input
+            type="radio"
+            name="dns-selection-mode"
+            value="manual"
+            class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
+            :checked="dnsSelectionMode === 'manual'"
+            :disabled="isLoading"
+            @change="setDnsSelectionMode('manual')"
+          />
+          <span>
+            <span class="block text-sm font-medium text-gray-900 dark:text-gray-100">
+              {{ DOMAIN_RESOLVE_CHECK_TEXTS.DNS_MANUAL }}
+            </span>
+            <span class="block text-xs text-gray-500 dark:text-gray-400">
+              {{ DOMAIN_RESOLVE_CHECK_TEXTS.DNS_MANUAL_HINT }}
+            </span>
+          </span>
+        </label>
+
+        <div v-if="isDnsListLoading" class="rounded-lg bg-gray-50 p-4 dark:bg-gray-900/50" aria-live="polite">
+          <LoadingSpinner size="sm" :message="DOMAIN_RESOLVE_CHECK_TEXTS.DNS_LIST_LOADING" />
+        </div>
+
+        <div
+          v-else-if="dnsListError"
+          class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300"
+          role="alert"
+        >
+          <div class="font-semibold">{{ DOMAIN_RESOLVE_CHECK_TEXTS.DNS_LIST_ERROR_TITLE }}</div>
+          <div class="mt-1">{{ dnsListError }}</div>
+          <BaseButton type="button" variant="secondary" size="sm" class="mt-3" @click="loadDnsServers">
+            {{ DOMAIN_RESOLVE_CHECK_TEXTS.DNS_LIST_RETRY }}
+          </BaseButton>
+        </div>
+
+        <div v-else-if="isManualDnsSelection" class="space-y-2">
+          <div
+            v-if="dnsServers.length === 0"
+            class="rounded-lg bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-900/50 dark:text-gray-400"
+          >
+            {{ DOMAIN_RESOLVE_CHECK_TEXTS.DNS_LIST_EMPTY }}
+          </div>
+
+          <div v-else class="max-h-64 space-y-2 overflow-y-auto pr-1" role="group" aria-label="Доступные DNS-серверы">
+            <label
+              v-for="server in dnsServers"
+              :key="server.id"
+              class="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-900/50"
+            >
+              <input
+                type="checkbox"
+                class="mt-1 h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+                :checked="selectedDnsServerIds.includes(server.id)"
+                :disabled="isLoading"
+                @change="toggleDnsServer(server.id)"
+              />
+              <span class="min-w-0 flex-1">
+                <span class="flex flex-wrap items-center gap-2">
+                  <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">ID {{ server.id }}</span>
+                  <span
+                    class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                  >
+                    {{ getDnsServerType(server) }}
+                  </span>
+                </span>
+                <span class="mt-1 block font-mono text-sm break-all text-gray-700 dark:text-gray-300">
+                  {{ getDnsServerAddress(server) }}
+                </span>
+                <span v-if="server.description" class="mt-1 block text-xs text-gray-500 dark:text-gray-400">
+                  {{ server.description }}
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div v-if="isManualDnsSelection && selectionError" class="text-sm text-red-600 dark:text-red-400" role="alert">
+          {{ selectionError }}
+        </div>
+      </fieldset>
 
       <div
         v-if="requestError"

@@ -15,6 +15,7 @@ export type {
   Domain,
   DomainsListCreateData,
   DomainCreateData,
+  DnsServerIds,
   DomainResolveByNameRequest,
   DomainResolveByIdRequest,
   DomainResolveCheckRequest,

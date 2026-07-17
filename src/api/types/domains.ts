@@ -57,12 +57,18 @@ export interface DomainCreateData {
 }
 
 /**
+ * Non-empty DNS server ID collection for a one-time resolve request
+ */
+export type DnsServerIds = [number, ...number[]]
+
+/**
  * One-time resolve request by domain name
  * @interface DomainResolveByNameRequest
  */
 export interface DomainResolveByNameRequest {
   domain: string
   id?: never
+  dns_server_ids?: DnsServerIds
 }
 
 /**
@@ -72,6 +78,7 @@ export interface DomainResolveByNameRequest {
 export interface DomainResolveByIdRequest {
   id: number
   domain?: never
+  dns_server_ids?: DnsServerIds
 }
 
 /**

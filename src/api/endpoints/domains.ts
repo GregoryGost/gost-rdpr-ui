@@ -19,6 +19,24 @@ function toSearchParams(params: PaginationParams): URLSearchParams {
 }
 
 /**
+ * Validate optional DNS server IDs before sending a one-time resolve request.
+ * @param {DomainResolveCheckRequest} data - Resolve request payload
+ * @returns {void}
+ * @throws {TypeError} When DNS server IDs violate the backend contract
+ */
+function validateDnsServerIds(data: DomainResolveCheckRequest): void {
+  const dnsServerIds = data.dns_server_ids
+  if (dnsServerIds === undefined) return
+
+  const hasInvalidId = dnsServerIds.some((id) => !Number.isInteger(id) || id < 0)
+  const hasDuplicateIds = new Set(dnsServerIds).size !== dnsServerIds.length
+
+  if (dnsServerIds.length === 0 || hasInvalidId || hasDuplicateIds) {
+    throw new TypeError('dns_server_ids must contain unique non-negative integers')
+  }
+}
+
+/**
  * Domains API response with additional fields
  */
 export interface DomainsResponse extends PaginatedResponse<Domain> {
@@ -76,15 +94,17 @@ export const domainsApi = {
    * @param {DomainResolveCheckRequest} data - Domain name or existing domain ID
    * @returns {Promise<DomainResolveCheckResponse>}
    */
-  resolveCheck: (data: DomainResolveCheckRequest) =>
-    apiRequest<DomainResolveCheckResponse>(
+  resolveCheck: (data: DomainResolveCheckRequest) => {
+    validateDnsServerIds(data)
+    return apiRequest<DomainResolveCheckResponse>(
       '/domains/resolve/check',
       {
         method: 'POST',
         body: JSON.stringify(data),
       },
       API.DOMAIN_RESOLVE_CHECK_TIMEOUT,
-    ),
+    )
+  },
 
   /**
    * Search domains by text
