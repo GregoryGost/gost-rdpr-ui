@@ -168,6 +168,27 @@ export const DOMAIN_RESOLVE_CHECK_TEXTS = {
 }
 
 /**
+ * Stored domain background resolve texts
+ */
+export const DOMAIN_RESOLVE_NOW_TEXTS = {
+  ROW_BUTTON_TITLE: 'Запустить фоновый резолвинг',
+  ROW_BUTTON_UNAVAILABLE: 'Фоновый резолвинг недоступен: ID домена должен быть положительным целым числом',
+  MODAL_TITLE: 'Запуск фонового резолвинга',
+  DOMAIN_LABEL: 'Доменное имя',
+  ID_LABEL: 'ID',
+  DESCRIPTION:
+    'После подтверждения сервер запустит фоновый резолвинг сохраненной записи. Операция может обновить связанные IP-адреса, статус и время последнего резолвинга.',
+  RUN: 'Запустить резолвинг',
+  LOADING: 'Запрос на запуск резолвинга отправляется...',
+  ACCEPTED_TITLE: 'Запуск принят в обработку',
+  ACCEPTED_MESSAGE:
+    'Сервер принял запрос. Резолвинг выполняется в фоне; это сообщение не означает, что операция уже завершена.',
+  ERROR_TITLE: 'Запуск не выполнен',
+  INVALID_ID: 'Запуск доступен только для домена с положительным целым ID',
+  CLOSE: 'Закрыть',
+}
+
+/**
  * Domains Lists texts
  */
 export const DOMAINS_LISTS_TEXTS = {
