@@ -22,6 +22,7 @@
 - `src/composables/usePagination.ts` — базовое управление состоянием пагинации
 - `src/composables/usePaginatedData.ts` — автоматическая пагинация с загрузкой данных
 - `src/composables/usePolling.ts` — периодический опрос данных
+- `src/composables/useDebouncedTask.ts` — отложенный запуск API-загрузок из текстовых фильтров
 - `src/composables/README.md` — полная документация с примерами
 
 ### 3. UI Kit (10 компонентов) ✅
@@ -37,6 +38,7 @@
 - **General:** `AppLogo`, `ErrorNotification`
 - **Dashboard:** `HealthStatusCard`, `VersionInfoCard`, `ConnectionAlert`, `PollingSettings`, `ConfigurationCard`, `SparklineCard`, `StatsMetricCard`, `StatsPieCard`
 - **Charts:** `LineChart`, `BarChart`, `PieChart`
+- **Domains:** `DomainResolveCheckModal`, `DomainResolveNowModal`
 
 ### 5. Layout ✅
 
@@ -232,13 +234,14 @@ STORES { HEALTH_CACHE_TTL, DEFAULT_POLLING_INTERVAL }
 PAGINATION { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS }
 
 // Поиск и валидация
-SEARCH { MIN_LENGTH }
+SEARCH { MIN_LENGTH, DEBOUNCE_MS }
 VALIDATION { MIN_NAME_LENGTH, MIN_URL_LENGTH }
 
 // UI тексты по доменам
 UI_TEXTS, COMMANDS_TEXTS, DOMAINS_LISTS_TEXTS,
 IPS_TEXTS, IPS_LISTS_TEXTS, STATS_TEXTS,
-ROS_TEXTS, ERROR_MESSAGES
+ROS_TEXTS, DOMAIN_RESOLVE_CHECK_TEXTS,
+DOMAIN_RESOLVE_NOW_TEXTS, ERROR_MESSAGES
 ```
 
 **Правила использования:**
@@ -263,8 +266,10 @@ timeout: 5000
 - **Mobile-first** подход в стилях
 - **ResizeObserver + requestAnimationFrame** для адаптивных SVG-чартов
 - **statsApi.getStats()** для точных глобальных метрик (не из пагинации)
-- **Фильтры над таблицами** перезагружают данные через API там, где backend поддерживает параметры фильтрации; неподдерживаемые условия применяются локально после загрузки свежей страницы данных
+- **Управляемые фильтры колонок** применяются родительской страницей до пагинации; API-поиск сужает источник данных, а неподдерживаемые backend условия обрабатываются через `loadClientFilteredPage` с согласованным `total`
+- **useDebouncedTask** откладывает API-загрузки из поиска и фильтров колонок на 500 мс; переходы по страницам и CRUD-действия отменяют ожидающий запуск
 - **Commands API** разделяет определение новых доменов (`resolveNewDomains`) и устаревших доменов (`resolveStaleDomains`)
+- **Domains API** разделяет разовую проверку без сохранения (`resolveCheck`) и запуск фонового обновления сохранённого домена (`resolveNow`)
 - **OpenAPI контракт** берётся из backend-репозитория `gost-rdpr/docs/OPENAPI.json`; локальный `TARGET_OPENAPI.*` не используется как источник документации
 
 ---

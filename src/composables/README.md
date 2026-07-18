@@ -206,13 +206,30 @@ const { data, isLoading, hasError, errorMessage, execute } = useApi(async () => 
 await execute()
 ```
 
+## useDebouncedTask
+
+Откладывает выполнение задачи до завершения серии вызовов и автоматически отменяет ожидающий запуск при размонтировании компонента. Задержка по умолчанию — `SEARCH.DEBOUNCE_MS` (500 мс).
+
+```typescript
+import { useDebouncedTask } from '@/composables'
+
+const { run: scheduleReload, cancel: cancelReload } = useDebouncedTask(loadData)
+
+// Вызвать после изменения поиска или фильтра.
+scheduleReload()
+
+// Отменить перед немедленной загрузкой, например при смене страницы.
+cancelReload()
+await loadData()
+```
+
 ## Централизованный экспорт
 
 Все композаблы экспортируются через `src/composables/index.ts`:
 
 ```typescript
 // Импорт композаблов
-import { usePaginatedData, usePolling, useApi } from '@/composables'
+import { usePaginatedData, usePolling, useApi, useDebouncedTask } from '@/composables'
 
 // Импорт типов
 import type { PaginationParams, PaginatedResponse } from '@/composables'
@@ -232,6 +249,7 @@ import type { PaginationParams, PaginatedResponse } from '@/composables'
 ### Константы поиска (используются в страницах с поиском)
 
 - **`SEARCH.MIN_LENGTH`** - минимальная длина поискового запроса (3)
+- **`SEARCH.DEBOUNCE_MS`** - задержка запуска API-загрузки из текстового ввода (500 мс)
 
 ### Константы API (useApi, usePaginatedData)
 
@@ -296,4 +314,4 @@ await load() // Ошибка будет перехвачена и показан
 
 ---
 
-**Последнее обновление:** 2026-05-13
+**Последнее обновление:** 2026-07-17
