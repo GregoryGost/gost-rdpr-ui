@@ -24,7 +24,16 @@ export type {
 } from './domains'
 
 // IPs types
-export type { IpsList, IpAddress, IpsListCreateData, IpAddressCreateData } from './ips'
+export type {
+  IpsList,
+  IpAddress,
+  IpsListCreateData,
+  IpAddressCreateData,
+  RipeStatPrefixCheckByAddressRequest,
+  RipeStatPrefixCheckByIdRequest,
+  RipeStatPrefixCheckRequest,
+  RipeStatPrefixCheckResponse,
+} from './ips'
 
 // RouterOS types
 export type { RosConfig, RosConfigCreateData } from './ros'

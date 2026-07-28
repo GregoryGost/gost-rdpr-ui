@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { commandsApi } from '@/api/endpoints/commands'
+import { ipsApi } from '@/api/endpoints/ips'
 import { COMMANDS_TEXTS } from '@/constants'
 import BaseButton from '@/ui/buttons/BaseButton.vue'
 import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
@@ -13,11 +14,12 @@ import {
   CheckCircleIcon,
   ExclamationCircleIcon,
   SparklesIcon,
+  TrashIcon,
 } from '@heroicons/vue/24/outline'
 import { showSuccess, showInfo } from '@/utils/notifications'
 import { errorHandler } from '@/utils/errorHandler'
 
-type CommandType = 'lists' | 'domains-new' | 'domains-stale' | 'ros'
+type CommandType = 'lists' | 'domains-new' | 'domains-stale' | 'ros' | 'ips-cleanup-not-allowed'
 type DomainResolveCommand = 'domains-new' | 'domains-stale'
 
 /**
@@ -28,11 +30,13 @@ const isLoadingLists = ref(false)
 const isLoadingNewDomains = ref(false)
 const isLoadingStaleDomains = ref(false)
 const isLoadingRouterOS = ref(false)
+const isLoadingNotAllowedIpsCleanup = ref(false)
 
 const isConfirmOpen = ref(false)
 const confirmCommand = ref<CommandType | null>(null)
 const confirmTitle = ref('')
 const confirmMessage = ref('')
+const confirmVariant = ref<'danger' | 'primary'>('primary')
 
 const forcedReload = ref(false)
 const rosIpType = ref<number | null>(4)
@@ -71,6 +75,7 @@ const isDomainResolveCommand = (command: CommandType): command is DomainResolveC
 const openConfirm = (command: CommandType) => {
   confirmCommand.value = command
   lastResult.value = null
+  confirmVariant.value = command === 'ips-cleanup-not-allowed' ? 'danger' : 'primary'
 
   switch (command) {
     case 'lists':
@@ -87,6 +92,10 @@ const openConfirm = (command: CommandType) => {
     case 'ros':
       confirmTitle.value = 'Обновить RouterOS'
       confirmMessage.value = `Firewall и маршрутизация будут обновлены на всех устройствах RouterOS${rosIpType.value ? ` (только IPv${rosIpType.value})` : ''}. Продолжить?`
+      break
+    case 'ips-cleanup-not-allowed':
+      confirmTitle.value = COMMANDS_TEXTS.IP_NOT_ALLOWED_CLEANUP_CONFIRM_TITLE
+      confirmMessage.value = COMMANDS_TEXTS.IP_NOT_ALLOWED_CLEANUP_CONFIRM_MESSAGE
       break
   }
 
@@ -140,6 +149,13 @@ const executeCommand = async () => {
         lastResult.value = { type: 'success', message: 'RouterOS успешно обновлен' }
         showSuccess(`RouterOS успешно обновлен${ipTypeText}`, 'Команда выполнена')
         break
+      case 'ips-cleanup-not-allowed':
+        isLoadingNotAllowedIpsCleanup.value = true
+        showInfo(COMMANDS_TEXTS.IP_NOT_ALLOWED_CLEANUP_PROGRESS, 'Выполнение команды')
+        await ipsApi.queueCleanupNotAllowed()
+        lastResult.value = { type: 'success', message: COMMANDS_TEXTS.IP_NOT_ALLOWED_CLEANUP_SUCCESS }
+        showSuccess(COMMANDS_TEXTS.IP_NOT_ALLOWED_CLEANUP_SUCCESS, 'Команда принята')
+        break
     }
   } catch (error) {
     lastResult.value = {
@@ -159,6 +175,7 @@ const executeCommand = async () => {
     isLoadingNewDomains.value = false
     isLoadingStaleDomains.value = false
     isLoadingRouterOS.value = false
+    isLoadingNotAllowedIpsCleanup.value = false
     isConfirmOpen.value = false
     confirmCommand.value = null
   }
@@ -200,7 +217,7 @@ const executeCommand = async () => {
     </div>
 
     <!-- Commands Grid -->
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-4">
       <!-- Load Lists Command -->
       <div class="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
         <div class="mb-4 flex items-center gap-3">
@@ -298,13 +315,39 @@ const executeCommand = async () => {
           Отправить команду
         </BaseButton>
       </div>
+
+      <!-- Cleanup prohibited IPs command -->
+      <div class="rounded-lg border border-red-200 bg-white p-6 dark:border-red-900/50 dark:bg-gray-800">
+        <div class="mb-4 flex items-center gap-3">
+          <div class="rounded-lg bg-red-100 p-3 dark:bg-red-900/20">
+            <TrashIcon class="h-6 w-6 text-red-600 dark:text-red-400" />
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {{ COMMANDS_TEXTS.IP_NOT_ALLOWED_CLEANUP_TITLE }}
+          </h3>
+        </div>
+        <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+          {{ COMMANDS_TEXTS.IP_NOT_ALLOWED_CLEANUP_DESCRIPTION }}
+        </p>
+        <div class="mb-4 flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
+          <ExclamationCircleIcon class="mt-0.5 h-5 w-5 flex-shrink-0" />
+          <p>{{ COMMANDS_TEXTS.IP_NOT_ALLOWED_CLEANUP_HINT }}</p>
+        </div>
+        <BaseButton
+          @click="openConfirm('ips-cleanup-not-allowed')"
+          variant="danger"
+          class="w-full"
+          :is-loading="isLoadingNotAllowedIpsCleanup"
+        >
+          {{ COMMANDS_TEXTS.IP_NOT_ALLOWED_CLEANUP_BUTTON }}
+        </BaseButton>
+      </div>
     </div>
 
     <!-- Info Box -->
     <div class="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
       <p class="text-sm text-blue-800 dark:text-blue-300">
-        <strong>Примечание:</strong> Команды выполняются в фоновом режиме. Ответ всегда OK. Результат будет заметен
-        через некоторое время.
+        <strong>Примечание:</strong> {{ COMMANDS_TEXTS.BACKGROUND_COMMANDS_NOTE }}
       </p>
     </div>
 
@@ -315,8 +358,14 @@ const executeCommand = async () => {
       :message="confirmMessage"
       confirm-text="Выполнить"
       cancel-text="Отмена"
-      variant="primary"
-      :is-loading="isLoadingLists || isLoadingNewDomains || isLoadingStaleDomains || isLoadingRouterOS"
+      :variant="confirmVariant"
+      :is-loading="
+        isLoadingLists ||
+        isLoadingNewDomains ||
+        isLoadingStaleDomains ||
+        isLoadingRouterOS ||
+        isLoadingNotAllowedIpsCleanup
+      "
       @confirm="executeCommand"
       @cancel="isConfirmOpen = false"
     />

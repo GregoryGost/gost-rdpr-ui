@@ -1,4 +1,4 @@
-model = "gpt-5.6-sol"
+model = "gpt-5.6-terra"
 model_reasoning_effort = "xhigh"
 sandbox_mode = "workspace-write"
 personality = "pragmatic"
@@ -9,8 +9,8 @@ service_tier = "default"
 sandbox = "elevated"
 
 [mcp_servers.playwright]
-args = ["@playwright/mcp@latest", "--caps=vision,devtools", "--isolated", "--browser=chromium"]
-command = "npx"
+args = ["dlx", "@playwright/mcp@latest", "--caps=vision,devtools", "--isolated", "--browser=chromium"]
+command = "pnpm"
 enabled = true
 
 [sandbox_workspace_write]
