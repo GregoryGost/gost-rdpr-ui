@@ -91,7 +91,7 @@ const closeSidebar = () => {
 
     <!-- Desktop sidebar -->
     <div class="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-      <div class="flex flex-grow flex-col border-r bg-white dark:border-gray-700 dark:bg-gray-800">
+      <div class="flex grow flex-col border-r bg-white dark:border-gray-700 dark:bg-gray-800">
         <div class="flex h-16 items-center border-b px-4 dark:border-gray-700">
           <AppLogo />
         </div>

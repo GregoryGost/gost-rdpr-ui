@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { ipsApi } from '@/api/endpoints/ips'
 import { statsApi } from '@/api/endpoints/stats'
 import type { IpAddress, IpAddressCreateData } from '@/api/types/ips'
-import { PAGINATION, IPS_TEXTS, UI_TEXTS, SEARCH, ERROR_MESSAGES } from '@/constants'
+import { PAGINATION, IPS_TEXTS, RIPESTAT_PREFIX_CHECK_TEXTS, UI_TEXTS, SEARCH, ERROR_MESSAGES } from '@/constants'
 import DataTable from '@/ui/tables/DataTable.vue'
 import PaginationControl from '@/ui/tables/PaginationControl.vue'
 import BaseButton from '@/ui/buttons/BaseButton.vue'
@@ -11,7 +11,15 @@ import BaseModal from '@/ui/modals/BaseModal.vue'
 import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
 import BaseInput from '@/ui/forms/BaseInput.vue'
 import BaseTextarea from '@/ui/forms/BaseTextarea.vue'
-import { PlusIcon, TrashIcon, MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
+import IpRipePrefixModal from '@/components/ips/IpRipePrefixModal.vue'
+import {
+  PlusIcon,
+  TrashIcon,
+  MagnifyingGlassIcon,
+  ArrowPathIcon,
+  ArrowPathRoundedSquareIcon,
+  MapPinIcon,
+} from '@heroicons/vue/24/outline'
 import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
 import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
@@ -81,8 +89,12 @@ const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.val
 const isAddModalOpen = ref(false)
 const isViewModalOpen = ref(false)
 const isDeleteConfirmOpen = ref(false)
+const isRipePrefixModalOpen = ref(false)
+const isRipeCacheClearConfirmOpen = ref(false)
+const isRipeCacheClearLoading = ref(false)
 const ipToDelete = ref<number | string | null>(null)
 const selectedIp = ref<IpAddress | null>(null)
+const selectedIpForRipePrefix = ref<IpAddress | null>(null)
 
 // Form data
 const formData = ref<IpAddressCreateData>({
@@ -489,6 +501,63 @@ const openViewModal = (ip: IpAddress) => {
 }
 
 /**
+ * Whether an IP record can be checked by RIPEstat.
+ * @param {IpAddress} ip - IP record
+ * @returns {boolean}
+ */
+const canCheckRipePrefix = (ip: IpAddress): boolean => ip.type === 4 && Number.isInteger(ip.id) && ip.id > 0
+
+/**
+ * Open the RIPEstat prefix result modal for one saved IPv4 record.
+ * @param {IpAddress} ip - IPv4 record
+ * @returns {void}
+ */
+const openRipePrefixModal = (ip: IpAddress): void => {
+  if (!canCheckRipePrefix(ip)) return
+  selectedIpForRipePrefix.value = ip
+  isRipePrefixModalOpen.value = true
+}
+
+/**
+ * Close the RIPEstat prefix result modal.
+ * @returns {void}
+ */
+const closeRipePrefixModal = (): void => {
+  isRipePrefixModalOpen.value = false
+  selectedIpForRipePrefix.value = null
+}
+
+/**
+ * Open the RIPEstat cache-clear confirmation.
+ * @returns {void}
+ */
+const openRipeCacheClearConfirm = (): void => {
+  isRipeCacheClearConfirmOpen.value = true
+}
+
+/**
+ * Clear the in-memory RIPEstat cache without reloading IP records.
+ * @returns {Promise<void>}
+ */
+const clearRipeStatCache = async (): Promise<void> => {
+  if (isRipeCacheClearLoading.value) return
+
+  isRipeCacheClearLoading.value = true
+  try {
+    await ipsApi.clearRipeStatCache()
+    isRipeCacheClearConfirmOpen.value = false
+    showSuccess(IPS_TEXTS.CLEAR_RIPESTAT_CACHE_SUCCESS)
+  } catch (error) {
+    errorHandler.handleError(error, {
+      action: 'clearRipeStatCache',
+      component: 'IpsPage',
+    })
+  } finally {
+    isRipeCacheClearLoading.value = false
+  }
+}
+
+/**
  * Open add modal
  */
 const openAddModal = () => {
@@ -747,11 +816,17 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Add Button -->
-      <BaseButton @click="openAddModal" variant="primary">
-        <PlusIcon class="mr-2 h-5 w-5" />
-        {{ IPS_TEXTS.ADD_BUTTON }}
-      </BaseButton>
+      <!-- Global actions -->
+      <div class="flex flex-wrap gap-2">
+        <BaseButton @click="openRipeCacheClearConfirm" variant="secondary">
+          <ArrowPathRoundedSquareIcon class="mr-2 h-5 w-5" />
+          {{ IPS_TEXTS.CLEAR_RIPESTAT_CACHE_BUTTON }}
+        </BaseButton>
+        <BaseButton @click="openAddModal" variant="primary">
+          <PlusIcon class="mr-2 h-5 w-5" />
+          {{ IPS_TEXTS.ADD_BUTTON }}
+        </BaseButton>
+      </div>
     </div>
 
     <!-- Table -->
@@ -814,9 +889,20 @@ onMounted(() => {
       </template>
 
       <template #cell-actions="{ row }">
-        <BaseButton variant="danger" size="sm" @click.stop="openDeleteConfirm(row.id)">
-          <TrashIcon class="h-4 w-4" />
-        </BaseButton>
+        <div class="flex gap-2">
+          <BaseButton
+            v-if="canCheckRipePrefix(row)"
+            variant="secondary"
+            size="sm"
+            :title="RIPESTAT_PREFIX_CHECK_TEXTS.ROW_BUTTON_TITLE"
+            @click.stop="openRipePrefixModal(row)"
+          >
+            <MapPinIcon class="h-4 w-4" />
+          </BaseButton>
+          <BaseButton variant="danger" size="sm" @click.stop="openDeleteConfirm(row.id)">
+            <TrashIcon class="h-4 w-4" />
+          </BaseButton>
+        </div>
       </template>
     </DataTable>
 
@@ -1034,6 +1120,22 @@ onMounted(() => {
       @confirm="deleteIp"
       @cancel="isDeleteConfirmOpen = false"
     />
+
+    <!-- RIPEstat cache clear confirmation -->
+    <ConfirmDialog
+      :is-open="isRipeCacheClearConfirmOpen"
+      :title="IPS_TEXTS.CLEAR_RIPESTAT_CACHE_TITLE"
+      :message="IPS_TEXTS.CLEAR_RIPESTAT_CACHE_MESSAGE"
+      confirm-text="Очистить кеш"
+      :cancel-text="UI_TEXTS.CANCEL"
+      variant="primary"
+      :is-loading="isRipeCacheClearLoading"
+      @confirm="clearRipeStatCache"
+      @cancel="isRipeCacheClearConfirmOpen = false"
+    />
+
+    <!-- RIPEstat prefix result modal -->
+    <IpRipePrefixModal :is-open="isRipePrefixModalOpen" :ip="selectedIpForRipePrefix" @close="closeRipePrefixModal" />
   </div>
 </template>
 

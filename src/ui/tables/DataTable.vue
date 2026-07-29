@@ -13,6 +13,7 @@ import {
   type TableColumn,
   type TableColumnFilters,
 } from '@/ui/tables/columnFilters'
+import type { DataTableProps } from '@/ui/tables/dataTableProps'
 
 const isIPv4 = (s: string): boolean => /^\d{1,3}(\.\d{1,3}){3}$/.test(s)
 const isIPv6 = (s: string): boolean => s.includes(':')
@@ -46,16 +47,7 @@ const compareIp = (a: string, b: string): number => {
   return a.localeCompare(b)
 }
 
-interface Props<T> {
-  data: T[]
-  columns: TableColumn<T>[]
-  isLoading?: boolean
-  emptyMessage?: string
-  isColumnFilteringEnabled?: boolean
-  columnFilters?: TableColumnFilters
-}
-
-const props = withDefaults(defineProps<Props<T>>(), {
+const props = withDefaults(defineProps<DataTableProps<T>>(), {
   isLoading: false,
   emptyMessage: 'Нет данных',
   isColumnFilteringEnabled: true,

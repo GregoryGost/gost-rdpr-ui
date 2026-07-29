@@ -121,7 +121,7 @@ const goToHome = () => {
           >
             <component
               :is="page.icon"
-              class="h-6 w-6 flex-shrink-0 text-gray-400 transition-colors group-hover:text-blue-600 dark:text-gray-500 dark:group-hover:text-blue-400"
+              class="h-6 w-6 shrink-0 text-gray-400 transition-colors group-hover:text-blue-600 dark:text-gray-500 dark:group-hover:text-blue-400"
             />
             <div class="flex-1">
               <div class="font-medium text-gray-900 dark:text-gray-100">{{ page.label }}</div>

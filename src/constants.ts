@@ -6,6 +6,7 @@ export const APP_TITLE = 'GOST-RDPR Ui'
 export const APP_DESCRIPTION = 'Admin Panel'
 export const APP_AUTHOR = 'GregoryGost'
 export const APP_VERSION = __APP_VERSION__
+export const APP_BUILD_DATE_UTC = __BUILD_DATE_UTC__
 
 /**
  * Storage keys
@@ -134,6 +135,18 @@ export const COMMANDS_TEXTS = {
   DOMAIN_RESOLVE_STALE_PROGRESS: 'Определение устаревших доменов... Это может занять больше времени.',
   DOMAIN_RESOLVE_NEW_SUCCESS: 'Новые домены успешно определены в IP адреса',
   DOMAIN_RESOLVE_STALE_SUCCESS: 'Устаревшие домены успешно определены в IP адреса',
+  IP_NOT_ALLOWED_CLEANUP_TITLE: 'Очистка запрещённых IP',
+  IP_NOT_ALLOWED_CLEANUP_DESCRIPTION:
+    'Поставить в очередь удаление IP адресов, соответствующих настройке IP_NOT_ALLOWED. Выполнение происходит в фоне.',
+  IP_NOT_ALLOWED_CLEANUP_HINT: 'После принятия команды сервер не сообщает количество удалений и момент завершения.',
+  IP_NOT_ALLOWED_CLEANUP_BUTTON: 'Запустить очистку',
+  IP_NOT_ALLOWED_CLEANUP_CONFIRM_TITLE: 'Поставить очистку запрещённых IP в очередь',
+  IP_NOT_ALLOWED_CLEANUP_CONFIRM_MESSAGE:
+    'Сервер начнёт фоновую очистку IP адресов из IP_NOT_ALLOWED. Количество удалений и момент завершения будут неизвестны. Продолжить?',
+  IP_NOT_ALLOWED_CLEANUP_PROGRESS: 'Запрос на очистку запрещённых IP отправляется...',
+  IP_NOT_ALLOWED_CLEANUP_SUCCESS: 'Задача очистки запрещённых IP принята в обработку',
+  BACKGROUND_COMMANDS_NOTE:
+    'Команды выполняются в фоновом режиме. Ответ подтверждает принятие команды, а не завершение; результат будет заметен через некоторое время.',
 }
 
 /**
@@ -275,6 +288,11 @@ export const IPS_TEXTS = {
   PAGE_TITLE: 'IP Адреса',
   PAGE_DESCRIPTION: 'Управление IP адресами для RouterOS конфигураций',
   ADD_BUTTON: 'Добавить IP Адрес',
+  CLEAR_RIPESTAT_CACHE_BUTTON: 'Очистить кеш RIPEstat',
+  CLEAR_RIPESTAT_CACHE_TITLE: 'Очистить кеш RIPEstat',
+  CLEAR_RIPESTAT_CACHE_MESSAGE:
+    'Будет очищен только кеш префиксов RIPEstat. Записи в базе данных не изменятся; следующая проверка получит актуальные данные.',
+  CLEAR_RIPESTAT_CACHE_SUCCESS: 'Кеш префиксов RIPEstat очищен',
   SEARCH_PLACEHOLDER: 'Поиск по IP адресу...',
   EMPTY_MESSAGE: 'IP адреса не найдены',
   MODAL_TITLE: 'Добавить IP Адрес',
@@ -322,6 +340,25 @@ export const IPS_TEXTS = {
   STATS_IPV6_HINT: 'Количество IPv6 адресов (type = 6)',
   STATS_WITH_LIST_HINT: 'IP адреса, связанные со списками IP',
   STATS_WITH_DOMAIN_HINT: 'IP адреса, связанные с доменами',
+}
+
+/**
+ * RIPEstat prefix check texts
+ */
+export const RIPESTAT_PREFIX_CHECK_TEXTS = {
+  ROW_BUTTON_TITLE: 'Проверить IPv4-префикс в RIPEstat',
+  MODAL_TITLE: 'Проверка IPv4-префикса в RIPEstat',
+  IP_LABEL: 'IP адрес',
+  ID_LABEL: 'ID записи',
+  LOADING: 'Проверка префикса в RIPEstat...',
+  RESULT_TITLE: 'Результат проверки',
+  ADDRESS_LABEL: 'Проверенный адрес',
+  PREFIX_LABEL: 'Префикс RIPEstat',
+  PREFIX_NOT_FOUND: 'Префикс не найден',
+  ERROR_TITLE: 'Проверка не выполнена',
+  RETRY: 'Повторить',
+  CLOSE: 'Закрыть',
+  INVALID_SOURCE: 'Проверка доступна только для сохранённого IPv4 с положительным целым ID',
 }
 
 /**

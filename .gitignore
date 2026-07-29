@@ -35,22 +35,23 @@ coverage
 # Vitest
 __screenshots__/
 
-# Agents
-.agent/
-
 # Cursor
 .cursor/mcp.json
 .cursor/agent_context/
 .cursor/*.md
 .cursor/*.txt
 
-# Codex
-.codex/*.txt
+# AI
+.codex/
+.agent/
+.agents/
+AGENTS.md
 
 # Env
 .env
 .env.*
-!.env.development
+!.env.example
+*.local
 
 # Playwright
 .playwright-mcp/

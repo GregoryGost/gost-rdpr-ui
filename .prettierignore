@@ -1,0 +1,20 @@
+# Dependencies and package-manager files
+node_modules/
+.pnpm-store/
+pnpm-lock.yaml
+
+# Generated output and test artifacts
+dist/
+dist-ssr/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+
+# Static game data
+public/data/
+
+# AI
+.codex/
+.agent/
+.agents/

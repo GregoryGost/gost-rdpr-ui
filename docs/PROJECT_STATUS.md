@@ -13,9 +13,9 @@
 - ✅ Структура директорий
 - ✅ TypeScript конфигурация
 - ✅ ESLint + Prettier настроены
-- ✅ Tailwind CSS v4 настроен
+- ✅ Tailwind CSS v4 подключён через Vite; глобальные токены, базовые слои и dark-вариант находятся в `src/css/main.css`
 - ✅ Vite конфигурация
-- ✅ Environment variables (.env.development)
+- ✅ Dev proxy использует `VITE_API_BASE_URL` из окружения процесса; по умолчанию — `http://127.0.0.1:4000`
 - ✅ Vue Router с lazy loading
 - ✅ Pinia stores (dark mode, notifications, settings)
 - ✅ Централизованные константы (`src/constants.ts`)
@@ -50,6 +50,8 @@
 | LineChart         | `src/components/charts/LineChart.vue`            |
 | BarChart          | `src/components/charts/BarChart.vue`             |
 | PieChart          | `src/components/charts/PieChart.vue`             |
+| **IP адреса**     |                                                  |
+| IpRipePrefixModal | `src/components/ips/IpRipePrefixModal.vue`       |
 
 ### 🔌 API Layer (100%)
 
@@ -134,7 +136,8 @@
 - ✅ Поддержаны настройки колонок `filterable`, `filterPlaceholder`, `filterValue`
 - ✅ Фильтрация применяется перед сортировкой
 - ✅ Для отображаемых значений добавлены display-aware фильтры: статусы, списки, IP type, связи с доменами и `use_default_gw`
-- ✅ На страницах с серверной пагинацией фильтры колонок управляются родителем и применяются до расчёта `payload`, `totalItems` и `totalPages`
+- ✅ На страницах с серверной пагинацией фильтры колонок управляются родителем и
+  применяются до расчёта `payload`, `totalItems` и `totalPages`
 - ✅ Если backend не поддерживает условие или корректный filtered total, используется `loadClientFilteredPage`
 - ✅ API-загрузки из поиска и фильтров колонок запускаются с debounce 500 мс
 
@@ -145,11 +148,20 @@
 - ✅ `use_default_gw` учтен как опциональное поле IP адреса и payload создания
 - ✅ На странице IP адресов `use_default_gw` отображается как `Да` / `Нет`
 - ✅ Команда определения доменов разделена на `resolveNewDomains()` и `resolveStaleDomains()`
-- ✅ `domainsApi.resolveCheck()` проверяет произвольный или сохранённый домен без записи результата и поддерживает ручной выбор DNS-серверов
-- ✅ Без `dns_server_ids` проверка использует пользовательские DNS-серверы, а DNS ID `0` — только fallback; при ручном выборе ID `0` используется явно
-- ✅ `domainsApi.resolveNow()` запускает фоновый резолвинг сохранённого домена с положительным ID и сообщает о принятии запроса, а не о завершении операции
-- ✅ Команды RouterOS оставлены в IPv4-only режиме: `Все типы IP` и `Только IPv6` отключены
-- ✅ Пагинация использует `cursor-pointer` только для доступных кнопок; disabled и текущая страница остаются с обычным курсором и без hover-эффекта
+- ✅ `domainsApi.resolveCheck()` проверяет произвольный или сохранённый домен без записи
+  результата и поддерживает ручной выбор DNS-серверов
+- ✅ Без `dns_server_ids` проверка использует пользовательские DNS-серверы, а DNS ID `0`
+  — только fallback; при ручном выборе ID `0` используется явно
+- ✅ `domainsApi.resolveNow()` запускает фоновый резолвинг сохранённого домена с
+  положительным ID и сообщает о принятии запроса, а не о завершении операции
+- ✅ `ipsApi.checkRipeStatPrefix()` проверяет IPv4-префикс через RIPEstat без изменения
+  записей БД; в интерфейсе действие доступно для сохранённых IPv4 с положительным ID
+- ✅ `ipsApi.clearRipeStatCache()` очищает только memory-кеш RIPEstat, не изменяя БД;
+  общая операция вынесена в панель действий рядом с добавлением IP и подтверждается в диалоге
+- ✅ Команды RouterOS оставлены в IPv4-only режиме: `Все типы IP` и `Только IPv6`
+  отключены
+- ✅ Пагинация использует `cursor-pointer` только для доступных кнопок; disabled и
+  текущая страница остаются с обычным курсором и без hover-эффекта
 
 ---
 
@@ -158,9 +170,9 @@
 | Файл                        | Содержание                       |
 | --------------------------- | -------------------------------- |
 | `README.md`                 | Обзор, скриншоты, быстрый старт  |
-| `PROJECT_STATUS.md`         | Текущий статус (этот файл)       |
-| `PROJECT_HISTORY.md`        | Детальная история всех изменений |
-| `DEVELOPMENT.md`            | Руководство для разработчиков    |
+| `docs/PROJECT_STATUS.md`    | Текущий статус (этот файл)       |
+| `docs/PROJECT_HISTORY.md`   | Детальная история всех изменений |
+| `docs/DEVELOPMENT.md`       | Руководство для разработчиков    |
 | `src/composables/README.md` | Документация по composables      |
 | Backend OpenAPI             | `gost-rdpr/docs/OPENAPI.json`    |
 
@@ -215,14 +227,14 @@
 
 | Технология   | Версия |
 | ------------ | ------ |
-| Vue          | 3.5.34 |
+| Vue          | 3.5.40 |
 | TypeScript   | 6.0.3  |
-| Vite         | 8.0.12 |
-| Tailwind CSS | 4.3.0  |
-| Pinia        | 3.x    |
-| Vue Router   | 5.0.7  |
-| Headless UI  | 1.7.x  |
-| Heroicons    | 2.x    |
+| Vite         | 8.1.5  |
+| Tailwind CSS | 4.3.3  |
+| Pinia        | 4.0.2  |
+| Vue Router   | 5.2.0  |
+| Headless UI  | 1.7.23 |
+| Heroicons    | 2.2.0  |
 
 - Node.js: `^20.19.0 || >=24.13.0`
 - pnpm: `11.1.1`
@@ -242,9 +254,10 @@
 | 2026-05-13 | Обновление зависимостей, внешний OpenAPI-контракт, split-команды доменов   |
 | 2026-05-16 | Согласованная пагинация фильтров, controlled column filters, debounce      |
 | 2026-07-17 | Разовая проверка доменов, выбор DNS и фоновый резолвинг                    |
+| 2026-07-29 | RIPEstat для IP, Tailwind CSS как глобальный CSS-слой, настройка Prettier  |
 
 Детальная история: [PROJECT_HISTORY.md](PROJECT_HISTORY.md)
 
 ---
 
-Последнее обновление: 2026-07-17
+Последнее обновление: 2026-07-29

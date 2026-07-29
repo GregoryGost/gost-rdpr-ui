@@ -59,3 +59,35 @@ export interface IpAddressCreateData {
   ros_comment?: string
   use_default_gw?: boolean
 }
+
+/**
+ * RIPEstat prefix check request by raw IPv4 address
+ * @interface RipeStatPrefixCheckByAddressRequest
+ */
+export interface RipeStatPrefixCheckByAddressRequest {
+  address: string
+  id?: never
+}
+
+/**
+ * RIPEstat prefix check request by saved IP record ID
+ * @interface RipeStatPrefixCheckByIdRequest
+ */
+export interface RipeStatPrefixCheckByIdRequest {
+  id: number
+  address?: never
+}
+
+/**
+ * RIPEstat prefix check request with exactly one source
+ */
+export type RipeStatPrefixCheckRequest = RipeStatPrefixCheckByAddressRequest | RipeStatPrefixCheckByIdRequest
+
+/**
+ * RIPEstat prefix check result
+ * @interface RipeStatPrefixCheckResponse
+ */
+export interface RipeStatPrefixCheckResponse {
+  address: string
+  prefix: string | null
+}
