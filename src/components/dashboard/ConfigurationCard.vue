@@ -85,8 +85,7 @@ const listsConfig = computed(() => {
 const ipConfig = computed(() => {
   if (!props.config) return null
   return {
-    'IP не разрешены': props.config.static.ip_not_allowed || '—',
-    'Список запрещённых IP': props.config.dynamic.ip_not_allowed_list.join(', ') || '—',
+    'Запрещённые сети': props.config.dynamic.ip_not_allowed_list.join(', ') || '—',
   }
 })
 
