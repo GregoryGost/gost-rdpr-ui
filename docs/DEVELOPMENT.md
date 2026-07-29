@@ -10,7 +10,7 @@
 - `src/api/endpoints/domains-lists.ts` — методы для списков доменов
 - `src/api/endpoints/domains.ts` — методы для доменов
 - `src/api/endpoints/ips-lists.ts` — методы для списков IP
-- `src/api/endpoints/ips.ts` — методы для IP адресов
+- `src/api/endpoints/ips.ts` — методы для IP адресов и операций RIPEstat
 - `src/api/endpoints/ros.ts` — методы для конфигураций RouterOS
 - `src/api/endpoints/commands.ts` — методы для выполнения команд
 - `src/api/endpoints/stats.ts` — глобальная статистика (`getStats()`, `getGrowth()`)
@@ -36,9 +36,11 @@
 ### 4. Components ✅
 
 - **General:** `AppLogo`, `ErrorNotification`
-- **Dashboard:** `HealthStatusCard`, `VersionInfoCard`, `ConnectionAlert`, `PollingSettings`, `ConfigurationCard`, `SparklineCard`, `StatsMetricCard`, `StatsPieCard`
+- **Dashboard:** `HealthStatusCard`, `VersionInfoCard`, `ConnectionAlert`, `PollingSettings`,
+  `ConfigurationCard`, `SparklineCard`, `StatsMetricCard`, `StatsPieCard`
 - **Charts:** `LineChart`, `BarChart`, `PieChart`
 - **Domains:** `DomainResolveCheckModal`, `DomainResolveNowModal`
+- **IPs:** `IpRipePrefixModal`
 
 ### 5. Layout ✅
 
@@ -161,7 +163,8 @@ const TABLE_COLUMNS = [
 
 ### Фильтрация колонок
 
-`DataTable` автоматически выводит строку фильтров под заголовками таблицы. Все колонки фильтруются по умолчанию, кроме колонки `actions`.
+`DataTable` автоматически выводит строку фильтров под заголовками таблицы. Все колонки
+фильтруются по умолчанию, кроме колонки `actions`.
 
 ```typescript
 const TABLE_COLUMNS = [
@@ -185,7 +188,9 @@ const TABLE_COLUMNS = [
 | `filterPlaceholder` | Плейсхолдер для input фильтра                                    |
 | `filterValue`       | Преобразует значение строки в текст, по которому идет фильтрация |
 
-Фильтрация применяется к данным, переданным в `DataTable`, и выполняется перед сортировкой. Для глобальной фильтрации по всем записям страница должна перезагружать данные через API, если backend предоставляет соответствующий query-параметр.
+Фильтрация применяется к данным, переданным в `DataTable`, и выполняется перед сортировкой.
+Для глобальной фильтрации по всем записям страница должна перезагружать данные через API,
+если backend предоставляет соответствующий query-параметр.
 
 ---
 
@@ -204,12 +209,12 @@ pnpm format       # Форматирование кода
 ## Правила кодирования
 
 1. **Отступы:** 2 пробела
-2. **Комментарии:** английский язык
-3. **UI текст:** русский язык
-4. **Константы:** `UPPERCASE_WITH_UNDERSCORES`
-5. **Компоненты:** `PascalCase` (минимум 2 слова)
-6. **Composables:** `camelCase` с префиксом `use`
-7. **Стили:** Tailwind utility classes напрямую, без BEM, без `px`
+1. **Комментарии:** английский язык
+1. **UI текст:** русский язык
+1. **Константы:** `UPPERCASE_WITH_UNDERSCORES`
+1. **Компоненты:** `PascalCase` (минимум 2 слова)
+1. **Composables:** `camelCase` с префиксом `use`
+1. **Стили:** Tailwind utility classes напрямую, без BEM, без `px`
 
 ---
 
@@ -219,7 +224,7 @@ pnpm format       # Форматирование кода
 
 ```typescript
 // Идентификация приложения
-APP_NAME, APP_TITLE, APP_DESCRIPTION, APP_AUTHOR
+APP_NAME, APP_TITLE, APP_DESCRIPTION, APP_AUTHOR, APP_VERSION
 
 // Ключи localStorage
 STORAGE_KEYS { DARK_MODE, POLLING_INTERVAL }
@@ -241,7 +246,8 @@ VALIDATION { MIN_NAME_LENGTH, MIN_URL_LENGTH }
 UI_TEXTS, COMMANDS_TEXTS, DOMAINS_LISTS_TEXTS,
 IPS_TEXTS, IPS_LISTS_TEXTS, STATS_TEXTS,
 ROS_TEXTS, DOMAIN_RESOLVE_CHECK_TEXTS,
-DOMAIN_RESOLVE_NOW_TEXTS, ERROR_MESSAGES
+DOMAIN_RESOLVE_NOW_TEXTS, RIPESTAT_PREFIX_CHECK_TEXTS,
+ERROR_MESSAGES
 ```
 
 **Правила использования:**
@@ -266,17 +272,29 @@ timeout: 5000
 - **Mobile-first** подход в стилях
 - **ResizeObserver + requestAnimationFrame** для адаптивных SVG-чартов
 - **statsApi.getStats()** для точных глобальных метрик (не из пагинации)
-- **Управляемые фильтры колонок** применяются родительской страницей до пагинации; API-поиск сужает источник данных, а неподдерживаемые backend условия обрабатываются через `loadClientFilteredPage` с согласованным `total`
-- **useDebouncedTask** откладывает API-загрузки из поиска и фильтров колонок на 500 мс; переходы по страницам и CRUD-действия отменяют ожидающий запуск
-- **Commands API** разделяет определение новых доменов (`resolveNewDomains`) и устаревших доменов (`resolveStaleDomains`)
-- **Domains API** разделяет разовую проверку без сохранения (`resolveCheck`) и запуск фонового обновления сохранённого домена (`resolveNow`)
-- **OpenAPI контракт** берётся из backend-репозитория `gost-rdpr/docs/OPENAPI.json`; локальный `TARGET_OPENAPI.*` не используется как источник документации
+- **Управляемые фильтры колонок** применяются родительской страницей до пагинации;
+  API-поиск сужает источник данных, а неподдерживаемые backend условия обрабатываются через
+  `loadClientFilteredPage` с согласованным `total`
+- **useDebouncedTask** откладывает API-загрузки из поиска и фильтров колонок на 500 мс;
+  переходы по страницам и CRUD-действия отменяют ожидающий запуск
+- **Commands API** разделяет определение новых доменов (`resolveNewDomains`) и устаревших
+  доменов (`resolveStaleDomains`)
+- **Domains API** разделяет разовую проверку без сохранения (`resolveCheck`) и запуск
+  фонового обновления сохранённого домена (`resolveNow`)
+- **RIPEstat API** разделяет проверку IPv4-префикса без изменения БД
+  (`checkRipeStatPrefix`) и общую очистку только memory-кеша (`clearRipeStatCache`);
+  второе действие находится рядом с добавлением IP, а не в строке таблицы
+- **Стили** подключаются через `src/css/main.css`: в нём находятся импорт Tailwind, токены,
+  базовые слои и dark-вариант; для интерфейса используются utility-классы Tailwind, а
+  изолированный SCSS остаётся только для отдельных стилей, которые невыгодно выражать утилитами
+- **OpenAPI контракт** берётся из backend-репозитория `gost-rdpr/docs/OPENAPI.json`;
+  локальный `TARGET_OPENAPI.*` не используется как источник документации
 
 ---
 
 ## Полезная документация
 
-- [Документация Composables](src/composables/README.md)
+- [Документация Composables](../src/composables/README.md)
 - [OpenAPI спецификация backend](https://github.com/GregoryGost/gost-rdpr/blob/master/docs/OPENAPI.json)
 - [Vue 3 Composition API](https://vuejs.org/api/composition-api-setup.html)
 - [TypeScript в Vue](https://vuejs.org/guide/typescript/overview.html)

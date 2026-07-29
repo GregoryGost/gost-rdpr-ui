@@ -6,6 +6,7 @@ export const APP_TITLE = 'GOST-RDPR Ui'
 export const APP_DESCRIPTION = 'Admin Panel'
 export const APP_AUTHOR = 'GregoryGost'
 export const APP_VERSION = __APP_VERSION__
+export const APP_BUILD_DATE_UTC = __BUILD_DATE_UTC__
 
 /**
  * Storage keys

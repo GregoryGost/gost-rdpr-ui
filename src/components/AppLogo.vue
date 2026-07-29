@@ -10,9 +10,9 @@ const [firstWord, secondWord] = APP_NAME.split('-')
 </script>
 
 <template>
-  <span class="logo-text font-bold text-gray-900 dark:text-gray-100">
-    <span class="logo-g">{{ firstWord }}</span
-    ><span class="logo-t">&mdash;{{ secondWord }}</span>
+  <span class="font-gost text-2xl font-bold text-gray-900 italic dark:text-gray-100">
+    <span class="inline-block rounded bg-brand-primary py-0 pr-[0.8rem] pl-2 text-white">{{ firstWord }}</span
+    ><span class="inline-block tracking-[0.1rem]">&mdash;{{ secondWord }}</span>
   </span>
 </template>
 

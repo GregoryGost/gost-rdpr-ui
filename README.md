@@ -2,7 +2,9 @@
 
 Административная панель для REST API проекта [GOST-RDPR](https://github.com/GregoryGost/gost-rdpr).
 
-Реализует CRUD-интерфейс для управления DNS-серверами, доменами, IP-адресами, конфигурациями RouterOS и командами с поиском, пагинацией, сортировкой и фильтрацией таблиц, а также страницу статистики с интерактивными графиками.
+Реализует CRUD-интерфейс для управления DNS-серверами, доменами, IP-адресами,
+конфигурациями RouterOS и командами с поиском, пагинацией, сортировкой и фильтрацией
+таблиц, а также страницу статистики с интерактивными графиками.
 
 ## Скриншоты
 
@@ -35,12 +37,6 @@
 pnpm install
 ```
 
-Создайте файл `.env.development`:
-
-```env
-VITE_API_BASE_URL=http://127.0.0.1:4000
-```
-
 ```bash
 pnpm dev        # http://localhost:5000
 pnpm build      # production сборка
@@ -49,20 +45,22 @@ pnpm lint-dry-run # проверка ESLint без записи исправле
 pnpm format     # форматирование кода
 ```
 
-> В режиме разработки запросы к `/api` автоматически проксируются к `VITE_API_BASE_URL`.
+> В режиме разработки запросы к `/api` автоматически проксируются к `http://127.0.0.1:4000`.
+> Чтобы использовать другой backend, задайте `VITE_API_BASE_URL` в окружении процесса
+> перед запуском `pnpm dev`.
 
 ## Технологии
 
 | Категория             | Технология                                     |
 | --------------------- | ---------------------------------------------- |
-| Framework             | Vue 3.5.34 (Composition API, `<script setup>`) |
+| Framework             | Vue 3.5.40 (Composition API, `<script setup>`) |
 | Язык                  | TypeScript 6.0.3                               |
-| Сборщик               | Vite 8.0.12                                    |
-| Стили                 | Tailwind CSS 4.3.0                             |
+| Сборщик               | Vite 8.1.5                                     |
+| Стили                 | Tailwind CSS 4.3.3                             |
 | UI-компоненты         | Headless UI 1.7.23, Heroicons 2.2.0            |
-| Роутинг               | Vue Router 5.0.7                               |
-| Управление состоянием | Pinia 3.0.4                                    |
-| Линтинг               | ESLint 10.3.0 + Prettier 3.8.3                 |
+| Роутинг               | Vue Router 5.2.0                               |
+| Управление состоянием | Pinia 4.0.2                                    |
+| Линтинг               | ESLint 10.8.0 + Prettier 3.9.6                 |
 
 **Требования:** Node.js `^20.19.0 || >=24.13.0`, пакетный менеджер `pnpm 11.1.1`.
 
@@ -73,24 +71,32 @@ pnpm format     # форматирование кода
 - **Списки доменов** — источники доменов, попытки загрузки, статистика ошибок
 - **Домены** — домены, IPv4 / IPv6, фильтры, разовая проверка через DNS-серверы и фоновый резолвинг сохранённых записей
 - **Списки IP** — источники IP-адресов, IPv4 / IPv6, попытки загрузки
-- **IP Адреса** — адреса (IPv4 / IPv6), связи со списками и доменами, базовый Gateway
+- **IP Адреса** — адреса (IPv4 / IPv6), связи со списками и доменами, базовый Gateway,
+  проверка IPv4-префикса через RIPEstat и очистка его memory-кеша
 - **Конфигурации RoS** — конфигурации RouterOS для BGP, firewall и маршрутизации
 - **Команды** — загрузка списков, определение новых и устаревших доменов, обновление RouterOS в IPv4-only режиме
 - **Статистика** — обзор, live-активность, динамика роста, разбивка по спискам
 
 ## Рекомендуемая IDE
 
-[VS Code](https://code.visualstudio.com/) + расширение [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar)
+[VS Code](https://code.visualstudio.com/) +
+[Vue (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.volar),
+[ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) и
+[Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
 ## Документация
 
-- [Руководство по разработке](DEVELOPMENT.md)
+- [Руководство по разработке](docs/DEVELOPMENT.md)
+- [Текущий статус проекта](docs/PROJECT_STATUS.md)
+- [История изменений](docs/PROJECT_HISTORY.md)
 - [OpenAPI спецификация backend](https://github.com/GregoryGost/gost-rdpr/blob/master/docs/OPENAPI.json)
 - [Документация composables](src/composables/README.md)
 
 ## Лицензия
 
-Все исходные материалы проекта распространяются под лицензией [GPL v3](./LICENSE). Автор не предоставляет гарантий работоспособности и не несёт ответственности за претензии или причинённый ущерб.
+Все исходные материалы проекта распространяются под лицензией [GPL v3](./LICENSE). Автор не
+предоставляет гарантий работоспособности и не несёт ответственности за претензии или
+причинённый ущерб.
 
 ## Об авторе
 

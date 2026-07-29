@@ -63,7 +63,7 @@ const emit = defineEmits<{
                 <div
                   :class="[
                     variant === 'danger' ? 'bg-red-100 dark:bg-red-900/20' : 'bg-blue-100 dark:bg-blue-900/20',
-                    'flex-shrink-0 rounded-full p-3',
+                    'shrink-0 rounded-full p-3',
                   ]"
                 >
                   <ExclamationTriangleIcon

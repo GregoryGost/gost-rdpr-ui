@@ -119,7 +119,7 @@ const systemConfig = computed(() => {
           class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium wrap-break-word text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -155,7 +155,7 @@ const systemConfig = computed(() => {
           class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium wrap-break-word text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -173,7 +173,7 @@ const systemConfig = computed(() => {
           class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium wrap-break-word text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -191,7 +191,7 @@ const systemConfig = computed(() => {
           class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium wrap-break-word text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -209,7 +209,7 @@ const systemConfig = computed(() => {
           class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium wrap-break-word text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -227,7 +227,7 @@ const systemConfig = computed(() => {
           class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium wrap-break-word text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>
@@ -245,7 +245,7 @@ const systemConfig = computed(() => {
           class="flex flex-col gap-1 border-b border-gray-100 pb-2 last:border-0 md:flex-row md:items-center md:justify-between md:gap-4 dark:border-gray-700"
         >
           <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}:</span>
-          <span class="font-mono text-sm font-medium break-words text-gray-900 md:text-right dark:text-gray-100">{{
+          <span class="font-mono text-sm font-medium wrap-break-word text-gray-900 md:text-right dark:text-gray-100">{{
             value
           }}</span>
         </div>

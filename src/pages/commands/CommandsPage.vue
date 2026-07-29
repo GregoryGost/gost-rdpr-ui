@@ -279,7 +279,7 @@ const executeCommand = async () => {
           </BaseButton>
         </div>
         <div class="mt-3 flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
-          <ExclamationCircleIcon class="mt-0.5 h-5 w-5 flex-shrink-0" />
+          <ExclamationCircleIcon class="mt-0.5 h-5 w-5 shrink-0" />
           <p>
             {{ COMMANDS_TEXTS.DOMAIN_RESOLVE_STALE_WARNING }}
           </p>
@@ -330,7 +330,7 @@ const executeCommand = async () => {
           {{ COMMANDS_TEXTS.IP_NOT_ALLOWED_CLEANUP_DESCRIPTION }}
         </p>
         <div class="mb-4 flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
-          <ExclamationCircleIcon class="mt-0.5 h-5 w-5 flex-shrink-0" />
+          <ExclamationCircleIcon class="mt-0.5 h-5 w-5 shrink-0" />
           <p>{{ COMMANDS_TEXTS.IP_NOT_ALLOWED_CLEANUP_HINT }}</p>
         </div>
         <BaseButton

@@ -1,6 +1,14 @@
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import { ApiError } from '@/api/client'
 import { errorHandler } from '@/utils/errorHandler'
+
+export interface UseApiResult<T> {
+  data: Ref<T | null>
+  isLoading: Ref<boolean>
+  hasError: Ref<boolean>
+  errorMessage: Ref<string | null>
+  execute: () => Promise<void>
+}
 
 /**
  * Composable for API requests with state management
@@ -9,8 +17,8 @@ import { errorHandler } from '@/utils/errorHandler'
  * @param {boolean} showNotification - Show error notification (default: true)
  * @returns Object with data, loading and error states, and execute method
  */
-export function useApi<T>(apiCall: () => Promise<T>, showNotification = true) {
-  const data = ref<T | null>(null)
+export function useApi<T>(apiCall: () => Promise<T>, showNotification = true): UseApiResult<T> {
+  const data = ref<T | null>(null) as Ref<T | null>
   const isLoading = ref(false)
   const hasError = ref(false)
   const errorMessage = ref<string | null>(null)

@@ -5,7 +5,7 @@ import App from './App.vue'
 import router from './router'
 import { APP_TITLE } from './constants'
 
-import './css/main.scss'
+import './css/main.css'
 
 // Error handler
 import { errorHandler } from './utils/errorHandler'
