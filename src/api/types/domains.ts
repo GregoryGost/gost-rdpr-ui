@@ -21,19 +21,39 @@ export interface DomainsList {
  * @interface Domain
  */
 export interface Domain {
+  /** Stored domain identifier used by domain-specific API operations. */
   id: number
+  /** Identifier of the domain list containing this record, when assigned. */
   domains_list_id?: number
+  /** Resolution status displayed in the table and domain card. */
   resolved: boolean
+  /** Domain name displayed in the table and resolution dialogs. */
   name: string
+  /** Optional comment associated with this domain for RouterOS. */
   ros_comment?: string
+  /** IPv4 addresses associated with the saved domain. */
   ips_v4?: string[]
+  /** IPv6 addresses associated with the saved domain. */
   ips_v6?: string[]
+  /** Backend timestamp of the domain record's creation. */
   created_at: number
+  /** Backend-formatted creation date displayed without client-side conversion. */
   created_at_hum: string
+  /** Backend timestamp of the most recent record update, when available. */
   updated_at?: number
+  /** Backend-formatted update date, when available. */
   updated_at_hum?: string
+  /** Backend timestamp of the last successful resolution, when available. */
   last_resolved_at?: number
+  /** Backend-formatted date of the last successful resolution, when available. */
   last_resolved_at_hum?: string
+  /**
+   * Backend timestamp of the last completed saved attempt, including partial results and failures.
+   * Null means the timestamp is unknown; responses without attempt metadata may omit this field.
+   */
+  last_attempt_at?: number | null
+  /** Backend-formatted attempt date; null or omitted when no date is available. */
+  last_attempt_at_hum?: string | null
 }
 
 /**

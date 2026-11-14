@@ -42,10 +42,8 @@ __screenshots__/
 .cursor/*.txt
 
 # AI
-.codex/
-.agent/
-.agents/
-AGENTS.md
+.codex/config.toml
+.agent-handoffs/
 
 # Env
 .env
@@ -55,3 +53,7 @@ AGENTS.md
 
 # Playwright
 .playwright-mcp/
+
+# TASKS
+TASKS.md
+TASKS_ARCHIVE.md

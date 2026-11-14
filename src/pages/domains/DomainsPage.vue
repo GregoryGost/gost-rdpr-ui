@@ -981,6 +981,17 @@ onMounted(() => {
                   Timestamp: {{ selectedDomain.last_resolved_at }}
                 </p>
               </div>
+
+              <div v-if="selectedDomain.last_attempt_at_hum">
+                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Последняя попытка</label>
+                <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedDomain.last_attempt_at_hum }}</p>
+                <p
+                  v-if="selectedDomain.last_attempt_at != null"
+                  class="font-mono text-xs text-gray-500 dark:text-gray-400"
+                >
+                  Timestamp: {{ selectedDomain.last_attempt_at }}
+                </p>
+              </div>
             </div>
           </div>
         </div>
