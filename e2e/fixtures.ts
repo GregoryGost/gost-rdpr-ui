@@ -2,7 +2,7 @@ import { test as base, expect, type Page, type Route } from '@playwright/test'
 
 /** Synthetic API domain, independent of application types and including nullable backend fields. */
 export interface BrowserDomain {
-  /** Positive saved identifier used by row actions. */
+  /** Saved identifier; nonpositive values model service records excluded from unprocessed counts. */
   id: number
   /** Domain name shown in searches and the saved card. */
   name: string
@@ -21,9 +21,9 @@ export interface BrowserDomain {
   /** Backend-formatted creation date. */
   created_at_hum: string
   /** Last successful resolution time in epoch seconds. */
-  last_resolved_at?: number
+  last_resolved_at?: number | null
   /** Backend-formatted last successful resolution date. */
-  last_resolved_at_hum?: string
+  last_resolved_at_hum?: string | null
   /** Last completed saved attempt, absent for older records or null when unknown. */
   last_attempt_at?: number | null
   /** Backend-formatted saved attempt date with the same compatibility cases. */
@@ -153,17 +153,20 @@ export class BrowserApi {
     })
   }
 
-  /** Returns backend-shaped pagination for url, applying only public search and resolved parameters. */
+  /** Returns backend-shaped pagination for url, applying the confirmed search and status parameters. */
   private domainPage(url: URL): unknown {
-    // text and resolved are backend filters; limit and offset select the requested slice.
+    // text/resolved/unprocessed are backend filters; limit and offset select the requested slice.
     const text = url.searchParams.get('text')?.toLowerCase() ?? ''
     const resolved = url.searchParams.get('resolved')
+    const unprocessed = url.searchParams.get('unprocessed') === 'true'
     const limit = Number(url.searchParams.get('limit') ?? 20)
     const offset = Number(url.searchParams.get('offset') ?? 0)
     // matching's callback models server-side filters, without copying application client-pagination logic.
     const matching = this.domains.filter(
       (domain) =>
-        domain.name.toLowerCase().includes(text) && (resolved === null || domain.resolved === (resolved === 'true')),
+        domain.name.toLowerCase().includes(text) &&
+        (resolved === null || domain.resolved === (resolved === 'true')) &&
+        (!unprocessed || (domain.id > 0 && domain.last_attempt_at == null && domain.last_resolved_at == null)),
     )
     // payload contains only this API page; counters describe the filtered source and global resolved total.
     const payload = matching.slice(offset, offset + limit)
@@ -224,9 +227,11 @@ export class BrowserApi {
     if (!domain) throw new Error(`Missing domain ${id}`)
     domain.last_attempt_at = 1700000300
     domain.last_attempt_at_hum = '2023-11-14 22:18:20'
-    domain.resolved = outcome !== 'failure'
-    domain.ips_v4 = outcome === 'failure' ? [] : ['192.0.2.20']
-    domain.ips_v6 = outcome === 'success' ? ['2001:db8::20'] : []
+    // Only complete success advances the saved resolution checkpoint; partial/failure retain prior status.
+    if (outcome === 'success') domain.resolved = true
+    if (outcome === 'success') domain.ips_v4 = ['192.0.2.20']
+    else if (outcome === 'partial') domain.ips_v4 = [...new Set([...(domain.ips_v4 ?? []), '192.0.2.20'])]
+    // Incomplete evidence preserves prior supports; saved resolution never changes IPv6 in this backend flow.
     if (outcome === 'success') {
       domain.last_resolved_at = 1700000300
       domain.last_resolved_at_hum = '2023-11-14 22:18:20'
@@ -270,6 +275,10 @@ export class BrowserApi {
             total: this.domains.length,
             resolved,
             unresolved: this.domains.length - resolved,
+            unprocessed: this.domains.filter(
+              /** Missing dates mean no saved processing; zero timestamps are known dates, and service IDs are excluded. */
+              (domain) => domain.id > 0 && domain.last_attempt_at == null && domain.last_resolved_at == null,
+            ).length,
             lists_total: 1,
             per_list: [
               {

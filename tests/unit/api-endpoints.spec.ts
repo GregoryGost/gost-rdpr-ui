@@ -25,6 +25,20 @@ beforeEach(() => {
 
 /** Shared wrappers must serialize values without losing zero, false or non-ASCII search text. */
 describe('endpoint serialization', () => {
+  /** The confirmed unprocessed flag composes with resolved and search; false remains an explicit legacy no-op. */
+  it('serializes the confirmed unprocessed contract on both domain endpoints', async () => {
+    await domainsApi.getAll({ unprocessed: true, resolved: false, limit: 10, offset: 0 })
+    expect(requestMock).toHaveBeenLastCalledWith('/domains?unprocessed=true&resolved=false&limit=10&offset=0')
+    await domainsApi.search('fresh & new', { unprocessed: true, limit: 10, offset: 0 })
+    expect(requestMock).toHaveBeenLastCalledWith(
+      '/domains/search?text=fresh+%26+new&unprocessed=true&limit=10&offset=0',
+    )
+    await domainsApi.getAll({ unprocessed: false, offset: 0 })
+    expect(requestMock).toHaveBeenLastCalledWith('/domains?unprocessed=false&offset=0')
+    await domainsApi.search('fresh', { unprocessed: undefined, resolved: undefined, offset: 0 })
+    expect(requestMock).toHaveBeenLastCalledWith('/domains/search?text=fresh&offset=0')
+  })
+
   /** All six searchable resources encode text and preserve the zero offset. */
   it.each([
     ['/dns', dnsApi],

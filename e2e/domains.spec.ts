@@ -49,22 +49,25 @@ test('navigates between home, domains, history and an unknown hash route', async
 /** Verifies API-backed pagination, button categories, combined column filters and reset behavior. */
 test('pages and combines domain filters before opening a matching card', async ({ page, api }) => {
   await openDomains(page)
-  await page.getByRole('combobox', { name: 'На странице:' }).selectOption('10')
-  await expect(page.getByText('Показано 1 - 10 из 26 результатов')).toBeVisible()
-  await page.getByRole('navigation', { name: 'Pagination' }).getByRole('button', { name: '2', exact: true }).click()
+  await page.getByRole('combobox', { name: 'На странице:' }).first().selectOption('10')
+  await expect(page.getByText('Показано 1 - 10 из 26 результатов').first()).toBeVisible()
+  await page
+    .getByRole('navigation', { name: 'Пагинация доменов сверху' })
+    .getByRole('button', { name: '2', exact: true })
+    .click()
   await expect(page.getByRole('cell', { name: 'page-11.example.test', exact: true })).toBeVisible()
   await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toHaveCount(0)
-  await expect(page.getByText('Показано 11 - 20 из 26 результатов')).toBeVisible()
+  await expect(page.getByText('Показано 11 - 20 из 26 результатов').first()).toBeVisible()
   await page.getByRole('button', { name: 'Не определен', exact: true }).click()
   await expect(page.getByRole('cell', { name: 'unknown.example.test', exact: true })).toBeVisible()
-  await expect(page.getByText('Показано 1 - 10 из 12 результатов')).toBeVisible()
+  await expect(page.getByText('Показано 1 - 10 из 12 результатов').first()).toBeVisible()
   await page.getByRole('button', { name: 'Со списком', exact: true }).click()
   await expect(page.getByText('Домены не найдены', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Сбросить', exact: true }).click()
   await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toBeVisible()
   await page.getByRole('searchbox', { name: 'Фильтр: Комментарий', exact: true }).fill('primary')
   await page.getByRole('searchbox', { name: 'Фильтр: Домен', exact: true }).fill('dated')
-  await expect(page.getByText('Показано 1 - 1 из 1 результатов')).toBeVisible()
+  await expect(page.getByText('Показано 1 - 1 из 1 результатов').first()).toBeVisible()
   // card is opened from the filtered table; its saved values must match the chosen entity.
   const card = await openCard(page, 'dated.example.test')
   await expectDate(card, 'Последняя попытка', '2023-11-14 22:16:40')
@@ -86,7 +89,7 @@ test('opens the existing saved card from list and search with independent attemp
   await listCard.getByRole('button', { name: 'Закрыть', exact: true }).click()
   await expect(page.locator('[role="dialog"]')).toHaveCount(0)
   await page.getByPlaceholder('Поиск по домену...').fill('dated')
-  await expect(page.getByText('Показано 1 - 1 из 1 результатов')).toBeVisible()
+  await expect(page.getByText('Показано 1 - 1 из 1 результатов').first()).toBeVisible()
   const searchCard = await openCard(page, 'dated.example.test')
   await expectDate(searchCard, 'Последняя попытка', '2023-11-14 22:16:40')
   await expectDate(searchCard, 'Последнее определение', '2023-11-14 22:15:00')
@@ -106,7 +109,7 @@ for (const name of ['unknown.example.test', 'legacy.example.test']) {
     await card.getByRole('button', { name: 'Закрыть', exact: true }).click()
     await expect(page.locator('[role="dialog"]')).toHaveCount(0)
     await page.getByPlaceholder('Поиск по домену...').fill(name)
-    await expect(page.getByText('Показано 1 - 1 из 1 результатов')).toBeVisible()
+    await expect(page.getByText('Показано 1 - 1 из 1 результатов').first()).toBeVisible()
     // searchCard verifies the same null/omitted compatibility contract on the separately fetched search payload.
     const searchCard = await openCard(page, name)
     await expect(searchCard.getByText('Последняя попытка', { exact: true })).toHaveCount(0)
@@ -147,9 +150,8 @@ for (const outcome of ['success', 'partial', 'failure'] as const satisfies reado
       'Последнее определение',
       outcome === 'success' ? '2023-11-14 22:18:20' : '2023-11-14 22:15:00',
     )
-    await expect(
-      afterCompletion.getByText(outcome === 'failure' ? 'Не определен' : 'Определен', { exact: true }),
-    ).toBeVisible()
+    // This already-resolved domain retains its saved checkpoint after an incomplete or failed later attempt.
+    await expect(afterCompletion.getByText('Определен', { exact: true })).toBeVisible()
   })
 }
 
@@ -221,7 +223,7 @@ test('validates creation, creates the submitted domain, cancels then confirms de
   await expect(deletion).toHaveCount(0)
   await expect(page.getByRole('alert').filter({ hasText: 'Домен #100 успешно удален' })).toBeVisible()
   // The completed range distinguishes a refreshed table from the transient loading state that also hides the row.
-  await expect(page.getByText('Показано 1 - 3 из 3 результатов')).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByText('Показано 1 - 3 из 3 результатов').first()).toBeVisible({ timeout: 10_000 })
   await expect(row).toHaveCount(0)
   expect(api.mutations.at(-1)).toEqual({ method: 'DELETE', path: '/domains/100', body: null })
 })
@@ -309,10 +311,10 @@ test('accepts initial global statistics after the user changes the table search'
   /** The poll callback ensures global statistics remain pending while the user changes the table query. */
   await expect.poll(() => api.heldPaths.get('/stats')?.length).toBe(1)
   await page.getByPlaceholder('Поиск по домену...').fill('dated')
-  await expect(page.getByText('Показано 1 - 1 из 1 результатов')).toBeVisible()
+  await expect(page.getByText('Показано 1 - 1 из 1 результатов').first()).toBeVisible()
   await api.releasePath('/stats')
   await expect(page.getByText('Всего доменов', { exact: true }).locator('..')).toHaveText('Всего доменов26')
-  await expect(page.getByText('Показано 1 - 1 из 1 результатов')).toBeVisible()
+  await expect(page.getByText('Показано 1 - 1 из 1 результатов').first()).toBeVisible()
 })
 
 /** Changing search during the existing background-acceptance delay must not suppress the mutation refresh. */
@@ -331,7 +333,7 @@ test('refreshes saved counts and the current search after creation during a quer
     page.getByRole('alert').filter({ hasText: 'Домен "created.example.test" успешно добавлен' }),
   ).toBeVisible()
   await page.getByPlaceholder('Поиск по домену...').fill('dated')
-  await expect(page.getByText('Показано 1 - 1 из 1 результатов')).toBeVisible()
+  await expect(page.getByText('Показано 1 - 1 из 1 результатов').first()).toBeVisible()
   await page.clock.fastForward(7000)
   await expect(page.getByText('Всего доменов', { exact: true }).locator('..')).toHaveText('Всего доменов4')
   await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toBeVisible()

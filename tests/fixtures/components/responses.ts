@@ -52,8 +52,8 @@ export function statistics(): StatsResponse {
     generated_at: '2026-11-14 12:00:00',
     // dns describes two classic servers and one DoH server.
     dns: { total: 3, classic: 2, doh: 1 },
-    // domains counts all 42 records, including 30 resolved; no domain lists exist in this fixture.
-    domains: { total: 42, resolved: 30, unresolved: 12, lists_total: 0, per_list: [] },
+    // domains counts 42 records, including 30 resolved and nine unprocessed; no domain lists exist in this fixture.
+    domains: { total: 42, resolved: 30, unresolved: 12, unprocessed: 9, lists_total: 0, per_list: [] },
     // ips counts eight addresses, split by family and association; there are no IP lists.
     ips: { total: 8, v4_total: 5, v6_total: 3, linked_to_domain: 6, standalone: 2, lists_total: 0, per_list: [] },
     // ros counts the single synthetic RouterOS configuration.

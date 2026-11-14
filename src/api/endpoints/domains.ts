@@ -1,5 +1,11 @@
 import { apiRequest } from '../client'
-import type { Domain, DomainCreateData, DomainResolveCheckRequest, DomainResolveCheckResponse } from '../types/domains'
+import type {
+  Domain,
+  DomainCreateData,
+  DomainResolveCheckRequest,
+  DomainResolveCheckResponse,
+  DomainsQueryParams,
+} from '../types/domains'
 import type { PaginatedResponse, PaginationParams, OkResponse } from '../types/common'
 import { API } from '@/constants'
 
@@ -62,10 +68,11 @@ export interface DomainsResponse extends PaginatedResponse<Domain> {
 export const domainsApi = {
   /**
    * Get all domains
-   * @param {PaginationParams & { resolved?: boolean }} [params] - Pagination and filter parameters
+   * @param {DomainsQueryParams} [params] - Pagination and filter parameters
    * @returns {Promise<DomainsResponse>}
    */
-  getAll: (params?: PaginationParams & { resolved?: boolean }) => {
+  getAll: (params?: DomainsQueryParams) => {
+    // queryString retains false and zero filters while the serializer omits undefined values.
     const queryString = params ? `?${toSearchParams(params)}` : ''
     return apiRequest<DomainsResponse>(`/domains${queryString}`)
   },
@@ -131,12 +138,14 @@ export const domainsApi = {
   /**
    * Search domains by text
    * @param {string} text - Search text
-   * @param {PaginationParams & { resolved?: boolean }} [params] - Pagination and filter parameters
+   * @param {DomainsQueryParams} [params] - Pagination and filter parameters
    * @returns {Promise<DomainsResponse>}
    */
-  search: (text: string, params?: PaginationParams & { resolved?: boolean }) => {
+  search: (text: string, params?: DomainsQueryParams) => {
+    // searchParams combines the required name search with the same optional server filters as the list.
     const searchParams = new URLSearchParams({ text })
     if (params) {
+      // The callback serializes each key/value pair, preserving false and zero and excluding missing values.
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           searchParams.append(key, String(value))
