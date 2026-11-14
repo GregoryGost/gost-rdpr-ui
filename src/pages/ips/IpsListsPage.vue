@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { ipsListsApi } from '@/api/endpoints/ips-lists'
 import { statsApi } from '@/api/endpoints/stats'
 import type { IpsList, IpsListCreateData } from '@/api/types/ips'
-import { useDebouncedTask, usePaginatedData } from '@/composables'
+import { useDebouncedTask, usePaginatedData, useLatestRequest } from '@/composables'
 import { IPS_LISTS_TEXTS, UI_TEXTS, SEARCH, VALIDATION, ERROR_MESSAGES } from '@/constants'
 import DataTable from '@/ui/tables/DataTable.vue'
 import PaginationControl from '@/ui/tables/PaginationControl.vue'
@@ -36,24 +36,31 @@ const hasActiveSearch = computed(() => searchQuery.value.length >= SEARCH.MIN_LE
 const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.value))
 
 // Statistics
+// statsRequests keeps global counts independent of table queries and rejects old responses after refresh or teardown.
+const statsRequests = useLatestRequest()
 const totalLists = ref(0)
 const totalWithErrors = ref(0)
 const totalCritical = ref(0)
 
-// Paginated data management
+/** lists holds accepted rows; isLoading tracks the current load; pagination owns page counters;
+ * The loader callback uses params as the requested page and returns its backend response.
+ * requests coordinates normal, search and filtered loads; loadLists loads the current normal page. */
 const {
   data: lists,
   isLoading,
   pagination,
+  requests,
   load: loadLists,
 } = usePaginatedData<IpsList>(async (params) => {
+  // filterItem freezes column values for every backend batch in this load.
+  const filterItem = createListColumnFilter()
   return loadAttemptsFilteredPage(
     ipsListsApi.getAll,
     params,
     attemptsFilter.value,
     hasActiveColumnFilters.value
       ? {
-          filterItem: matchesListColumnFilters,
+          filterItem,
         }
       : false,
   )
@@ -101,30 +108,35 @@ const TABLE_COLUMNS: TableColumn<IpsList>[] = [
   { key: 'actions', label: UI_TEXTS.ACTIONS },
 ]
 
-function matchesListColumnFilters(list: IpsList): boolean {
-  return matchesColumnFilters(list, TABLE_COLUMNS, columnFilters.value)
+/** Captures column values and returns a predicate that checks each list against that snapshot. */
+function createListColumnFilter() {
+  // filters is copied so later edits cannot change matching halfway through backend pagination.
+  const filters = { ...columnFilters.value }
+  return (list: IpsList) => matchesColumnFilters(list, TABLE_COLUMNS, filters)
 }
 
-/**
- * Search IPs lists
- */
-const showSearchResults = (total: number) => {
+/** Reports the accepted result total for the query captured by its request. */
+const showSearchResults = (total: number, query: string) => {
   if (total === 0) {
-    showInfo(
-      `${IPS_LISTS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
-      UI_TEXTS.SEARCH_RESULTS,
-    )
+    showInfo(`${IPS_LISTS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${query}" ${UI_TEXTS.NOTHING_FOUND}`, UI_TEXTS.SEARCH_RESULTS)
     return
   }
 
   showInfo(`${IPS_LISTS_TEXTS.SEARCH_FOUND_PREFIX} ${total}`, UI_TEXTS.SEARCH_RESULTS)
 }
 
+/** Loads the captured search and filters; obsolete outcomes cannot publish or notify. */
 const loadSearchResults = async (shouldNotify = false) => {
+  // isCurrent checks ownership; query is the entered search; filterItem freezes column matching.
+  const isCurrent = requests.begin()
+  const query = searchQuery.value
+  const filterItem = createListColumnFilter()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
+    // response holds the filtered rows and matching total; the fetch callback reuses the captured query.
     const response = await loadAttemptsFilteredPage(
-      (params) => ipsListsApi.search(searchQuery.value, params),
+      (params) => ipsListsApi.search(query, params),
       {
         limit: pagination.pageSize.value,
         offset: pagination.offset.value,
@@ -132,22 +144,25 @@ const loadSearchResults = async (shouldNotify = false) => {
       attemptsFilter.value,
       {
         forceClientPagination: true,
-        filterItem: hasActiveColumnFilters.value ? matchesListColumnFilters : undefined,
+        filterItem: hasActiveColumnFilters.value ? filterItem : undefined,
       },
     )
 
+    if (!isCurrent()) return
     lists.value = response.payload
     pagination.totalItems.value = response.total
 
-    if (shouldNotify) showSearchResults(response.total)
+    if (shouldNotify) showSearchResults(response.total, query)
   } catch (error) {
+    // error belongs to this search and is reported only if its intent remains current.
+    if (!isCurrent()) return
     errorHandler.handleError(error, {
       action: 'searchLists',
       component: 'IpsListsPage',
-      query: searchQuery.value,
+      query,
     })
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
@@ -162,6 +177,8 @@ const loadActiveLists = async (shouldNotifySearch = false) => {
   }
 }
 
+/** runSearchListsDebounced schedules the search callback; cancelSearchListsDebounce clears its queued run.
+ * The callback resets pagination and loads the latest active input after the debounce delay. */
 const { run: runSearchListsDebounced, cancel: cancelSearchListsDebounce } = useDebouncedTask(async () => {
   pagination.currentPage.value = 1 // Reset to first page
 
@@ -173,32 +190,42 @@ const { run: runSearchListsDebounced, cancel: cancelSearchListsDebounce } = useD
   await loadSearchResults(true)
 })
 
+/** runColumnFiltersDebounced schedules a reload using current filters; cancelColumnFiltersDebounce clears it.
+ * The callback loads through the active search or normal source. */
 const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = useDebouncedTask(async () => {
   await loadActiveLists()
 })
 
+/** Cancels queued input loads and immediately invalidates all earlier request continuations. */
 const cancelPendingInputLoads = () => {
+  requests.invalidate()
   cancelSearchListsDebounce()
   cancelColumnFiltersDebounce()
 }
 
+/** Invalidates earlier results at input time, before scheduling the existing search debounce. */
 const searchLists = () => {
+  cancelPendingInputLoads()
   runSearchListsDebounced()
 }
 
+/** Selects page and loads it through the active search or filter source. */
 const goToActivePage = async (page: number) => {
   cancelPendingInputLoads()
   pagination.goToPage(page)
   await loadActiveLists()
 }
 
+/** Selects a new page size and reloads the first page through the active source. */
 const changeActivePageSize = async (size: number) => {
   cancelPendingInputLoads()
   pagination.changePageSize(size)
   await loadActiveLists()
 }
 
+/** Replaces column filters, invalidating pending results before the debounced reload. */
 const updateColumnFilters = (filters: TableColumnFilters) => {
+  cancelPendingInputLoads()
   columnFilters.value = filters
   pagination.currentPage.value = 1
   runColumnFiltersDebounced()
@@ -207,13 +234,25 @@ const updateColumnFilters = (filters: TableColumnFilters) => {
 /**
  * Load global statistics from the dedicated statistics API endpoint
  */
-const loadGlobalStats = async () => {
+// The default isCurrent predicate keeps standalone statistics refreshes independent of table query changes.
+const loadGlobalStats = async (isCurrent: () => boolean = () => true) => {
+  // An obsolete dependent caller must not supersede an independent statistics refresh.
+  if (!isCurrent()) return
+  // isStatsCurrent prevents older statistics responses from replacing a newer refresh or surviving unmount.
+  const isStatsCurrent = statsRequests.begin()
+  if (!isStatsCurrent() || !isCurrent()) return
   try {
+    // stats is the dedicated global statistics response for the current caller.
     const stats = await statsApi.getStats()
+    // Global counts do not depend on the table query, so an accepted statistics response survives input edits.
+    if (!isStatsCurrent()) return
     totalLists.value = stats.ips.lists_total
+    // The per_list callbacks count retryable lists (l.attempts 1–2) and critical lists (3 or more).
     totalWithErrors.value = stats.ips.per_list.filter((l) => l.attempts > 0 && l.attempts < 3).length
     totalCritical.value = stats.ips.per_list.filter((l) => l.attempts >= 3).length
   } catch (error) {
+    // error is the statistics failure; obsolete table-dependent refreshes must not notify.
+    if (!isStatsCurrent() || !isCurrent()) return
     errorHandler.handleError(error, { action: 'loadGlobalStats', component: 'IpsListsPage' })
   }
 }
@@ -300,23 +339,37 @@ const closeAddModal = () => {
 const createList = async () => {
   if (!validateForm()) return
 
+  // listName retains the submitted entity name for success and error messages after form reset.
+  const listName = formData.value.name
   cancelPendingInputLoads()
+  // isCurrent controls table loading and empty-page fallback; accepted mutation outcomes depend only on scope lifetime.
+  let isCurrent = requests.begin()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
     await ipsListsApi.create([formData.value])
+    if (!requests.isActive()) return
     closeAddModal()
-    showSuccess(`${IPS_LISTS_TEXTS.LIST_PREFIX} "${formData.value.name}" ${IPS_LISTS_TEXTS.SUCCESS_CREATED}`)
+    showSuccess(`${IPS_LISTS_TEXTS.LIST_PREFIX} "${listName}" ${IPS_LISTS_TEXTS.SUCCESS_CREATED}`)
     await delay()
-    await loadActiveLists()
+    if (!requests.isActive()) return
+    // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
+    const pendingLoad = loadActiveLists()
+    isCurrent = requests.capture()
+    await pendingLoad
+    if (!requests.isActive()) return
     await loadGlobalStats()
+    if (!isCurrent()) return
   } catch (error) {
+    // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
+    if (!requests.isActive()) return
     errorHandler.handleError(error, {
       action: 'createList',
       component: 'IpsListsPage',
-      name: formData.value.name,
+      name: listName,
     })
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
@@ -335,24 +388,40 @@ const deleteList = async () => {
   if (!listToDelete.value) return
 
   cancelPendingInputLoads()
+  // listId captures the confirmed row before selection state is cleared.
   const listId = listToDelete.value
+  // isCurrent controls table loading and empty-page fallback; accepted mutation outcomes depend only on scope lifetime.
+  let isCurrent = requests.begin()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
     await ipsListsApi.deleteOne(listId)
+    if (!requests.isActive()) return
     isDeleteConfirmOpen.value = false
     listToDelete.value = null
     showSuccess(`${IPS_LISTS_TEXTS.LIST_PREFIX} #${listId} ${IPS_LISTS_TEXTS.SUCCESS_DELETED}`)
 
     // Reload data after deletion
     await delay()
-    await loadActiveLists()
+    if (!requests.isActive()) return
+    // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
+    const pendingLoad = loadActiveLists()
+    isCurrent = requests.capture()
+    await pendingLoad
+    if (!requests.isActive()) return
     await loadGlobalStats()
 
+    if (!isCurrent()) return
     // Check if we need to go to previous page (if current page is now empty)
     if (lists.value.length === 0 && pagination.currentPage.value > 1) {
-      await goToActivePage(pagination.currentPage.value - 1)
+      // previousPageLoad starts the fallback synchronously; capture its ownership before awaiting it.
+      const previousPageLoad = goToActivePage(pagination.currentPage.value - 1)
+      isCurrent = requests.capture()
+      await previousPageLoad
     }
   } catch (error) {
+    // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
+    if (!requests.isActive()) return
     errorHandler.handleError(error, {
       action: 'deleteList',
       component: 'IpsListsPage',
@@ -361,7 +430,7 @@ const deleteList = async () => {
     isDeleteConfirmOpen.value = false
     listToDelete.value = null
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 

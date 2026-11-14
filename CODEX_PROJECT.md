@@ -172,9 +172,9 @@ Commands may write generated output only when the current request permits it.
 | Check changed source formatting | `pnpm exec prettier --check <explicit changed source paths>` |
 | Existing broad formatter | `pnpm format` formats all `src/`; do not use for a narrow change |
 | Markdown lint | none; review changed project Markdown against `.markdownlint.json` |
-| Unit / component tests | none; Vitest policy is active, execution unavailable until dependencies/config/scripts exist |
-| Integration tests | none |
-| Browser E2E | none; Playwright E2E policy is active, execution unavailable until tooling/config/scripts exist |
+| Unit / component tests | `pnpm test`; watch mode: `pnpm test:watch`; coverage: `pnpm test:coverage` |
+| Integration tests | `pnpm test tests/integration` |
+| Browser E2E | `pnpm test:e2e`; builds a fresh isolated preview and runs Chromium against API fixtures |
 | UI validation | active UI/Playwright MCP policies; verify the configured connection; record actual browser coverage |
 | Agent-material validation | parse role TOML; verify local references, activation, hard dependencies and import hashes |
 
@@ -190,7 +190,7 @@ Use `.markdownlint.json` for project-maintained Markdown; do not reformat import
 - Node.js constraint: `>=26.12.1` from `package.json`; no Node.js backend service in this repository.
 - Package manager: `pnpm@12.18.0` from `package.json`; workspace policy in `pnpm-workspace.yaml`.
 - TypeScript: `6.0.3`; framework: Vue; build tool: Vite; module format: ESM.
-- TypeScript configs: `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json`.
+- TypeScript configs: `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json`, `tsconfig.e2e.json`.
 - Application alias: `@/* -> src/*`; preserve the matching Vite alias.
 - Public API types: `src/api/types/`; endpoint wrappers: `src/api/endpoints/`; transport: `src/api/client.ts`.
 - Shared constants/UI text: `src/constants.ts`; reusable logic: `src/composables/`.
@@ -203,18 +203,18 @@ Use `.markdownlint.json` for project-maintained Markdown; do not reformat import
 
 ## Vue 3 + TypeScript + Vite Profile
 
-- Vue frontend enabled: yes; Vue `3.5.40`; TypeScript in Vue SFCs: yes.
-- Build tool: Vite `8.1.5`; Composition API and `<script setup lang="ts">` for new SFCs.
+- Vue frontend enabled: yes; Vue `3.5.45`; TypeScript in Vue SFCs: yes.
+- Build tool: Vite `8.3.8`; Composition API and `<script setup lang="ts">` for new SFCs.
 - SFC style policy: Tailwind utilities first; component-local CSS/SCSS only when justified.
-- Vue Router enabled: yes, `5.2.0`; router source: `src/router/index.ts`.
+- Vue Router enabled: yes, `5.5.0`; hash router: `src/router/index.ts`; shared records: `src/router/routes.ts`.
 - History mode: `createWebHashHistory()`; lazy routes, route names and Russian title metadata are public contracts.
-- Pinia enabled: yes, `4.0.2`; setup stores in `src/stores/`.
+- Pinia enabled: yes, `4.1.0`; setup stores in `src/stores/`.
 - Persistence: existing theme/settings storage only; no new persistence plugin or cross-tab mechanism implicitly.
 - VueUse enabled: no.
 - UI primitives: `src/ui/`; shared components: `src/components/`; pages: `src/pages/`.
 - UI dependencies: Headless UI `1.7.23`, Heroicons `2.2.0`.
 - HTTP contract: current backend
-  [OpenAPI specification](https://github.com/GregoryGost/gost-rdpr/blob/master/docs/OPENAPI.json).
+  [OpenAPI specification](https://github.com/GregoryGost/gost-rdpr/blob/develop/docs/OPENAPI.json).
   Retrieve relevant current contracts before changing API behavior; do not infer backend semantics from UI types.
 - Development API URL: `/api` proxied by Vite to process `VITE_API_BASE_URL`, default `http://127.0.0.1:4000`;
   the proxy removes the `/api` prefix.
@@ -223,11 +223,11 @@ Use `.markdownlint.json` for project-maintained Markdown; do not reformat import
 
 ## Formatting And Linting Profile
 
-- Prettier enabled: yes, `3.9.6`; config: `.prettierrc.json`; ignore file: `.prettierignore`.
+- Prettier enabled: yes, `3.10.1`; config: `.prettierrc.json`; ignore file: `.prettierignore`.
 - Source style: 2 spaces, no semicolons, single quotes, print width 120.
 - Prettier plugins: existing `prettier-plugin-tailwindcss@0.8.1` only; stylesheet: `src/css/main.css`.
 - Tailwind class sorting enabled through Prettier: yes.
-- ESLint enabled: yes, `10.8.0`; flat config: `eslint.config.ts`.
+- ESLint enabled: yes, `10.14.0`; flat config: `eslint.config.ts`.
 - ESLint/Prettier conflict handling: `eslint-config-prettier/flat` after Vue/TypeScript rules.
 - Preserve existing Vue/TypeScript lint scopes and globals; do not add typed linting or rule exceptions implicitly.
 - Formatter scope policy: changed files only; preserve imported agent materials.
@@ -255,7 +255,7 @@ Use `.markdownlint.json` for project-maintained Markdown; do not reformat import
 
 ### Tailwind CSS
 
-- Tailwind enabled: yes, `4.3.3`; integration: `@tailwindcss/vite` in `vite.config.ts`.
+- Tailwind enabled: yes, `4.3.5`; integration: `@tailwindcss/vite` in `vite.config.ts`.
 - Stylesheet entry point: `src/css/main.css`; theme and dark variant live there.
 - Source detection: existing Tailwind integration; use full statically detectable class names.
 - Tailwind/SCSS coexistence: separate plain CSS entry for Tailwind v4; never process its directives through Sass.
@@ -266,7 +266,7 @@ Use `.markdownlint.json` for project-maintained Markdown; do not reformat import
 
 ### SCSS
 
-- SCSS enabled: yes; Dart Sass `1.102.0`.
+- SCSS enabled: yes; Dart Sass `1.108.2`.
 - Entry point: component-local `<style lang="scss" scoped>` in `src/components/ErrorNotification.vue`.
 - Shared SCSS module policy: `@use/@forward` for new modules; no shared SCSS entry currently.
 - Active SCSS rule/skill: `scss_styling.md + scss-expert`.
@@ -304,26 +304,33 @@ invent commands, claim passing tests or install missing tools without authorizat
 ### Vue Unit / Component Testing
 
 - Vue component testing enabled: yes, as an agent instruction profile.
-- Selected test runner: Vitest; installed runner: none; Vitest config path: none; test command: none.
-- Vue Test Utils selected: yes; installed: no; DOM test environment: none.
-- Coverage tooling and command: none.
+- Selected and installed test runner: Vitest `5.1.0`; config: `vitest.config.ts`; command: `pnpm test`.
+- Vue Test Utils: `2.5.1`; DOM environment: `jsdom@31.0.1`; explicit Vitest API imports, no test globals.
+- Pinia testing helper: `@pinia/testing@2.0.2`; use real Pinia for action and persistence tests.
+- Coverage: `@vitest/coverage-v8@5.1.0`, `pnpm test:coverage`; reports under `coverage/`.
+- Tests: `tests/unit/`, `tests/components/`, `tests/integration/`; fixtures: `tests/fixtures/`;
+  cleanup: `tests/setup.ts`. Type checking includes tests through `tsconfig.app.json`.
 - Active Vue testing rule/skill: `vitest_vue_testing.md + vitest-vue-testing`.
 - Router testing overlay: `vue_router_testing.md + vue-router-testing`.
 - Pinia testing overlay: `pinia_testing.md + pinia-testing`.
-- Execution status: unavailable until the runner, Vue Test Utils, required test helpers, DOM environment,
-  configuration and commands are separately configured.
+- Execution status: configured; verify actual command outcomes for the current source/test/config snapshot.
 
 ### Vue Playwright E2E Testing
 
 - Vue Playwright E2E enabled: yes, as an agent instruction profile.
 - Active Vue Playwright E2E rule/skill: `vue_playwright_e2e_testing.md + vue-playwright-e2e-testing`.
-- Selected E2E runner: Playwright Test; installed runner: none.
-- Playwright config path: none; E2E command: none; browser matrix: not configured.
-- App start/preview command: use the declared development/preview commands after verifying their readiness.
-- Base URL source: the actual configured server output; account for the application's hash history.
-- Backend/data isolation, fixtures and auth setup: not configured; establish them before API-backed E2E execution.
-- Execution status: unavailable until Playwright Test, required browsers, configuration, commands and isolated
-  test inputs are separately configured.
+- Installed E2E runner: `@playwright/test@1.65.1`; config: `playwright.config.ts`; command: `pnpm test:e2e`.
+- Required browser: Chromium; install separately with `pnpm exec playwright install chromium`.
+- Test sources and stateful API fixtures: `e2e/`; separate types: `tsconfig.e2e.json`.
+- Web server: `scripts/start-e2e-server.ts` builds in `e2e` mode with `VITE_API_BASE_URL=/api`, then previews
+  on loopback port 5001 with strict port binding and an empty proxy. Existing servers are never reused.
+- Base URL: `http://127.0.0.1:5001`, verified against server readiness output; routes use hash history.
+- Backend isolation: fixtures handle API requests; unexpected API or external requests fail the test.
+  No real backend, database, DNS or RIPEstat calls. These checks do not establish real backend integration.
+- Artifacts: `playwright-report/`, `test-results/`; traces and screenshots retained on failure.
+- Execution status: configured; verify actual outcomes and browser coverage for the current snapshot.
+- CI: `.github/workflows/develop-checks.yml` runs on pull requests targeting `develop` only, with locked
+  Node.js/pnpm, frozen installation, types, ESLint, coverage, preview build and Chromium E2E.
 
 - Do not treat test-related include globs in `tsconfig*`, ignore entries or old screenshot directories
   as proof of installed test infrastructure.

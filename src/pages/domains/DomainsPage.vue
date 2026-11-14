@@ -27,7 +27,7 @@ import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
 import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
 import { loadClientFilteredPage } from '@/utils/clientPagination'
-import { useDebouncedTask } from '@/composables'
+import { useDebouncedTask, useLatestRequest } from '@/composables'
 import {
   hasColumnFilters,
   matchesColumnFilters,
@@ -46,6 +46,10 @@ const listFilter = ref<DomainListFilter>('all')
 const columnFilters = ref<TableColumnFilters>({})
 
 // Data management
+// statsRequests keeps global counts independent of table queries and rejects old responses after refresh or teardown.
+const statsRequests = useLatestRequest()
+// requests coordinates search, filtered reloads and input invalidation for this table.
+const requests = useLatestRequest()
 const domains = ref<Domain[]>([])
 const isLoading = ref(false)
 
@@ -123,14 +127,16 @@ const TABLE_COLUMNS: TableColumn<Domain>[] = [
   { key: 'actions', label: 'Действия' },
 ]
 
-const matchesListFilter = (domain: Domain): boolean => {
-  if (listFilter.value === 'with-list') return domain.domains_list_id != null
-  if (listFilter.value === 'without-list') return domain.domains_list_id == null
-  return true
-}
-
-const matchesActiveDomainFilters = (domain: Domain): boolean => {
-  return matchesListFilter(domain) && matchesColumnFilters(domain, TABLE_COLUMNS, columnFilters.value)
+/** Captures list and column filters and returns a stable predicate for every fetched backend page. */
+const createDomainFilter = () => {
+  // selectedList is this request's list category; filters is its independent column-filter snapshot.
+  const selectedList = listFilter.value
+  const filters = { ...columnFilters.value }
+  return (domain: Domain): boolean => {
+    if (selectedList === 'with-list' && domain.domains_list_id == null) return false
+    if (selectedList === 'without-list' && domain.domains_list_id != null) return false
+    return matchesColumnFilters(domain, TABLE_COLUMNS, filters)
+  }
 }
 
 /**
@@ -176,15 +182,27 @@ const getKnownListFilterTotal = (): number | undefined => {
 /**
  * Load global stats from the dedicated statistics API endpoint
  */
-const loadGlobalStats = async () => {
+// The default isCurrent predicate keeps standalone statistics refreshes independent of table query changes.
+const loadGlobalStats = async (isCurrent: () => boolean = () => true) => {
+  // An obsolete dependent caller must not supersede an independent statistics refresh.
+  if (!isCurrent()) return
+  // isStatsCurrent prevents older statistics responses from replacing a newer refresh or surviving unmount.
+  const isStatsCurrent = statsRequests.begin()
+  if (!isStatsCurrent() || !isCurrent()) return
   try {
+    // stats is the dedicated global statistics response for the current caller.
     const stats = await statsApi.getStats()
+    // Global counts do not depend on the table query, so an accepted statistics response survives input edits.
+    if (!isStatsCurrent()) return
     globalTotalResolved.value = stats.domains.resolved
     globalTotalQuery.value = stats.domains.total
+    // The reduce callbacks accumulate each list's total, resolved and unresolved counts in sum.
     globalWithListTotal.value = stats.domains.per_list.reduce((sum, list) => sum + list.total, 0)
     globalWithListResolved.value = stats.domains.per_list.reduce((sum, list) => sum + list.resolved, 0)
     globalWithListUnresolved.value = stats.domains.per_list.reduce((sum, list) => sum + list.unresolved, 0)
   } catch (error) {
+    // error is the statistics failure; obsolete table-dependent refreshes must not notify.
+    if (!isStatsCurrent() || !isCurrent()) return
     errorHandler.handleError(error, {
       action: 'loadGlobalStats',
       component: 'DomainsPage',
@@ -196,34 +214,46 @@ const loadGlobalStats = async () => {
  * Load domains (paginated, with active filters)
  */
 const loadDomainsWithStats = async () => {
+  // isCurrent guards this load; filterItem freezes row matching; pageParams freezes the requested page.
+  const isCurrent = requests.begin()
+  const filterItem = createDomainFilter()
+  const pageParams = { limit: pageSize.value, offset: offset.value }
+  // resolved is the API filter used by every backend page in this request.
+  const resolved = resolvedFilter.value
+  // forceClientPagination keeps the original list/column filtering policy for this request.
+  const forceClientPagination = listFilter.value !== 'all' || hasActiveColumnFilters.value
+  if (!isCurrent()) return
   isLoading.value = true
   try {
     if (listFilter.value !== 'all' && !isGlobalStatsLoaded.value) {
-      await loadGlobalStats()
+      await loadGlobalStats(isCurrent)
+      if (!isCurrent()) return
     }
 
+    // The known total is read only while this request still owns the unchanged filter intent.
     const knownListFilterTotal = getKnownListFilterTotal()
+    // response combines backend batches; fetch callbacks use only the parameters captured above.
     const response = await loadClientFilteredPage(
       (params) =>
         domainsApi.getAll({
           ...params,
-          resolved: resolvedFilter.value,
+          resolved,
         }),
+      pageParams,
+      filterItem,
       {
-        limit: pageSize.value,
-        offset: offset.value,
-      },
-      matchesActiveDomainFilters,
-      {
-        forceClientPagination: listFilter.value !== 'all' || hasActiveColumnFilters.value,
+        forceClientPagination,
         knownTotal: knownListFilterTotal,
         stopWhenPageFilled: knownListFilterTotal !== undefined,
       },
     )
 
+    if (!isCurrent()) return
     domains.value = response.payload
     totalItems.value = response.total_query
   } catch (error) {
+    // error belongs to this load; an obsolete failure must not clear or notify over a newer intent.
+    if (!isCurrent()) return
     errorHandler.handleError(error, {
       action: 'loadDomainsWithStats',
       component: 'DomainsPage',
@@ -231,7 +261,7 @@ const loadDomainsWithStats = async () => {
     domains.value = []
     totalItems.value = 0
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
@@ -239,6 +269,7 @@ const loadDomainsWithStats = async () => {
  * Search domains immediately with current pagination and filters.
  */
 const runSearchDomains = async () => {
+  // apiSearchQuery selects the main search or the searchable column value at invocation time.
   const apiSearchQuery = getApiSearchQuery()
 
   if (!apiSearchQuery) {
@@ -246,42 +277,55 @@ const runSearchDomains = async () => {
     return
   }
 
+  // isCurrent guards this load; filterItem freezes row matching; pageParams freezes the requested page.
+  const isCurrent = requests.begin()
+  const filterItem = createDomainFilter()
+  const pageParams = { limit: pageSize.value, offset: offset.value }
+  // resolved is the API filter used by every backend page in this request.
+  const resolved = resolvedFilter.value
+  // forceClientPagination keeps the original list/column filtering policy for this request.
+  const forceClientPagination = listFilter.value !== 'all' || hasActiveColumnFilters.value
+  // query and notifySearch preserve the entered search for error context and accepted-result notifications.
+  const query = searchQuery.value
+  const notifySearch = hasActiveSearch()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
+    // response combines backend batches; fetch callbacks use only the parameters captured above.
     const response = await loadClientFilteredPage(
       (params) =>
         domainsApi.search(apiSearchQuery, {
           ...params,
-          resolved: resolvedFilter.value,
+          resolved,
         }),
-      {
-        limit: pageSize.value,
-        offset: offset.value,
-      },
-      matchesActiveDomainFilters,
-      listFilter.value !== 'all' || hasActiveColumnFilters.value,
+      pageParams,
+      filterItem,
+      forceClientPagination,
     )
 
+    if (!isCurrent()) return
     domains.value = response.payload
     totalItems.value = response.total_query
 
-    if (hasActiveSearch()) {
+    if (notifySearch) {
       if (response.total_query === 0) {
-        showInfo(`По запросу "${searchQuery.value}" ничего не найдено`, 'Результаты поиска')
+        showInfo(`По запросу "${query}" ничего не найдено`, 'Результаты поиска')
       } else {
         showInfo(`Найдено доменов: ${response.total_query}`, 'Результаты поиска')
       }
     }
   } catch (error) {
+    // error belongs to this load; an obsolete failure must not clear or notify over a newer intent.
+    if (!isCurrent()) return
     errorHandler.handleError(error, {
       action: 'searchDomains',
       component: 'DomainsPage',
-      query: searchQuery.value,
+      query,
     })
     domains.value = []
     totalItems.value = 0
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
@@ -302,16 +346,22 @@ const refreshDomains = () => {
   return loadActiveDomains()
 }
 
+/** runSearchDomainsDebounced queues the callback that resets the page and loads current input;
+ * cancelSearchDomainsDebounce clears that queued execution. */
 const { run: runSearchDomainsDebounced, cancel: cancelSearchDomainsDebounce } = useDebouncedTask(async () => {
   currentPage.value = 1 // Reset to first page
   await loadActiveDomains()
 })
 
+/** runColumnFiltersDebounced queues the callback that reloads active filters;
+ * cancelColumnFiltersDebounce clears that queued execution. */
 const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = useDebouncedTask(async () => {
   await loadActiveDomains()
 })
 
+/** Clears queued input loads and rejects earlier responses immediately, including during the debounce gap. */
 const cancelPendingInputLoads = () => {
+  requests.invalidate()
   cancelSearchDomainsDebounce()
   cancelColumnFiltersDebounce()
 }
@@ -335,16 +385,17 @@ const changePageSize = (size: number) => {
   loadActiveDomains()
 }
 
+/** Replaces column filters and invalidates old responses before scheduling the filtered reload. */
 const updateColumnFilters = (filters: TableColumnFilters) => {
+  cancelPendingInputLoads()
   columnFilters.value = filters
   currentPage.value = 1
   runColumnFiltersDebounced()
 }
 
-/**
- * Search domains
- */
+/** Invalidates old responses as soon as input changes, then schedules the existing search debounce. */
 const searchDomains = () => {
+  cancelPendingInputLoads()
   runSearchDomainsDebounced()
 }
 
@@ -365,9 +416,14 @@ const filterByList = async (value: DomainListFilter) => {
   cancelPendingInputLoads()
   listFilter.value = value
   currentPage.value = 1 // Reset to first page
-  await loadActiveDomains()
+  // pendingLoad starts synchronously; isCurrent checks the generation it selected before notifying.
+  const pendingLoad = loadActiveDomains()
+  const isCurrent = requests.capture()
+  await pendingLoad
+  if (!isCurrent()) return
 
   // Show filter notification
+  // filterLabels supplies the existing empty-result message for the selected list category.
   const filterLabels = {
     all: 'все списки',
     'with-list': 'домены со списком',
@@ -487,22 +543,35 @@ const closeDomainResolveNow = (): void => {
 const createDomain = async () => {
   if (!validateForm()) return
 
+  // domainName retains the submitted entity name for success and error messages after form reset.
+  const domainName = formData.value.domain
   cancelPendingInputLoads()
+  // isCurrent controls table loading and empty-page fallback; accepted mutation outcomes depend only on scope lifetime.
+  let isCurrent = requests.begin()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
     await domainsApi.create([formData.value])
+    if (!requests.isActive()) return
     closeAddModal()
-    showSuccess(`Домен "${formData.value.domain}" успешно добавлен`)
+    showSuccess(`Домен "${domainName}" успешно добавлен`)
     await delay()
-    await refreshDomains()
+    if (!requests.isActive()) return
+    // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
+    const pendingLoad = refreshDomains()
+    isCurrent = requests.capture()
+    await pendingLoad
+    if (!requests.isActive()) return
   } catch (error) {
+    // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
+    if (!requests.isActive()) return
     errorHandler.handleError(error, {
       action: 'createDomain',
       component: 'DomainsPage',
-      domain: formData.value.domain,
+      domain: domainName,
     })
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
@@ -529,24 +598,40 @@ const deleteDomain = async () => {
   if (!domainToDelete.value) return
 
   cancelPendingInputLoads()
+  // domainId captures the confirmed row before selection state is cleared.
   const domainId = domainToDelete.value
+  // isCurrent controls table loading and empty-page fallback; accepted mutation outcomes depend only on scope lifetime.
+  let isCurrent = requests.begin()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
     await domainsApi.deleteOne(domainId)
+    if (!requests.isActive()) return
     isDeleteConfirmOpen.value = false
     domainToDelete.value = null
     showSuccess(`Домен #${domainId} успешно удален`)
 
     // Reload data after deletion
     await delay()
-    await refreshDomains()
+    if (!requests.isActive()) return
+    // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
+    const pendingLoad = refreshDomains()
+    isCurrent = requests.capture()
+    await pendingLoad
+    if (!requests.isActive()) return
 
+    if (!isCurrent()) return
     // Check if we need to go to previous page (if current page is now empty)
     if (domains.value.length === 0 && currentPage.value > 1) {
       currentPage.value -= 1
-      await loadActiveDomains()
+      // previousPageLoad is the reload for the preceding page after an empty deletion result.
+      const previousPageLoad = loadActiveDomains()
+      isCurrent = requests.capture()
+      await previousPageLoad
     }
   } catch (error) {
+    // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
+    if (!requests.isActive()) return
     errorHandler.handleError(error, {
       action: 'deleteDomain',
       component: 'DomainsPage',
@@ -555,7 +640,7 @@ const deleteDomain = async () => {
     isDeleteConfirmOpen.value = false
     domainToDelete.value = null
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 

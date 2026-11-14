@@ -49,18 +49,51 @@ pnpm format     # форматирование кода
 > Чтобы использовать другой backend, задайте `VITE_API_BASE_URL` в окружении процесса
 > перед запуском `pnpm dev`.
 
+## Тесты
+
+После установки зависимостей по lockfile скачайте Chromium:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm exec playwright install chromium
+```
+
+```powershell
+pnpm test           # однократный запуск unit, компонентных и интеграционных тестов
+pnpm test:watch     # повторный запуск при изменениях
+pnpm test:coverage  # покрытие выбранных критических модулей
+pnpm test:e2e       # сборка и браузерные сценарии в Chromium
+```
+
+Unit-тесты находятся в `tests/unit/`, компонентные — в `tests/components/`,
+интеграционные — в `tests/integration/`. Общая очистка окружения описана в `tests/setup.ts`,
+тестовые данные и вспомогательные функции — в `tests/fixtures/`.
+
+Браузерные сценарии и управляемые ответы API находятся в `e2e/`. Команда `test:e2e` сама собирает
+приложение с `VITE_API_BASE_URL=/api` и запускает отдельный preview на `http://127.0.0.1:5001`.
+Порт должен быть свободен. Тесты подменяют API и не требуют рабочего backend, БД или внешних DNS-серверов.
+Они проверяют frontend; настоящую интеграцию с backend нужно выполнять отдельно на изолированном стенде.
+
+Для отладки используйте `pnpm test:watch` или `pnpm test:e2e --debug`.
+Отчёт покрытия сохраняется в `coverage/`, браузерный отчёт — в `playwright-report/`,
+trace и screenshots при сбоях — в `test-results/`. Покрытие включает выбранные исходники,
+даже если тесты их ещё не импортировали; 100% для всего приложения не требуется.
+
+Workflow `.github/workflows/develop-checks.yml` проверяет pull request только в `develop`:
+типы, ESLint, тесты с покрытием, сборку preview и E2E в Chromium. Отчёты сохраняются как artifacts.
+
 ## Технологии
 
 | Категория             | Технология                                     |
 | --------------------- | ---------------------------------------------- |
-| Framework             | Vue 3.5.40 (Composition API, `<script setup>`) |
+| Framework             | Vue 3.5.45 (Composition API, `<script setup>`) |
 | Язык                  | TypeScript 6.0.3                               |
-| Сборщик               | Vite 8.1.5                                     |
-| Стили                 | Tailwind CSS 4.3.3                             |
+| Сборщик               | Vite 8.3.8                                     |
+| Стили                 | Tailwind CSS 4.3.5                             |
 | UI-компоненты         | Headless UI 1.7.23, Heroicons 2.2.0            |
-| Роутинг               | Vue Router 5.2.0                               |
-| Управление состоянием | Pinia 4.0.2                                    |
-| Линтинг               | ESLint 10.8.0 + Prettier 3.9.6                 |
+| Роутинг               | Vue Router 5.5.0                               |
+| Управление состоянием | Pinia 4.1.0                                    |
+| Линтинг               | ESLint 10.14.0 + Prettier 3.10.1                |
 
 **Требования:** Node.js `>=26.12.1`, пакетный менеджер `pnpm 12.18.0`.
 
@@ -90,7 +123,7 @@ pnpm format     # форматирование кода
 - [Руководство по разработке](docs/DEVELOPMENT.md)
 - [Текущий статус проекта](docs/PROJECT_STATUS.md)
 - [История изменений](docs/PROJECT_HISTORY.md)
-- [OpenAPI спецификация backend](https://github.com/GregoryGost/gost-rdpr/blob/master/docs/OPENAPI.json)
+- [OpenAPI спецификация backend](https://github.com/GregoryGost/gost-rdpr/blob/develop/docs/OPENAPI.json)
 - [Документация composables](src/composables/README.md)
 
 ## Лицензия

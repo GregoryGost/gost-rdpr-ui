@@ -1,11 +1,14 @@
 import { ref } from 'vue'
 import { usePagination } from './usePagination'
+import { useLatestRequest } from './useLatestRequest'
 
 /**
  * Pagination parameters for API requests
  */
 export interface PaginationParams {
+  /** Maximum rows requested for this page. */
   limit: number
+  /** Number of rows skipped before this page. */
   offset: number
 }
 
@@ -13,7 +16,9 @@ export interface PaginationParams {
  * API response with pagination
  */
 export interface PaginatedResponse<T> {
+  /** Rows returned for the requested page. */
   payload: T[]
+  /** Total rows matching the requested dataset. */
   total: number
 }
 
@@ -23,8 +28,8 @@ export interface PaginatedResponse<T> {
 export type DataLoader<T> = (params: PaginationParams) => Promise<PaginatedResponse<T>>
 
 /**
- * Composable for managing paginated data with automatic loading
- * Combines pagination state with data fetching logic
+ * Combines pagination state with explicit data loading. Only the latest load may publish rows,
+ * totals or loading completion. Pages sharing these refs with custom loaders must use requests too.
  *
  * @template T - Type of data items
  * @param {DataLoader<T>} loader - Function to load data with pagination params
@@ -32,40 +37,51 @@ export type DataLoader<T> = (params: PaginationParams) => Promise<PaginatedRespo
  * @returns Object with data, loading state, pagination and methods
  *
  * @example
- * const { data, isLoading, pagination, load, refresh } = usePaginatedData(
+ * const { data, isLoading, goToPage, changePageSize, load, refresh } = usePaginatedData(
  *   async (params) => await dnsApi.getAll(params)
  * )
  *
  * // Load data manually
  * await load()
  *
- * // Pagination will automatically trigger reload
- * pagination.goToPage(2)
- * pagination.changePageSize(50)
+ * // Use the loading wrappers to change pagination and request the selected page
+ * goToPage(2)
+ * changePageSize(50)
  */
 export function usePaginatedData<T>(loader: DataLoader<T>, initialPageSize: number = 20) {
+  // data contains the latest accepted page; isLoading describes the active load.
   const data = ref<T[]>([])
   const isLoading = ref(false)
+  // pagination owns the selected page, requested size and accepted result total.
   const pagination = usePagination(initialPageSize)
+  // requests also lets custom page loaders invalidate this composable's pending responses.
+  const requests = useLatestRequest()
 
   /**
-   * Load data with current pagination params
+   * Loads a snapshot of the current page, ignoring success, failure and completion from obsolete loads.
    */
   const load = async () => {
+    // isCurrent checks whether this load still owns the shared result state.
+    const isCurrent = requests.begin()
+    if (!isCurrent()) return
     isLoading.value = true
     try {
+      // response contains rows and the total for the page selected at invocation time.
       const response = await loader({
         limit: pagination.pageSize.value,
         offset: pagination.offset.value,
       })
+      if (!isCurrent()) return
       data.value = response.payload
       pagination.totalItems.value = response.total
     } catch (error) {
+      // error is this load's failure; obsolete failures must not erase a newer result.
+      if (!isCurrent()) return
       console.error('Failed to load paginated data:', error)
       data.value = []
       pagination.totalItems.value = 0
     } finally {
-      isLoading.value = false
+      if (isCurrent()) isLoading.value = false
     }
   }
 
@@ -125,5 +141,6 @@ export function usePaginatedData<T>(loader: DataLoader<T>, initialPageSize: numb
     changePageSize,
     nextPage,
     prevPage,
+    requests,
   }
 }

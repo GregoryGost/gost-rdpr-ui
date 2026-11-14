@@ -17,6 +17,6 @@
     "nightwatch.conf.*",
     "playwright.config.*",
     "eslint.config.*",
-    "e2e/**/*.ts"
+    "scripts/**/*.ts"
   ]
 }

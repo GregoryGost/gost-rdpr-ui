@@ -10,6 +10,10 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
     "lint-dry-run": "eslint . --fix-dry-run --format json -o ./lint-result.html",
     "format": "prettier --write --experimental-cli src/"
   },
@@ -25,17 +29,22 @@
     "vue-router": "5.5.0"
   },
   "devDependencies": {
+    "@pinia/testing": "2.0.2",
+    "@playwright/test": "1.65.1",
     "@tailwindcss/vite": "4.3.5",
     "@tsconfig/node26": "26.0.2",
     "@types/node": "26.6.6",
     "@vitejs/plugin-vue": "6.0.11",
+    "@vitest/coverage-v8": "5.1.0",
     "@vue/eslint-config-typescript": "14.9.0",
+    "@vue/test-utils": "2.5.1",
     "@vue/tsconfig": "0.9.1",
     "eslint": "10.14.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-vue": "10.12.1",
     "globals": "17.14.0",
     "jiti": "2.7.0",
+    "jsdom": "31.0.1",
     "npm-run-all2": "9.0.4",
     "prettier": "3.10.1",
     "prettier-plugin-tailwindcss": "0.8.1",
@@ -44,6 +53,7 @@
     "typescript": "6.0.3",
     "vite": "8.3.8",
     "vite-plugin-vue-devtools": "8.2.1",
+    "vitest": "5.1.0",
     "vue-tsc": "3.3.14"
   }
 }

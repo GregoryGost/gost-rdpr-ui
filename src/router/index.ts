@@ -1,78 +1,14 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
+import { routes } from './routes'
 
-const routes: RouteRecordRaw[] = [
-  {
-    path: '/',
-    component: () => import('@/layouts/MainLayout.vue'),
-    children: [
-      {
-        path: '',
-        name: 'home',
-        component: () => import('@/pages/HomePage.vue'),
-        meta: { title: 'Главная' },
-      },
-      {
-        path: 'dns',
-        name: 'dns',
-        component: () => import('@/pages/dns/DnsServersPage.vue'),
-        meta: { title: 'DNS Серверы' },
-      },
-      {
-        path: 'domains',
-        name: 'domains',
-        component: () => import('@/pages/domains/DomainsPage.vue'),
-        meta: { title: 'Домены' },
-      },
-      {
-        path: 'domains/lists',
-        name: 'domains-lists',
-        component: () => import('@/pages/domains/DomainsListsPage.vue'),
-        meta: { title: 'Списки Доменов' },
-      },
-      {
-        path: 'ips/lists',
-        name: 'ips-lists',
-        component: () => import('@/pages/ips/IpsListsPage.vue'),
-        meta: { title: 'Списки IP Адресов' },
-      },
-      {
-        path: 'ips',
-        name: 'ips',
-        component: () => import('@/pages/ips/IpsPage.vue'),
-        meta: { title: 'IP Адреса' },
-      },
-      {
-        path: 'ros',
-        name: 'ros',
-        component: () => import('@/pages/ros/RosConfigsPage.vue'),
-        meta: { title: 'Конфигурации' },
-      },
-      {
-        path: 'commands',
-        name: 'commands',
-        component: () => import('@/pages/commands/CommandsPage.vue'),
-        meta: { title: 'Команды' },
-      },
-      {
-        path: 'stats',
-        name: 'stats',
-        component: () => import('@/pages/stats/StatisticsPage.vue'),
-        meta: { title: 'Статистика' },
-      },
-      {
-        path: ':pathMatch(.*)*',
-        name: 'not-found',
-        component: () => import('@/pages/NotFoundPage.vue'),
-        meta: { title: '404 - Страница не найдена' },
-      },
-    ],
-  },
-]
-
+/** Production router retains hash URLs and the existing saved-position scroll behavior. */
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
+  /**
+   * Restores savedPosition after history navigation, otherwise scrolls to the page top.
+   * to and from describe the destination and source routes; neither changes this scroll policy.
+   */
   scrollBehavior(to, from, savedPosition) {
     return savedPosition || { top: 0 }
   },

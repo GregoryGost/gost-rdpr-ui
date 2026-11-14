@@ -33,17 +33,27 @@ if (!healthStore.isCacheValid()) {
   healthStore.invalidateCache()
 }
 
+// isHealthRequestPending also covers initial and manual loads that run outside the polling timer.
+let isHealthRequestPending = false
+
+/** Loads health once at a time so a slow initial or manual request cannot overlap a polling tick. */
 const loadHealthData = async () => {
+  if (isHealthRequestPending) return
+  isHealthRequestPending = true
   try {
+    // healthData is the latest health response accepted into the shared health cache.
     const healthData = await apiRequest<HealthData>('/health')
     healthStore.updateHealth(healthData)
   } catch (error) {
+    // error is the failed health request; cached data remains available while the failure is reported.
     healthStore.setError()
     errorHandler.handleError(error, {
       action: 'loadHealthData',
       component: 'HomePage',
       silent: true,
     })
+  } finally {
+    isHealthRequestPending = false
   }
 }
 

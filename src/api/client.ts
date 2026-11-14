@@ -49,28 +49,36 @@ export async function apiRequest<T>(
   options?: RequestInit,
   timeout: number = API.TIMEOUT,
 ): Promise<T> {
+  // controller supplies the fetch signal; the timeout callback aborts it when the request deadline expires.
   const controller = new AbortController()
+  // timeoutId identifies the deadline timer that every completed or failed fetch must clear.
   const timeoutId = setTimeout(() => controller.abort(), timeout)
 
   try {
+    // requestHeaders copies every supported HeadersInit form and resolves header names without case sensitivity.
+    const requestHeaders = new Headers(options?.headers)
+    if (!requestHeaders.has('Content-Type')) {
+      requestHeaders.set('Content-Type', API.HEADERS.CONTENT_TYPE)
+    }
+
+    // response is the transport response whose HTTP status and JSON body are returned to the caller.
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
-      headers: {
-        'Content-Type': API.HEADERS.CONTENT_TYPE,
-        ...options?.headers,
-      },
+      headers: requestHeaders,
       signal: controller.signal,
     })
 
     clearTimeout(timeoutId)
 
     if (!response.ok) {
+      // error contains backend failure fields; the rejection callback supplies fallback text for non-JSON bodies.
       const error = await response.json().catch(() => ({ error: 'Unknown error' }))
       throw new ApiError(response.status, error.error || error.message || 'Request failed')
     }
 
     return response.json()
   } catch (error) {
+    // error is a fetch or HTTP-status failure classified below; the deadline is released before propagation.
     clearTimeout(timeoutId)
 
     // Handle abort/timeout

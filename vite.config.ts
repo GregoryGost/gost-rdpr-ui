@@ -13,7 +13,7 @@ const packageJson = JSON.parse(readFileSync(new URL('./package.json', import.met
 
 const buildDateUtc = new Date().toISOString().slice(0, 10)
 
-// https://vite.dev/config/
+/** Creates the app configuration; mode disables diagnostic plugins for unit and browser test builds. */
 export default defineConfig(({ mode }) => ({
   build: {
     target: ['chrome111', 'edge111', 'firefox128', 'safari16.4', 'ios16.4'],
@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => ({
       '/api': {
         target: process.env.VITE_API_BASE_URL || 'http://127.0.0.1:4000',
         changeOrigin: true,
+        /** Removes the UI-only API prefix from path before forwarding a development request. */
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
@@ -54,7 +55,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   base: process.env.BASE_URL,
-  plugins: [vue(), vueDevTools(), tailwindcss()],
+  plugins: [vue(), ...(mode === 'test' || mode === 'e2e' ? [] : [vueDevTools()]), tailwindcss()],
   css: {
     devSourcemap: mode === 'development',
   },

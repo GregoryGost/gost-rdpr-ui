@@ -43,10 +43,18 @@ function formatApiDate(d: Date): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
 }
 
+// isRequestPending covers both the initial mounted load and subsequent polling ticks.
+let isRequestPending = false
+
+/** Refreshes the growth window once at a time, keeping the last chart data when the request fails. */
 const load = async () => {
+  if (isRequestPending) return
+  isRequestPending = true
   try {
+    // now ends the requested window; from starts it one hour earlier.
     const now = new Date()
     const from = new Date(now.getTime() - 60 * 60 * 1000)
+    // res contains the growth points and aggregate counters for this chart's current window.
     const res = await statsApi.getGrowth({
       entity: props.entity,
       granularity: 'minute',
@@ -62,6 +70,7 @@ const load = async () => {
   } catch {
     hasError.value = true
   } finally {
+    isRequestPending = false
     loading.value = false
   }
 }

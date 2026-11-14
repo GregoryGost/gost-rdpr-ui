@@ -31,11 +31,14 @@ const searchQuery = ref('')
 const columnFilters = ref<TableColumnFilters>({})
 const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.value))
 
-// Paginated data management
+/** configs holds accepted rows; isLoading tracks the current load; pagination owns page counters;
+ * The loader callback uses params as the requested page and returns its backend response.
+ * requests coordinates normal, search and filtered loads; loadConfigs loads the current normal page. */
 const {
   data: configs,
   isLoading,
   pagination,
+  requests,
   load: loadConfigs,
 } = usePaginatedData<RosConfig>(async (params) => {
   return await rosApi.getAll(params)
@@ -74,51 +77,63 @@ const TABLE_COLUMNS: TableColumn<RosConfig>[] = [
 
 const hasActiveSearch = () => Boolean(searchQuery.value && searchQuery.value.length >= SEARCH.MIN_LENGTH)
 
-const matchesRosColumnFilters = (config: RosConfig): boolean => {
-  return matchesColumnFilters(config, TABLE_COLUMNS, columnFilters.value)
+/** Captures column values and returns a predicate for one consistent filtered dataset. */
+const createRosColumnFilter = () => {
+  // filters keeps subsequent backend batches independent of new input edits.
+  const filters = { ...columnFilters.value }
+  return (row: RosConfig) => matchesColumnFilters(row, TABLE_COLUMNS, filters)
 }
 
-const showSearchResults = (total: number) => {
+/** Reports the accepted result total for the query captured by its request. */
+const showSearchResults = (total: number, query: string) => {
   if (total === 0) {
-    showInfo(
-      `${ROS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
-      UI_TEXTS.SEARCH_RESULTS,
-    )
+    showInfo(`${ROS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${query}" ${UI_TEXTS.NOTHING_FOUND}`, UI_TEXTS.SEARCH_RESULTS)
     return
   }
 
   showInfo(`${ROS_TEXTS.SEARCH_FOUND_PREFIX} ${total}`, UI_TEXTS.SEARCH_RESULTS)
 }
 
+/** Loads the captured search and filters; obsolete outcomes cannot publish or notify. */
 const loadSearchResults = async (shouldNotify = false) => {
+  // isCurrent checks ownership; query is the entered search; filterItem freezes column matching.
+  const isCurrent = requests.begin()
+  const query = searchQuery.value
+  const filterItem = createRosColumnFilter()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
+    // response holds the filtered rows and matching total; the fetch callback reuses the captured query.
     const response = await loadClientFilteredPage(
-      (params) => rosApi.search(searchQuery.value, params),
+      (params) => rosApi.search(query, params),
       {
         limit: pagination.pageSize.value,
         offset: pagination.offset.value,
       },
-      matchesRosColumnFilters,
+      filterItem,
     )
 
+    if (!isCurrent()) return
     configs.value = response.payload
     pagination.totalItems.value = response.total
 
-    if (shouldNotify) showSearchResults(response.total)
+    if (shouldNotify) showSearchResults(response.total, query)
   } catch (error) {
+    // error belongs to this search and is reported only if its intent remains current.
+    if (!isCurrent()) return
     errorHandler.handleError(error, {
       action: 'searchConfigs',
       component: 'RosConfigsPage',
-      query: searchQuery.value,
+      query,
     })
     configs.value = []
     pagination.totalItems.value = 0
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
+/** Selects the search, column-filtered or normal source for the current intent. */
 const loadActiveConfigs = async (shouldNotifySearch = false) => {
   if (hasActiveSearch()) {
     await loadSearchResults(shouldNotifySearch)
@@ -129,21 +144,30 @@ const loadActiveConfigs = async (shouldNotifySearch = false) => {
   }
 }
 
+/** Loads a snapshot of column-filtered rows without allowing earlier loads to replace them. */
 const loadFilteredConfigs = async () => {
+  // isCurrent checks publication ownership; filterItem retains this request's column values.
+  const isCurrent = requests.begin()
+  const filterItem = createRosColumnFilter()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
+    // response contains this filtered page and total; its fetch callback forwards each backend page unchanged.
     const response = await loadClientFilteredPage(
       (params) => rosApi.getAll(params),
       {
         limit: pagination.pageSize.value,
         offset: pagination.offset.value,
       },
-      matchesRosColumnFilters,
+      filterItem,
     )
 
+    if (!isCurrent()) return
     configs.value = response.payload
     pagination.totalItems.value = response.total
   } catch (error) {
+    // error is relevant only while this filtered load remains current.
+    if (!isCurrent()) return
     errorHandler.handleError(error, {
       action: 'loadFilteredConfigs',
       component: 'RosConfigsPage',
@@ -151,10 +175,12 @@ const loadFilteredConfigs = async () => {
     configs.value = []
     pagination.totalItems.value = 0
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
+/** runSearchConfigsDebounced schedules the search callback; cancelSearchConfigsDebounce clears its queued run.
+ * The callback resets pagination and loads the latest active input after the debounce delay. */
 const { run: runSearchConfigsDebounced, cancel: cancelSearchConfigsDebounce } = useDebouncedTask(async () => {
   pagination.currentPage.value = 1 // Reset to first page
 
@@ -166,35 +192,42 @@ const { run: runSearchConfigsDebounced, cancel: cancelSearchConfigsDebounce } = 
   await loadSearchResults(true)
 })
 
+/** runColumnFiltersDebounced schedules a reload using current filters; cancelColumnFiltersDebounce clears it.
+ * The callback loads through the active search or normal source. */
 const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = useDebouncedTask(async () => {
   await loadActiveConfigs()
 })
 
+/** Cancels queued input loads and immediately invalidates all earlier request continuations. */
 const cancelPendingInputLoads = () => {
+  requests.invalidate()
   cancelSearchConfigsDebounce()
   cancelColumnFiltersDebounce()
 }
 
+/** Selects page and loads it through the active search or filter source. */
 const goToActivePage = async (page: number) => {
   cancelPendingInputLoads()
   pagination.goToPage(page)
   await loadActiveConfigs()
 }
 
+/** Selects a new page size and reloads the first page through the active source. */
 const changeActivePageSize = async (size: number) => {
   cancelPendingInputLoads()
   pagination.changePageSize(size)
   await loadActiveConfigs()
 }
 
-/**
- * Search configs
- */
+/** Invalidates earlier results at input time, before scheduling the existing search debounce. */
 const searchConfigs = () => {
+  cancelPendingInputLoads()
   runSearchConfigsDebounced()
 }
 
+/** Replaces column filters, invalidating pending results before the debounced reload. */
 const updateColumnFilters = (filters: TableColumnFilters) => {
+  cancelPendingInputLoads()
   columnFilters.value = filters
   pagination.currentPage.value = 1
   runColumnFiltersDebounced()
@@ -265,22 +298,35 @@ const closeAddModal = () => {
 const createConfig = async () => {
   if (!validateForm()) return
 
+  // configHost retains the submitted entity name for success and error messages after form reset.
+  const configHost = formData.value.host
   cancelPendingInputLoads()
+  // isCurrent controls table loading and empty-page fallback; accepted mutation outcomes depend only on scope lifetime.
+  let isCurrent = requests.begin()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
     await rosApi.create([formData.value])
+    if (!requests.isActive()) return
     closeAddModal()
-    showSuccess(`${ROS_TEXTS.CONFIG_PREFIX} "${formData.value.host}" ${ROS_TEXTS.SUCCESS_CREATED}`)
+    showSuccess(`${ROS_TEXTS.CONFIG_PREFIX} "${configHost}" ${ROS_TEXTS.SUCCESS_CREATED}`)
     await delay()
-    await loadActiveConfigs()
+    if (!requests.isActive()) return
+    // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
+    const pendingLoad = loadActiveConfigs()
+    isCurrent = requests.capture()
+    await pendingLoad
+    if (!requests.isActive()) return
   } catch (error) {
+    // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
+    if (!requests.isActive()) return
     errorHandler.handleError(error, {
       action: 'createConfig',
       component: 'RosConfigsPage',
-      host: formData.value.host,
+      host: configHost,
     })
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
@@ -299,23 +345,39 @@ const deleteConfig = async () => {
   if (!configToDelete.value) return
 
   cancelPendingInputLoads()
+  // configId captures the confirmed row before selection state is cleared.
   const configId = configToDelete.value
+  // isCurrent controls table loading and empty-page fallback; accepted mutation outcomes depend only on scope lifetime.
+  let isCurrent = requests.begin()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
     await rosApi.deleteOne(configId)
+    if (!requests.isActive()) return
     isDeleteConfirmOpen.value = false
     configToDelete.value = null
     showSuccess(`${ROS_TEXTS.CONFIG_PREFIX} #${configId} ${ROS_TEXTS.SUCCESS_DELETED}`)
 
     // Reload data after deletion
     await delay()
-    await loadActiveConfigs()
+    if (!requests.isActive()) return
+    // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
+    const pendingLoad = loadActiveConfigs()
+    isCurrent = requests.capture()
+    await pendingLoad
+    if (!requests.isActive()) return
 
+    if (!isCurrent()) return
     // Check if we need to go to previous page (if current page is now empty)
     if (configs.value.length === 0 && pagination.currentPage.value > 1) {
-      await goToActivePage(pagination.currentPage.value - 1)
+      // previousPageLoad starts the fallback synchronously; capture its ownership before awaiting it.
+      const previousPageLoad = goToActivePage(pagination.currentPage.value - 1)
+      isCurrent = requests.capture()
+      await previousPageLoad
     }
   } catch (error) {
+    // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
+    if (!requests.isActive()) return
     errorHandler.handleError(error, {
       action: 'deleteConfig',
       component: 'RosConfigsPage',
@@ -324,7 +386,7 @@ const deleteConfig = async () => {
     isDeleteConfirmOpen.value = false
     configToDelete.value = null
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 

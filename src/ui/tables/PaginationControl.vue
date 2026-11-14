@@ -26,7 +26,8 @@ const emit = defineEmits<{
 const hasNextPage = computed(() => props.currentPage < props.totalPages)
 const hasPrevPage = computed(() => props.currentPage > 1)
 
-const startItem = computed(() => (props.currentPage - 1) * props.pageSize + 1)
+// startItem is zero for an empty dataset; otherwise its computation returns the first displayed row number.
+const startItem = computed(() => (props.totalItems === 0 ? 0 : (props.currentPage - 1) * props.pageSize + 1))
 const endItem = computed(() => Math.min(props.currentPage * props.pageSize, props.totalItems))
 
 const visiblePages = computed(() => {

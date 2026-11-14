@@ -3,5 +3,6 @@ export { usePaginatedData } from './usePaginatedData'
 export { usePolling } from './usePolling'
 export { useApi } from './useApi'
 export { useDebouncedTask } from './useDebouncedTask'
+export { useLatestRequest } from './useLatestRequest'
 
 export type { PaginationParams, PaginatedResponse, DataLoader } from './usePaginatedData'

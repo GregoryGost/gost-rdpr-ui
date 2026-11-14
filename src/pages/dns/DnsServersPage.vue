@@ -31,11 +31,14 @@ const searchQuery = ref('')
 const columnFilters = ref<TableColumnFilters>({})
 const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.value))
 
-// Paginated data management
+/** servers holds accepted rows; isLoading tracks the current load; pagination owns page counters;
+ * The loader callback uses params as the requested page and returns its backend response.
+ * requests coordinates normal, search and filtered loads; loadServers loads the current normal page. */
 const {
   data: servers,
   isLoading,
   pagination,
+  requests,
   load: loadServers,
 } = usePaginatedData<DnsServer>(async (params) => dnsApi.getAll(params), 20)
 
@@ -67,48 +70,63 @@ const TABLE_COLUMNS: TableColumn<DnsServer>[] = [
 
 const hasActiveSearch = () => Boolean(searchQuery.value && searchQuery.value.length >= SEARCH.MIN_LENGTH)
 
-const matchesDnsColumnFilters = (server: DnsServer): boolean => {
-  return matchesColumnFilters(server, TABLE_COLUMNS, columnFilters.value)
+/** Captures column values and returns a predicate for one consistent filtered dataset. */
+const createDnsColumnFilter = () => {
+  // filters keeps subsequent backend batches independent of new input edits.
+  const filters = { ...columnFilters.value }
+  return (row: DnsServer) => matchesColumnFilters(row, TABLE_COLUMNS, filters)
 }
 
-const showSearchResults = (total: number) => {
+/** Reports the accepted result total for the query captured by its request. */
+const showSearchResults = (total: number, query: string) => {
   if (total === 0) {
-    showInfo(`По запросу "${searchQuery.value}" ничего не найдено`, 'Результаты поиска')
+    showInfo(`По запросу "${query}" ничего не найдено`, 'Результаты поиска')
     return
   }
 
   showInfo(`Найдено серверов: ${total}`, 'Результаты поиска')
 }
 
+/** Loads the captured search and filters; obsolete outcomes cannot publish or notify. */
 const loadSearchResults = async (shouldNotify = false) => {
+  // isCurrent checks ownership; query is the entered search; filterItem freezes column matching.
+  const isCurrent = requests.begin()
+  const query = searchQuery.value
+  const filterItem = createDnsColumnFilter()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
+    // response holds the filtered rows and matching total; the fetch callback reuses the captured query.
     const response = await loadClientFilteredPage(
-      (params) => dnsApi.search(searchQuery.value, params),
+      (params) => dnsApi.search(query, params),
       {
         limit: pagination.pageSize.value,
         offset: pagination.offset.value,
       },
-      matchesDnsColumnFilters,
+      filterItem,
     )
 
+    if (!isCurrent()) return
     servers.value = response.payload
     pagination.totalItems.value = response.total
 
-    if (shouldNotify) showSearchResults(response.total)
+    if (shouldNotify) showSearchResults(response.total, query)
   } catch (error) {
+    // error belongs to this search and is reported only if its intent remains current.
+    if (!isCurrent()) return
     errorHandler.handleError(error, {
       action: 'searchServers',
       component: 'DnsServersPage',
-      query: searchQuery.value,
+      query,
     })
     servers.value = []
     pagination.totalItems.value = 0
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
+/** Selects the search, column-filtered or normal source for the current intent. */
 const loadActiveServers = async (shouldNotifySearch = false) => {
   if (hasActiveSearch()) {
     await loadSearchResults(shouldNotifySearch)
@@ -119,21 +137,30 @@ const loadActiveServers = async (shouldNotifySearch = false) => {
   }
 }
 
+/** Loads a snapshot of column-filtered rows without allowing earlier loads to replace them. */
 const loadFilteredServers = async () => {
+  // isCurrent checks publication ownership; filterItem retains this request's column values.
+  const isCurrent = requests.begin()
+  const filterItem = createDnsColumnFilter()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
+    // response contains this filtered page and total; its fetch callback forwards each backend page unchanged.
     const response = await loadClientFilteredPage(
       (params) => dnsApi.getAll(params),
       {
         limit: pagination.pageSize.value,
         offset: pagination.offset.value,
       },
-      matchesDnsColumnFilters,
+      filterItem,
     )
 
+    if (!isCurrent()) return
     servers.value = response.payload
     pagination.totalItems.value = response.total
   } catch (error) {
+    // error is relevant only while this filtered load remains current.
+    if (!isCurrent()) return
     errorHandler.handleError(error, {
       action: 'loadFilteredServers',
       component: 'DnsServersPage',
@@ -141,10 +168,12 @@ const loadFilteredServers = async () => {
     servers.value = []
     pagination.totalItems.value = 0
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
+/** runSearchServersDebounced schedules the search callback; cancelSearchServersDebounce clears its queued run.
+ * The callback resets pagination and loads the latest active input after the debounce delay. */
 const { run: runSearchServersDebounced, cancel: cancelSearchServersDebounce } = useDebouncedTask(async () => {
   pagination.currentPage.value = 1 // Reset to first page
 
@@ -156,35 +185,42 @@ const { run: runSearchServersDebounced, cancel: cancelSearchServersDebounce } = 
   await loadSearchResults(true)
 })
 
+/** runColumnFiltersDebounced schedules a reload using current filters; cancelColumnFiltersDebounce clears it.
+ * The callback loads through the active search or normal source. */
 const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = useDebouncedTask(async () => {
   await loadActiveServers()
 })
 
+/** Cancels queued input loads and immediately invalidates all earlier request continuations. */
 const cancelPendingInputLoads = () => {
+  requests.invalidate()
   cancelSearchServersDebounce()
   cancelColumnFiltersDebounce()
 }
 
+/** Selects page and loads it through the active search or filter source. */
 const goToActivePage = async (page: number) => {
   cancelPendingInputLoads()
   pagination.goToPage(page)
   await loadActiveServers()
 }
 
+/** Selects a new page size and reloads the first page through the active source. */
 const changeActivePageSize = async (size: number) => {
   cancelPendingInputLoads()
   pagination.changePageSize(size)
   await loadActiveServers()
 }
 
-/**
- * Search DNS servers
- */
+/** Invalidates earlier results at input time, before scheduling the existing search debounce. */
 const searchServers = () => {
+  cancelPendingInputLoads()
   runSearchServersDebounced()
 }
 
+/** Replaces column filters, invalidating pending results before the debounced reload. */
 const updateColumnFilters = (filters: TableColumnFilters) => {
+  cancelPendingInputLoads()
   columnFilters.value = filters
   pagination.currentPage.value = 1
   runColumnFiltersDebounced()
@@ -253,23 +289,35 @@ const closeAddModal = () => {
 const createServer = async () => {
   if (!validateForm()) return
 
+  // serverName retains the submitted entity name for success and error messages after form reset.
+  const serverName = formData.value.server || formData.value.doh_server
   cancelPendingInputLoads()
+  // isCurrent controls table loading and empty-page fallback; accepted mutation outcomes depend only on scope lifetime.
+  let isCurrent = requests.begin()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
     await dnsApi.create([formData.value])
-    const serverName = formData.value.server || formData.value.doh_server
+    if (!requests.isActive()) return
     closeAddModal()
     showSuccess(`DNS сервер "${serverName}" успешно добавлен`)
     await delay()
-    await loadActiveServers()
+    if (!requests.isActive()) return
+    // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
+    const pendingLoad = loadActiveServers()
+    isCurrent = requests.capture()
+    await pendingLoad
+    if (!requests.isActive()) return
   } catch (error) {
+    // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
+    if (!requests.isActive()) return
     errorHandler.handleError(error, {
       action: 'createServer',
       component: 'DnsServersPage',
-      server: formData.value.server || formData.value.doh_server,
+      server: serverName,
     })
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
@@ -288,23 +336,39 @@ const deleteServer = async () => {
   if (!serverToDelete.value) return
 
   cancelPendingInputLoads()
+  // serverId captures the confirmed row before selection state is cleared.
   const serverId = serverToDelete.value
+  // isCurrent controls table loading and empty-page fallback; accepted mutation outcomes depend only on scope lifetime.
+  let isCurrent = requests.begin()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
     await dnsApi.deleteOne(serverId)
+    if (!requests.isActive()) return
     isDeleteConfirmOpen.value = false
     serverToDelete.value = null
     showSuccess(`DNS сервер #${serverId} успешно удален`)
 
     // Reload data after deletion
     await delay()
-    await loadActiveServers()
+    if (!requests.isActive()) return
+    // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
+    const pendingLoad = loadActiveServers()
+    isCurrent = requests.capture()
+    await pendingLoad
+    if (!requests.isActive()) return
 
+    if (!isCurrent()) return
     // Check if we need to go to previous page (if current page is now empty)
     if (servers.value.length === 0 && pagination.currentPage.value > 1) {
-      await goToActivePage(pagination.currentPage.value - 1)
+      // previousPageLoad starts the fallback synchronously; capture its ownership before awaiting it.
+      const previousPageLoad = goToActivePage(pagination.currentPage.value - 1)
+      isCurrent = requests.capture()
+      await previousPageLoad
     }
   } catch (error) {
+    // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
+    if (!requests.isActive()) return
     errorHandler.handleError(error, {
       action: 'deleteServer',
       component: 'DnsServersPage',
@@ -313,7 +377,7 @@ const deleteServer = async () => {
     isDeleteConfirmOpen.value = false
     serverToDelete.value = null
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 

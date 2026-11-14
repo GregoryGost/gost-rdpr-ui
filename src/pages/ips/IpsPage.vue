@@ -24,7 +24,7 @@ import { showSuccess, showWarning, showInfo } from '@/utils/notifications'
 import { delay } from '@/utils/timers'
 import { errorHandler } from '@/utils/errorHandler'
 import { loadClientFilteredPage } from '@/utils/clientPagination'
-import { useDebouncedTask } from '@/composables'
+import { useDebouncedTask, useLatestRequest } from '@/composables'
 import {
   hasColumnFilters,
   matchesColumnFilters,
@@ -49,6 +49,10 @@ const gatewayFilter = ref<IpGatewayFilter>('all')
 const columnFilters = ref<TableColumnFilters>({})
 
 // Data management
+// statsRequests keeps global counts independent of table queries and rejects old responses after refresh or teardown.
+const statsRequests = useLatestRequest()
+// requests coordinates search, filtered reloads and input invalidation for this table.
+const requests = useLatestRequest()
 const ips = ref<IpAddress[]>([])
 const isLoading = ref(false)
 const totalIps = ref(0)
@@ -142,20 +146,26 @@ const TABLE_COLUMNS: TableColumn<IpAddress>[] = [
   { key: 'actions', label: UI_TEXTS.ACTIONS },
 ]
 
-const matchesIpFilters = (ip: IpAddress): boolean => {
-  if (typeFilter.value === 'ipv4' && ip.type !== 4) return false
-  if (typeFilter.value === 'ipv6' && ip.type !== 6) return false
-  if (listFilter.value === 'with-list' && ip.ip_list_id == null) return false
-  if (listFilter.value === 'without-list' && ip.ip_list_id != null) return false
-  if (domainFilter.value === 'with-domain' && ip.domain_id == null) return false
-  if (domainFilter.value === 'without-domain' && ip.domain_id != null) return false
-  if (gatewayFilter.value === 'default-gateway' && ip.use_default_gw !== true) return false
-  if (gatewayFilter.value === 'vpn-gateway' && ip.use_default_gw === true) return false
-  return true
-}
-
-const matchesActiveIpFilters = (ip: IpAddress): boolean => {
-  return matchesIpFilters(ip) && matchesColumnFilters(ip, TABLE_COLUMNS, columnFilters.value)
+/** Captures all button and column filters; its predicate keeps backend batches in the same dataset. */
+const createIpFilter = () => {
+  // selectedType, selectedList, selectedDomain and selectedGateway retain the requested button categories.
+  const selectedType = typeFilter.value
+  const selectedList = listFilter.value
+  const selectedDomain = domainFilter.value
+  const selectedGateway = gatewayFilter.value
+  // filters retains column values even if the user edits them while backend pages are pending.
+  const filters = { ...columnFilters.value }
+  return (ip: IpAddress): boolean => {
+    if (selectedType === 'ipv4' && ip.type !== 4) return false
+    if (selectedType === 'ipv6' && ip.type !== 6) return false
+    if (selectedList === 'with-list' && ip.ip_list_id == null) return false
+    if (selectedList === 'without-list' && ip.ip_list_id != null) return false
+    if (selectedDomain === 'with-domain' && ip.domain_id == null) return false
+    if (selectedDomain === 'without-domain' && ip.domain_id != null) return false
+    if (selectedGateway === 'default-gateway' && ip.use_default_gw !== true) return false
+    if (selectedGateway === 'vpn-gateway' && ip.use_default_gw === true) return false
+    return matchesColumnFilters(ip, TABLE_COLUMNS, filters)
+  }
 }
 
 /**
@@ -194,9 +204,11 @@ const getApiSearchQuery = (): string | undefined => {
 const shouldUseClientPagination = () =>
   hasActiveSearch() || hasActiveButtonFilters.value || hasActiveColumnFilters.value
 
-const loadDefaultGatewayTotal = async () => {
+/** Reads the gateway count for a current table load without publishing an obsolete result. */
+const loadDefaultGatewayTotal = async (isCurrent: () => boolean) => {
   if (totalDefaultGateway.value !== undefined) return
 
+  // response counts only rows whose default gateway flag is true; callbacks keep this fixed predicate.
   const response = await loadClientFilteredPage<IpAddress>(
     (params) =>
       ipsApi.getAll({
@@ -210,7 +222,7 @@ const loadDefaultGatewayTotal = async () => {
     (ip) => ip.use_default_gw === true,
   )
 
-  totalDefaultGateway.value = response.total
+  if (isCurrent()) totalDefaultGateway.value = response.total
 }
 
 const getKnownIpFilterTotal = (): number | undefined => {
@@ -265,10 +277,21 @@ const getKnownIpFilterTotal = (): number | undefined => {
  * Load IPs with stats
  */
 const loadIpsWithStats = async () => {
+  // isCurrent guards this load; filterItem freezes row matching; pageParams freezes the requested page.
+  const isCurrent = requests.begin()
+  const filterItem = createIpFilter()
+  const pageParams = { limit: pageSize.value, offset: offset.value }
+  // type and defaultGateway are the API parameters shared by every backend batch.
+  const type = getTypeFilterParam()
+  const defaultGateway = getGatewayFilterParam()
+  // forceClientPagination retains the existing search/button/column filtering policy.
+  const forceClientPagination = shouldUseClientPagination()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
     if (hasActiveButtonFilters.value && totalIps.value === 0) {
-      await loadGlobalStats()
+      await loadGlobalStats(isCurrent)
+      if (!isCurrent()) return
     }
 
     if (
@@ -277,32 +300,35 @@ const loadIpsWithStats = async () => {
       listFilter.value === 'all' &&
       domainFilter.value === 'all'
     ) {
-      await loadDefaultGatewayTotal()
+      await loadDefaultGatewayTotal(isCurrent)
+      if (!isCurrent()) return
     }
 
+    // The known total is read only while this request still owns the unchanged filter intent.
     const knownFilterTotal = getKnownIpFilterTotal()
+    // response combines backend batches; fetch callbacks use only the parameters captured above.
     const response = await loadClientFilteredPage(
       (params) =>
         ipsApi.getAll({
           ...params,
-          type: getTypeFilterParam(),
-          default_gw: getGatewayFilterParam(),
+          type,
+          default_gw: defaultGateway,
         }),
+      pageParams,
+      filterItem,
       {
-        limit: pageSize.value,
-        offset: offset.value,
-      },
-      matchesActiveIpFilters,
-      {
-        forceClientPagination: shouldUseClientPagination(),
+        forceClientPagination,
         knownTotal: knownFilterTotal,
         stopWhenPageFilled: knownFilterTotal !== undefined,
       },
     )
 
+    if (!isCurrent()) return
     totalItems.value = response.total
     ips.value = response.payload
   } catch (error) {
+    // error belongs to this load; an obsolete failure must not clear or notify over a newer intent.
+    if (!isCurrent()) return
     errorHandler.handleError(error, {
       action: 'loadIpsWithStats',
       component: 'IpsPage',
@@ -310,7 +336,7 @@ const loadIpsWithStats = async () => {
     ips.value = []
     totalItems.value = 0
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
@@ -318,6 +344,7 @@ const loadIpsWithStats = async () => {
  * Search IPs immediately with current pagination and filters.
  */
 const runSearchIps = async () => {
+  // apiSearchQuery selects the main search or the searchable column value at invocation time.
   const apiSearchQuery = getApiSearchQuery()
 
   if (!apiSearchQuery) {
@@ -325,45 +352,54 @@ const runSearchIps = async () => {
     return
   }
 
+  // isCurrent guards this load; filterItem freezes row matching; pageParams freezes the requested page.
+  const isCurrent = requests.begin()
+  const filterItem = createIpFilter()
+  const pageParams = { limit: pageSize.value, offset: offset.value }
+  // type and defaultGateway are the API parameters shared by every backend batch.
+  const type = getTypeFilterParam()
+  const defaultGateway = getGatewayFilterParam()
+  // query and notifySearch preserve the entered search for error context and accepted-result notifications.
+  const query = searchQuery.value
+  const notifySearch = hasActiveSearch()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
+    // response combines backend batches; fetch callbacks use only the parameters captured above.
     const response = await loadClientFilteredPage(
       (params) =>
         ipsApi.search(apiSearchQuery, {
           ...params,
-          type: getTypeFilterParam(),
-          default_gw: getGatewayFilterParam(),
+          type,
+          default_gw: defaultGateway,
         }),
-      {
-        limit: pageSize.value,
-        offset: offset.value,
-      },
-      matchesActiveIpFilters,
+      pageParams,
+      filterItem,
     )
 
+    if (!isCurrent()) return
     totalItems.value = response.total
     ips.value = response.payload
 
-    if (hasActiveSearch()) {
+    if (notifySearch) {
       if (response.total === 0) {
-        showInfo(
-          `${IPS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${searchQuery.value}" ${UI_TEXTS.NOTHING_FOUND}`,
-          UI_TEXTS.SEARCH_RESULTS,
-        )
+        showInfo(`${IPS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${query}" ${UI_TEXTS.NOTHING_FOUND}`, UI_TEXTS.SEARCH_RESULTS)
       } else {
         showInfo(`${IPS_TEXTS.SEARCH_FOUND_PREFIX} ${response.total}`, UI_TEXTS.SEARCH_RESULTS)
       }
     }
   } catch (error) {
+    // error belongs to this load; an obsolete failure must not clear or notify over a newer intent.
+    if (!isCurrent()) return
     errorHandler.handleError(error, {
       action: 'searchIps',
       component: 'IpsPage',
-      query: searchQuery.value,
+      query,
     })
     ips.value = []
     totalItems.value = 0
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
@@ -375,41 +411,58 @@ const loadActiveIps = () => {
   return loadIpsWithStats()
 }
 
-/**
- * Search IPs
- */
+/** runSearchIpsDebounced queues the callback that resets the page and loads current input;
+ * cancelSearchIpsDebounce clears that queued execution. */
 const { run: runSearchIpsDebounced, cancel: cancelSearchIpsDebounce } = useDebouncedTask(async () => {
   currentPage.value = 1 // Reset to first page
   await loadActiveIps()
 })
 
+/** runColumnFiltersDebounced queues the callback that reloads active filters;
+ * cancelColumnFiltersDebounce clears that queued execution. */
 const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = useDebouncedTask(async () => {
   await loadActiveIps()
 })
 
+/** Clears queued input loads and rejects earlier responses immediately, including during the debounce gap. */
 const cancelPendingInputLoads = () => {
+  requests.invalidate()
   cancelSearchIpsDebounce()
   cancelColumnFiltersDebounce()
 }
 
+/** Invalidates old responses as soon as input changes, then schedules the existing search debounce. */
 const searchIps = () => {
+  cancelPendingInputLoads()
   runSearchIpsDebounced()
 }
 
 /**
  * Load global statistics from the dedicated statistics API endpoint
  */
-const loadGlobalStats = async () => {
+// The default isCurrent predicate keeps standalone statistics refreshes independent of table query changes.
+const loadGlobalStats = async (isCurrent: () => boolean = () => true) => {
+  // An obsolete dependent caller must not supersede an independent statistics refresh.
+  if (!isCurrent()) return
+  // isStatsCurrent prevents older statistics responses from replacing a newer refresh or surviving unmount.
+  const isStatsCurrent = statsRequests.begin()
+  if (!isStatsCurrent() || !isCurrent()) return
   try {
+    // stats is the dedicated global statistics response for the current caller.
     const stats = await statsApi.getStats()
+    // Global counts do not depend on the table query, so an accepted statistics response survives input edits.
+    if (!isStatsCurrent()) return
     totalIps.value = stats.ips.total
     totalIpv4.value = stats.ips.v4_total
     totalIpv6.value = stats.ips.v6_total
+    // The reduce callbacks add each list l's total/v4_count/v6_count to sum.
     totalWithList.value = stats.ips.per_list.reduce((sum, l) => sum + l.total, 0)
     totalWithListIpv4.value = stats.ips.per_list.reduce((sum, l) => sum + l.v4_count, 0)
     totalWithListIpv6.value = stats.ips.per_list.reduce((sum, l) => sum + l.v6_count, 0)
     totalWithDomain.value = stats.ips.linked_to_domain
   } catch (error) {
+    // error is the statistics failure; obsolete table-dependent refreshes must not notify.
+    if (!isStatsCurrent() || !isCurrent()) return
     errorHandler.handleError(error, { action: 'loadGlobalStats', component: 'IpsPage' })
   }
 }
@@ -581,23 +634,37 @@ const closeAddModal = () => {
 const createIp = async () => {
   if (!validateForm()) return
 
+  // ipAddress retains the submitted entity name for success and error messages after form reset.
+  const ipAddress = formData.value.addr
   cancelPendingInputLoads()
+  // isCurrent controls table loading and empty-page fallback; accepted mutation outcomes depend only on scope lifetime.
+  let isCurrent = requests.begin()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
     await ipsApi.create([formData.value])
+    if (!requests.isActive()) return
     closeAddModal()
-    showSuccess(`${IPS_TEXTS.IP_PREFIX} "${formData.value.addr}" ${IPS_TEXTS.SUCCESS_CREATED}`)
+    showSuccess(`${IPS_TEXTS.IP_PREFIX} "${ipAddress}" ${IPS_TEXTS.SUCCESS_CREATED}`)
     await delay()
-    await loadActiveIps()
+    if (!requests.isActive()) return
+    // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
+    const pendingLoad = loadActiveIps()
+    isCurrent = requests.capture()
+    await pendingLoad
+    if (!requests.isActive()) return
     await loadGlobalStats()
+    if (!isCurrent()) return
   } catch (error) {
+    // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
+    if (!requests.isActive()) return
     errorHandler.handleError(error, {
       action: 'createIp',
       component: 'IpsPage',
-      addr: formData.value.addr,
+      addr: ipAddress,
     })
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
@@ -616,24 +683,40 @@ const deleteIp = async () => {
   if (!ipToDelete.value) return
 
   cancelPendingInputLoads()
+  // ipId captures the confirmed row before selection state is cleared.
   const ipId = ipToDelete.value
+  // isCurrent controls table loading and empty-page fallback; accepted mutation outcomes depend only on scope lifetime.
+  let isCurrent = requests.begin()
+  if (!isCurrent()) return
   isLoading.value = true
   try {
     await ipsApi.deleteOne(ipId)
+    if (!requests.isActive()) return
     isDeleteConfirmOpen.value = false
     ipToDelete.value = null
     showSuccess(`${IPS_TEXTS.IP_PREFIX} #${ipId} ${IPS_TEXTS.SUCCESS_DELETED}`)
 
     // Reload data after deletion
     await delay()
-    await loadActiveIps()
+    if (!requests.isActive()) return
+    // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
+    const pendingLoad = loadActiveIps()
+    isCurrent = requests.capture()
+    await pendingLoad
+    if (!requests.isActive()) return
     await loadGlobalStats()
 
+    if (!isCurrent()) return
     // Check if we need to go to previous page (if current page is now empty)
     if (ips.value.length === 0 && currentPage.value > 1) {
-      goToPage(currentPage.value - 1)
+      // previousPageLoad starts the fallback; capture its generation before awaiting completion.
+      const previousPageLoad = goToPage(currentPage.value - 1)
+      isCurrent = requests.capture()
+      await previousPageLoad
     }
   } catch (error) {
+    // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
+    if (!requests.isActive()) return
     errorHandler.handleError(error, {
       action: 'deleteIp',
       component: 'IpsPage',
@@ -642,7 +725,7 @@ const deleteIp = async () => {
     isDeleteConfirmOpen.value = false
     ipToDelete.value = null
   } finally {
-    isLoading.value = false
+    if (isCurrent()) isLoading.value = false
   }
 }
 
@@ -652,7 +735,7 @@ const deleteIp = async () => {
 const goToPage = (page: number) => {
   cancelPendingInputLoads()
   currentPage.value = page
-  loadActiveIps()
+  return loadActiveIps()
 }
 
 /**
@@ -665,7 +748,9 @@ const changePageSize = (size: number) => {
   loadActiveIps()
 }
 
+/** Replaces column filters and invalidates old responses before scheduling the filtered reload. */
 const updateColumnFilters = (filters: TableColumnFilters) => {
+  cancelPendingInputLoads()
   columnFilters.value = filters
   currentPage.value = 1
   runColumnFiltersDebounced()

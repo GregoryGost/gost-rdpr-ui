@@ -31,7 +31,8 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <TransitionRoot :show="isOpen" as="template">
+  <!-- Keep the transition mounted so Headless UI can restore focus after the leave animation. -->
+  <TransitionRoot :show="isOpen" :unmount="false" as="template">
     <Dialog @close="emit('cancel')" class="relative z-50">
       <TransitionChild
         as="template"

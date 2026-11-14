@@ -53,6 +53,9 @@ __screenshots__/
 
 # Playwright
 .playwright-mcp/
+playwright-report/
+test-results/
+blob-report/
 
 # TASKS
 TASKS.md
