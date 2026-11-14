@@ -17,12 +17,20 @@ export interface StatsDomainsListItem {
   attempts: number
 }
 
+/** Global domain aggregates, independent of the current list/search query and page. */
 export interface StatsDomainsData {
+  /** Existing total number of stored domain records. */
   total: number
+  /** Existing number of records whose saved resolution flag is true. */
   resolved: number
+  /** Existing number of records whose saved resolution flag is false. */
   unresolved: number
+  /** Number of configured domain lists, including empty lists. */
   lists_total: number
+  /** Existing list-level totals and download-attempt counts. */
   per_list: StatsDomainsListItem[]
+  /** Positive-ID records with neither a saved attempt nor a successful-resolution date. */
+  unprocessed: number
 }
 
 export interface StatsIpsListItem {

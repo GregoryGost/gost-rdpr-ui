@@ -1,5 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import PaginationControl from '@/ui/tables/PaginationControl.vue'
 import DomainsPage from '@/pages/domains/DomainsPage.vue'
 import { domainsApi, type DomainsResponse } from '@/api/endpoints/domains'
 import { statsApi } from '@/api/endpoints/stats'
@@ -119,6 +120,7 @@ describe('domain request integration', () => {
     expect(wrapper.text()).toMatch(/Всего доменов\s*42/)
     expect(wrapper.text()).toMatch(/Определено\s*30/)
     expect(wrapper.text()).toMatch(/Не определено\s*12/)
+    expect(wrapper.text()).toMatch(/Не обработано\s*9/)
   })
 
   /** An already submitted creation still closes and notifies after search edits, then refreshes the current query. */
@@ -223,5 +225,205 @@ describe('domain request integration', () => {
     expect(notifications.showInfo).not.toHaveBeenCalled()
     expect(errorHandler.handleError).not.toHaveBeenCalled()
     expect(vi.getTimerCount()).toBe(0)
+  })
+  /** Both rendered controls share parent state and each user action starts one list load. */
+  it('synchronizes both pagers without duplicate list requests', async () => {
+    vi.mocked(domainsApi.getAll).mockResolvedValue(domainPage([domain('baseline.test')], 995))
+    // wrapper renders the real page; panels contains its two independently mounted pagination components.
+    const wrapper = mountPage()
+    await flushPromises()
+    const panels = wrapper.findAllComponents(PaginationControl)
+    expect(panels).toHaveLength(2)
+    expect(domainsApi.getAll).toHaveBeenCalledTimes(1)
+    await panels[0]!.get('select').setValue('10')
+    await flushPromises()
+    expect(panels[1]!.props('pageSize')).toBe(10)
+    expect(domainsApi.getAll).toHaveBeenCalledTimes(2)
+    expect(domainsApi.getAll).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 10, offset: 0 }))
+    await panels[1]!
+      .findAll('nav button')
+      .find(/** Selects the bottom panel's distant final page. */ (button) => button.text() === '100')!
+      .trigger('click')
+    await flushPromises()
+    expect(panels[0]!.props('currentPage')).toBe(100)
+    expect(domainsApi.getAll).toHaveBeenCalledTimes(3)
+    expect(domainsApi.getAll).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 10, offset: 990 }))
+    await panels[0]!.get('select').setValue('50')
+    await flushPromises()
+    expect(panels[1]!.props()).toMatchObject({ currentPage: 1, pageSize: 50, totalPages: 20 })
+    expect(domainsApi.getAll).toHaveBeenCalledTimes(4)
+    expect(domainsApi.getAll).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 50, offset: 0 }))
+  })
+
+  /** Empty and pending results keep both controls present and prevent out-of-bounds requests. */
+  it('retains both pagers in loading and empty states', async () => {
+    // pending holds the first list response while the controls expose their loading state.
+    const pending = deferred<DomainsResponse>()
+    vi.mocked(domainsApi.getAll).mockReturnValueOnce(pending.promise)
+    // wrapper begins with no accepted table rows; panels remain mounted across response settlement.
+    const wrapper = mountPage()
+    await flushPromises()
+    const panels = wrapper.findAllComponents(PaginationControl)
+    expect(panels).toHaveLength(2)
+    expect(
+      panels.every(/** Checks shared loading state in both component instances. */ (panel) => panel.props('isLoading')),
+    ).toBe(true)
+    pending.resolve(domainPage([]))
+    await flushPromises()
+    expect(wrapper.findAllComponents(PaginationControl)).toHaveLength(2)
+    expect(
+      panels.every(
+        /** Checks that no numbered pages are available after an empty reply. */ (panel) =>
+          panel.props('totalPages') === 0,
+      ),
+    ).toBe(true)
+    expect(
+      wrapper
+        .findAll('select')
+        .every(/** Selectors retain the same parent-owned page size. */ (select) => select.element.value === '20'),
+    ).toBe(true)
+    expect(domainsApi.getAll).toHaveBeenCalledTimes(1)
+  })
+
+  /** Four status choices are exclusive server intents; switching/resetting removes the new flag and resets pages. */
+  it('keeps unprocessed exclusive with the existing resolved statuses and reset', async () => {
+    vi.mocked(domainsApi.getAll).mockResolvedValue(domainPage([domain('baseline.test')], 100))
+    // wrapper provides real button handlers; clickStatus selects their exact Russian labels.
+    const wrapper = mountPage()
+    await flushPromises()
+    /** Activates label through its rendered button and settles the corresponding isolated backend request. */
+    async function clickStatus(label: string): Promise<void> {
+      await wrapper
+        .findAll('button')
+        .find(
+          /** Matches the status action rather than similarly worded captions. */ (button) => button.text() === label,
+        )!
+        .trigger('click')
+      await flushPromises()
+    }
+    await wrapper
+      .findAllComponents(PaginationControl)[0]!
+      .findAll('nav button')
+      .find(/** Selects a valid noninitial numbered page. */ (button) => button.text() === '3')!
+      .trigger('click')
+    await flushPromises()
+    await clickStatus('Не обработано')
+    expect(domainsApi.getAll).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unprocessed: true, resolved: undefined, offset: 0 }),
+    )
+    expect(
+      wrapper
+        .findAllComponents(PaginationControl)
+        .every(/** Both panel states reset together. */ (panel) => panel.props('currentPage') === 1),
+    ).toBe(true)
+    await wrapper.get('input[placeholder="Поиск по домену..."]').setValue('fresh')
+    await vi.advanceTimersByTimeAsync(500)
+    await flushPromises()
+    expect(domainsApi.search).toHaveBeenLastCalledWith(
+      'fresh',
+      expect.objectContaining({ unprocessed: true, resolved: undefined, offset: 0 }),
+    )
+    await clickStatus('Определен')
+    expect(domainsApi.search).toHaveBeenLastCalledWith(
+      'fresh',
+      expect.objectContaining({ unprocessed: undefined, resolved: true, offset: 0 }),
+    )
+    await clickStatus('Не определен')
+    expect(domainsApi.search).toHaveBeenLastCalledWith(
+      'fresh',
+      expect.objectContaining({ unprocessed: undefined, resolved: false, offset: 0 }),
+    )
+    await clickStatus('Все')
+    expect(domainsApi.search).toHaveBeenLastCalledWith(
+      'fresh',
+      expect.objectContaining({ unprocessed: undefined, resolved: undefined, offset: 0 }),
+    )
+    await clickStatus('Не обработано')
+    await clickStatus('Сбросить')
+    expect(domainsApi.search).toHaveBeenLastCalledWith(
+      'fresh',
+      expect.objectContaining({ unprocessed: undefined, resolved: undefined, offset: 0 }),
+    )
+    expect(statsApi.getStats).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toMatch(/Не обработано\s*9/)
+  })
+
+  /** An obsolete unprocessed result or failure must not overwrite the newer resolved selection or publish an error. */
+  it.each(['success', 'failure'])('ignores an obsolete unprocessed %s after a status change', async (outcome) => {
+    // oldRequest deliberately outlives the next status request; wrapper starts with accepted baseline data.
+    const oldRequest = deferred<DomainsResponse>()
+    const wrapper = mountPage()
+    await flushPromises()
+    vi.mocked(domainsApi.getAll)
+      .mockReturnValueOnce(oldRequest.promise)
+      .mockResolvedValueOnce(domainPage([domain('accepted-resolved.test')]))
+    await wrapper
+      .findAll('button')
+      .find(/** Starts the older unprocessed request. */ (button) => button.text() === 'Не обработано')!
+      .trigger('click')
+    await wrapper
+      .findAll('button')
+      .find(
+        /** The latest status must remain usable while an older request is pending. */ (button) =>
+          button.text() === 'Определен',
+      )!
+      .trigger('click')
+    await flushPromises()
+    if (outcome === 'success') oldRequest.resolve(domainPage([domain('obsolete-unprocessed.test')], 99))
+    else oldRequest.reject(new Error('Obsolete unprocessed failure'))
+    await flushPromises()
+    expect(wrapper.get('tbody').text()).toContain('accepted-resolved.test')
+    expect(wrapper.get('tbody').text()).not.toContain('obsolete-unprocessed.test')
+    expect(wrapper.text()).not.toContain('99 результатов')
+    expect(errorHandler.handleError).not.toHaveBeenCalled()
+    expect(
+      wrapper
+        .findAllComponents(PaginationControl)
+        .every(/** Completion belongs only to the newest request. */ (panel) => !panel.props('isLoading')),
+    ).toBe(true)
+  })
+
+  /** A statistics failure follows the existing error path without fabricating counts from loaded table rows. */
+  it('reports statistics failure and preserves zero unprocessed instead of deriving it from table rows', async () => {
+    // failure is the independent global stats error; wrapper still receives a successful table response.
+    const failure = new Error('Statistics unavailable')
+    vi.mocked(statsApi.getStats).mockRejectedValueOnce(failure)
+    const wrapper = mountPage()
+    await flushPromises()
+    expect(wrapper.text()).toMatch(/Не обработано\s*0/)
+    expect(wrapper.get('tbody').text()).toContain('baseline.test')
+    expect(errorHandler.handleError).toHaveBeenCalledExactlyOnceWith(failure, {
+      action: 'loadGlobalStats',
+      component: 'DomainsPage',
+    })
+  })
+
+  /** A changed backend total cannot leave either panel on a page outside the new selection. */
+  it.each([21, 0])('clamps both panels when the requested page shrinks to %s rows', async (total) => {
+    vi.mocked(domainsApi.getAll).mockResolvedValueOnce(domainPage([domain('initial.test')], 100))
+    // wrapper first accepts five pages, then receives a smaller total for its final-page request.
+    const wrapper = mountPage()
+    await flushPromises()
+    vi.mocked(domainsApi.getAll).mockResolvedValueOnce(domainPage([], total))
+    if (total > 0) vi.mocked(domainsApi.getAll).mockResolvedValueOnce(domainPage([domain('new-last.test')], total))
+    await wrapper
+      .findAllComponents(PaginationControl)[0]!
+      .findAll('nav button')
+      .find(/** Requests a page that disappears before its response. */ (button) => button.text() === '5')!
+      .trigger('click')
+    await flushPromises()
+    expect(
+      wrapper
+        .findAllComponents(PaginationControl)
+        .every(
+          /** Both panels adopt the last valid page, or one for empty results. */ (panel) =>
+            panel.props('currentPage') === (total > 0 ? 2 : 1),
+        ),
+    ).toBe(true)
+    expect(domainsApi.getAll).toHaveBeenCalledTimes(total > 0 ? 3 : 2)
+    if (total > 0) {
+      expect(domainsApi.getAll).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 20, offset: 20 }))
+      expect(wrapper.get('tbody').text()).toContain('new-last.test')
+    } else expect(wrapper.get('tbody').text()).toContain('Домены не найдены')
   })
 })

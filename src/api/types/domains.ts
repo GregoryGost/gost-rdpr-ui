@@ -1,3 +1,5 @@
+import type { PaginationParams } from './common'
+
 /**
  * Domain list entity
  * @interface DomainsList
@@ -44,9 +46,9 @@ export interface Domain {
   /** Backend-formatted update date, when available. */
   updated_at_hum?: string
   /** Backend timestamp of the last successful resolution, when available. */
-  last_resolved_at?: number
+  last_resolved_at?: number | null
   /** Backend-formatted date of the last successful resolution, when available. */
-  last_resolved_at_hum?: string
+  last_resolved_at_hum?: string | null
   /**
    * Backend timestamp of the last completed saved attempt, including partial results and failures.
    * Null means the timestamp is unknown; responses without attempt metadata may omit this field.
@@ -125,4 +127,12 @@ export interface DnsServerResolveResult {
 export interface DomainResolveCheckResponse {
   domain: string
   results: DnsServerResolveResult[]
+}
+
+/** Pagination and independent status filters accepted by both domain list and search endpoints. */
+export interface DomainsQueryParams extends PaginationParams {
+  /** Selects the saved resolution flag; omission includes both resolution states. */
+  resolved?: boolean
+  /** True restricts rows to positive IDs with neither date; false or omission adds no restriction. */
+  unprocessed?: boolean
 }

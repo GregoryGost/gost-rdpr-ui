@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { domainsApi } from '@/api/endpoints/domains'
+import { domainsApi, type DomainsResponse } from '@/api/endpoints/domains'
 import { statsApi } from '@/api/endpoints/stats'
 import type { Domain, DomainCreateData } from '@/api/types/domains'
 import { DOMAIN_RESOLVE_CHECK_TEXTS, DOMAIN_RESOLVE_NOW_TEXTS, PAGINATION, SEARCH, UI_TEXTS } from '@/constants'
@@ -40,7 +40,16 @@ import {
  * @component DomainsPage
  */
 const searchQuery = ref('')
-const resolvedFilter = ref<boolean | undefined>(undefined)
+/** Exclusive table status; unprocessed is independent of the domain's saved resolved flag. */
+type DomainStatusFilter = 'all' | 'resolved' | 'unresolved' | 'unprocessed'
+/** domainStatusFilter is the only selected status button and resets with the other button filters. */
+const domainStatusFilter = ref<DomainStatusFilter>('all')
+/** resolvedFilter derives the existing API flag only for its two resolution categories. */
+const resolvedFilter = computed(() =>
+  domainStatusFilter.value === 'resolved' ? true : domainStatusFilter.value === 'unresolved' ? false : undefined,
+)
+/** unprocessedFilter enables server-side date eligibility only for the unprocessed category. */
+const unprocessedFilter = computed(() => (domainStatusFilter.value === 'unprocessed' ? true : undefined))
 type DomainListFilter = 'all' | 'with-list' | 'without-list'
 const listFilter = ref<DomainListFilter>('all')
 const columnFilters = ref<TableColumnFilters>({})
@@ -56,6 +65,8 @@ const isLoading = ref(false)
 // Global stats (always unfiltered — used for stat cards)
 const globalTotalResolved = ref(0)
 const globalTotalQuery = ref(0)
+/** globalUnprocessed counts every ordinary domain without a saved attempt or success date, independent of the table. */
+const globalUnprocessed = ref(0)
 const globalWithListTotal = ref(0)
 const globalWithListResolved = ref(0)
 const globalWithListUnresolved = ref(0)
@@ -76,7 +87,8 @@ const pagination = {
   PAGE_SIZE_OPTIONS: PAGINATION.PAGE_SIZE_OPTIONS,
 }
 
-const hasActiveButtonFilters = computed(() => resolvedFilter.value !== undefined || listFilter.value !== 'all')
+/** hasActiveButtonFilters enables reset for any status category or list-presence selection. */
+const hasActiveButtonFilters = computed(() => domainStatusFilter.value !== 'all' || listFilter.value !== 'all')
 const isGlobalStatsLoaded = computed(() => globalTotalQuery.value > 0)
 const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.value))
 
@@ -154,14 +166,23 @@ const getApiSearchQuery = (): string | undefined => {
   return getColumnFilterQuery('name')
 }
 
+/** Returns an exact existing list subtotal, or requests a full filtered scan when no matching aggregate exists. */
 const getKnownListFilterTotal = (): number | undefined => {
-  if (listFilter.value === 'all' || hasActiveSearch() || hasActiveColumnFilters.value) return undefined
+  if (
+    domainStatusFilter.value === 'unprocessed' ||
+    listFilter.value === 'all' ||
+    hasActiveSearch() ||
+    hasActiveColumnFilters.value
+  )
+    return undefined
 
+  // withListTotals holds existing all/resolved/unresolved counts for list members; none describes unprocessed domains.
   const withListTotals = {
     all: globalWithListTotal.value,
     resolved: globalWithListResolved.value,
     unresolved: globalWithListUnresolved.value,
   }
+  // withoutListTotals subtracts list members from the corresponding existing global all/resolved/unresolved counts.
   const withoutListTotals = {
     all: globalTotalQuery.value - globalWithListTotal.value,
     resolved: globalTotalResolved.value - globalWithListResolved.value,
@@ -196,6 +217,7 @@ const loadGlobalStats = async (isCurrent: () => boolean = () => true) => {
     if (!isStatsCurrent()) return
     globalTotalResolved.value = stats.domains.resolved
     globalTotalQuery.value = stats.domains.total
+    globalUnprocessed.value = stats.domains.unprocessed
     // The reduce callbacks accumulate each list's total, resolved and unresolved counts in sum.
     globalWithListTotal.value = stats.domains.per_list.reduce((sum, list) => sum + list.total, 0)
     globalWithListResolved.value = stats.domains.per_list.reduce((sum, list) => sum + list.resolved, 0)
@@ -220,6 +242,8 @@ const loadDomainsWithStats = async () => {
   const pageParams = { limit: pageSize.value, offset: offset.value }
   // resolved is the API filter used by every backend page in this request.
   const resolved = resolvedFilter.value
+  // unprocessed captures the server-side eligibility flag for every backend batch in this request.
+  const unprocessed = unprocessedFilter.value
   // forceClientPagination keeps the original list/column filtering policy for this request.
   const forceClientPagination = listFilter.value !== 'all' || hasActiveColumnFilters.value
   if (!isCurrent()) return
@@ -238,6 +262,7 @@ const loadDomainsWithStats = async () => {
         domainsApi.getAll({
           ...params,
           resolved,
+          unprocessed,
         }),
       pageParams,
       filterItem,
@@ -248,9 +273,7 @@ const loadDomainsWithStats = async () => {
       },
     )
 
-    if (!isCurrent()) return
-    domains.value = response.payload
-    totalItems.value = response.total_query
+    await publishDomainPage(response, isCurrent)
   } catch (error) {
     // error belongs to this load; an obsolete failure must not clear or notify over a newer intent.
     if (!isCurrent()) return
@@ -283,6 +306,8 @@ const runSearchDomains = async () => {
   const pageParams = { limit: pageSize.value, offset: offset.value }
   // resolved is the API filter used by every backend page in this request.
   const resolved = resolvedFilter.value
+  // unprocessed captures the server-side eligibility flag for every backend batch in this request.
+  const unprocessed = unprocessedFilter.value
   // forceClientPagination keeps the original list/column filtering policy for this request.
   const forceClientPagination = listFilter.value !== 'all' || hasActiveColumnFilters.value
   // query and notifySearch preserve the entered search for error context and accepted-result notifications.
@@ -297,15 +322,14 @@ const runSearchDomains = async () => {
         domainsApi.search(apiSearchQuery, {
           ...params,
           resolved,
+          unprocessed,
         }),
       pageParams,
       filterItem,
       forceClientPagination,
     )
 
-    if (!isCurrent()) return
-    domains.value = response.payload
-    totalItems.value = response.total_query
+    if (!(await publishDomainPage(response, isCurrent))) return
 
     if (notifySearch) {
       if (response.total_query === 0) {
@@ -327,6 +351,23 @@ const runSearchDomains = async () => {
   } finally {
     if (isCurrent()) isLoading.value = false
   }
+}
+
+/** Publishes the current response and reloads a valid final page if concurrent backend changes shortened the result. */
+const publishDomainPage = async (response: DomainsResponse, isCurrent: () => boolean): Promise<boolean> => {
+  if (!isCurrent()) return false
+  totalItems.value = response.total_query
+  // lastPage keeps empty results on page one while bounding every nonempty selection by its current filtered total.
+  const lastPage = Math.max(1, totalPages.value)
+  if (currentPage.value > lastPage) {
+    currentPage.value = lastPage
+    if (response.total_query > 0) {
+      await loadActiveDomains()
+      return false
+    }
+  }
+  domains.value = response.payload
+  return true
 }
 
 /**
@@ -370,6 +411,8 @@ const cancelPendingInputLoads = () => {
  * Go to specific page and load data
  */
 const goToPage = (page: number) => {
+  if (isLoading.value || !Number.isInteger(page) || page < 1 || page > totalPages.value || page === currentPage.value)
+    return
   cancelPendingInputLoads()
   currentPage.value = page
   loadActiveDomains()
@@ -379,6 +422,7 @@ const goToPage = (page: number) => {
  * Change page size and reload from first page
  */
 const changePageSize = (size: number) => {
+  if (isLoading.value || !PAGINATION.PAGE_SIZE_OPTIONS.includes(size) || size === pageSize.value) return
   cancelPendingInputLoads()
   pageSize.value = size
   currentPage.value = 1
@@ -390,21 +434,24 @@ const updateColumnFilters = (filters: TableColumnFilters) => {
   cancelPendingInputLoads()
   columnFilters.value = filters
   currentPage.value = 1
+  isLoading.value = true
   runColumnFiltersDebounced()
 }
 
 /** Invalidates old responses as soon as input changes, then schedules the existing search debounce. */
 const searchDomains = () => {
   cancelPendingInputLoads()
+  currentPage.value = 1
+  isLoading.value = true
   runSearchDomainsDebounced()
 }
 
 /**
- * Filter by resolved status
+ * Select one status category and reload its server-filtered first page.
  */
-const filterByResolved = (value: boolean | undefined) => {
+const filterByStatus = (value: DomainStatusFilter) => {
   cancelPendingInputLoads()
-  resolvedFilter.value = value
+  domainStatusFilter.value = value
   currentPage.value = 1 // Reset to first page
   loadActiveDomains()
 }
@@ -439,7 +486,7 @@ const filterByList = async (value: DomainListFilter) => {
  */
 const resetButtonFilters = () => {
   cancelPendingInputLoads()
-  resolvedFilter.value = undefined
+  domainStatusFilter.value = 'all'
   listFilter.value = 'all'
   currentPage.value = 1
   loadActiveDomains()
@@ -670,7 +717,7 @@ onMounted(() => {
     </div>
 
     <!-- Stats -->
-    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">Всего доменов</div>
         <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ globalTotalQuery }}</div>
@@ -685,12 +732,16 @@ onMounted(() => {
           {{ globalTotalQuery - globalTotalResolved }}
         </div>
       </div>
+      <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <div class="text-sm text-gray-600 dark:text-gray-400">Не обработано</div>
+        <div class="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">{{ globalUnprocessed }}</div>
+      </div>
     </div>
 
     <!-- Actions Bar -->
-    <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row">
+    <div class="mb-6 flex flex-col justify-between gap-4">
       <!-- Search and Filter -->
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
         <!-- Search -->
         <div class="relative max-w-md flex-1">
           <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -706,27 +757,38 @@ onMounted(() => {
         </div>
 
         <!-- Filter by Resolved Status -->
-        <div class="flex flex-wrap gap-2">
+        <div role="group" aria-label="Статус доменов" class="flex flex-wrap gap-2">
           <BaseButton
-            @click="filterByResolved(undefined)"
-            :variant="resolvedFilter === undefined ? 'primary' : 'ghost'"
+            @click="filterByStatus('all')"
+            :variant="domainStatusFilter === 'all' ? 'primary' : 'ghost'"
+            :aria-pressed="domainStatusFilter === 'all'"
             size="sm"
           >
             Все
           </BaseButton>
           <BaseButton
-            @click="filterByResolved(true)"
-            :variant="resolvedFilter === true ? 'primary' : 'ghost'"
+            @click="filterByStatus('resolved')"
+            :variant="domainStatusFilter === 'resolved' ? 'primary' : 'ghost'"
+            :aria-pressed="domainStatusFilter === 'resolved'"
             size="sm"
           >
             Определен
           </BaseButton>
           <BaseButton
-            @click="filterByResolved(false)"
-            :variant="resolvedFilter === false ? 'primary' : 'ghost'"
+            @click="filterByStatus('unresolved')"
+            :variant="domainStatusFilter === 'unresolved' ? 'primary' : 'ghost'"
+            :aria-pressed="domainStatusFilter === 'unresolved'"
             size="sm"
           >
             Не определен
+          </BaseButton>
+          <BaseButton
+            @click="filterByStatus('unprocessed')"
+            :variant="domainStatusFilter === 'unprocessed' ? 'primary' : 'ghost'"
+            :aria-pressed="domainStatusFilter === 'unprocessed'"
+            size="sm"
+          >
+            Не обработано
           </BaseButton>
         </div>
 
@@ -775,6 +837,20 @@ onMounted(() => {
         </BaseButton>
       </div>
     </div>
+
+    <PaginationControl
+      :current-page="pagination.currentPage.value"
+      :total-pages="pagination.totalPages.value"
+      :total-items="pagination.totalItems.value"
+      :page-size="pagination.pageSize.value"
+      :page-size-options="pagination.PAGE_SIZE_OPTIONS"
+      :is-loading="isLoading"
+      show-last-page
+      compact-mobile
+      aria-label="Пагинация доменов сверху"
+      @update:current-page="goToPage"
+      @update:page-size="changePageSize"
+    />
 
     <!-- Table -->
     <DataTable
@@ -896,12 +972,15 @@ onMounted(() => {
 
     <!-- Pagination -->
     <PaginationControl
-      v-if="domains.length > 0"
       :current-page="pagination.currentPage.value"
       :total-pages="pagination.totalPages.value"
       :total-items="pagination.totalItems.value"
       :page-size="pagination.pageSize.value"
       :page-size-options="pagination.PAGE_SIZE_OPTIONS"
+      :is-loading="isLoading"
+      show-last-page
+      compact-mobile
+      aria-label="Пагинация доменов снизу"
       @update:current-page="goToPage"
       @update:page-size="changePageSize"
     />
