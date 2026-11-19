@@ -171,10 +171,10 @@ describe('domain resolving', () => {
         method: 'POST',
         body: '{"domain":"example.test","dns_server_ids":[0,2]}',
       },
-      35000,
+      60000,
     )
     await domainsApi.resolveCheck({ id: 7 })
-    expect(requestMock).toHaveBeenLastCalledWith('/domains/resolve/check', { method: 'POST', body: '{"id":7}' }, 35000)
+    expect(requestMock).toHaveBeenLastCalledWith('/domains/resolve/check', { method: 'POST', body: '{"id":7}' }, 60000)
   })
 })
 

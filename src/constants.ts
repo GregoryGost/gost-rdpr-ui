@@ -51,8 +51,8 @@ export const VALIDATION = {
  * API configuration
  */
 export const API = {
-  TIMEOUT: 5000, // milliseconds  (5 seconds)
-  DOMAIN_RESOLVE_CHECK_TIMEOUT: 35000, // 30-second backend read timeout plus transport overhead
+  TIMEOUT: 60000, // Default timeout for receiving response headers, in milliseconds (60 seconds)
+  DOMAIN_RESOLVE_CHECK_TIMEOUT: 60000, // Wait for one-time resolve response headers, in milliseconds (60 seconds)
   // Use relative path to avoid CORS issues in production (nginx proxy)
   FALLBACK_BASE_URL: '/api',
   HEADERS: {
