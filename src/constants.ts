@@ -379,7 +379,60 @@ export const STATS_TEXTS = {
   PAGE_DESCRIPTION: 'Графики и аналитика по данным системы',
   NAV_TITLE: 'Статистика',
   SECTION_OVERVIEW: 'Обзор данных',
-  SECTION_LIVE: 'Активность за последний час',
+  /** Title of the live metrics section. */
+  ACTIVITY_TITLE: 'Активность сервиса',
+  /** Label of the shared polling delay selector. */
+  ACTIVITY_INTERVAL: 'Интервал опроса',
+  /** Label of the viewing window selector. */
+  ACTIVITY_PERIOD: 'Период графиков',
+  /** Status shown while the first scrape is pending. */
+  ACTIVITY_LOADING: 'Загрузка метрик…',
+  /** Status displayed when the latest poll cannot supply a complete scrape. */
+  ACTIVITY_ERROR: 'Метрики недоступны. Опрос продолжится.',
+  /** Prefix for the first observation time when history covers part of the selected window. */
+  ACTIVITY_COVERAGE: 'Наблюдения с',
+  /** Plot placeholder for an interval with no numeric points. */
+  ACTIVITY_NO_POINTS: 'Недостаточно данных',
+  /** Heading of the resolution outcome chart. */
+  ACTIVITY_RESOLUTION: 'Результаты резолвинга',
+  /** Unit of the normalized outcome rates. */
+  ACTIVITY_PER_MINUTE: 'Обработок в минуту',
+  /** Legend label for successful outcomes. */
+  ACTIVITY_SUCCESS: 'Успешно',
+  /** Legend label for partial outcomes. */
+  ACTIVITY_PARTIAL: 'Частично',
+  /** Legend label for failed outcomes. */
+  ACTIVITY_FAILURE: 'Ошибки',
+  /** Heading of the DNS duration chart. */
+  ACTIVITY_DNS: 'Задержка DNS и DoH',
+  /** Legend label for classic DNS observations. */
+  ACTIVITY_CLASSIC_DNS: 'DNS',
+  /** Legend label for DNS-over-HTTPS observations. */
+  ACTIVITY_DOH: 'DoH',
+  /** Heading of the SQLite writer queue residence chart. */
+  ACTIVITY_WRITER: 'Ожидание в очереди SQLite',
+  /** Unit of the mean duration observations. */
+  ACTIVITY_MS: 'Средняя задержка, мс',
+  /** Legend label for the SQLite duration series. */
+  ACTIVITY_MEAN: 'Среднее',
+  /** Heading of the run snapshot card. */
+  ACTIVITY_RUNS: 'Последние проходы',
+  /** Display name of the new domain resolving mode. */
+  ACTIVITY_RUN_NEW: 'Новые',
+  /** Display name of the stale domain resolving mode. */
+  ACTIVITY_RUN_STALE: 'Устаревшие',
+  /** Display name of the stored domain resolving mode. */
+  ACTIVITY_RUN_STORED: 'Сохранённые',
+  /** Label for the number of domains selected by a run. */
+  ACTIVITY_RUN_SELECTED: 'Выбрано',
+  /** Label for the number of physical attempts that started. */
+  ACTIVITY_RUN_ATTEMPTED: 'Попыток',
+  /** Label for write commands with confirmed persistence. */
+  ACTIVITY_RUN_CONFIRMED: 'Подтверждено',
+  /** Label for write commands awaiting a persistence result. */
+  ACTIVITY_RUN_PENDING: 'Ожидают',
+  /** Placeholder shown until the backend publishes a snapshot for a mode. */
+  ACTIVITY_NO_RUN: 'Нет данных о запуске',
   SECTION_GROWTH: 'Динамика роста',
   LABEL_ENTITY: 'Сущность',
   LABEL_GRANULARITY: 'Группировка',

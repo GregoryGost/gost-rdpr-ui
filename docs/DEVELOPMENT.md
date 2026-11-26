@@ -13,7 +13,7 @@
 - `src/api/endpoints/ips.ts` — методы для IP адресов и операций RIPEstat
 - `src/api/endpoints/ros.ts` — методы для конфигураций RouterOS
 - `src/api/endpoints/commands.ts` — методы для выполнения команд
-- `src/api/endpoints/stats.ts` — глобальная статистика (`getStats()`, `getGrowth()`)
+- `src/api/endpoints/stats.ts` — глобальная статистика, динамика роста и снимки OpenMetrics
 - `src/api/endpoints/index.ts` — централизованный экспорт
 
 ### 2. Composables ✅
@@ -37,8 +37,9 @@
 
 - **General:** `AppLogo`, `ErrorNotification`
 - **Dashboard:** `HealthStatusCard`, `VersionInfoCard`, `ConnectionAlert`, `PollingSettings`,
-  `ConfigurationCard`, `SparklineCard`, `StatsMetricCard`, `StatsPieCard`
-- **Charts:** `LineChart`, `BarChart`, `PieChart`
+  `ConfigurationCard`, `StatsMetricCard`, `StatsPieCard`
+- **Charts:** `ActivityChart`, `LineChart`, `BarChart`, `PieChart`
+- **Statistics:** `MetricsActivity` — общий опрос, графики активности и карточка последних проходов
 - **Domains:** `DomainResolveCheckModal`, `DomainResolveNowModal`
 - **IPs:** `IpRipePrefixModal`
 

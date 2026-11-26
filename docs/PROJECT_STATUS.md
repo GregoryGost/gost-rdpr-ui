@@ -43,10 +43,10 @@
 | ConnectionAlert   | `src/components/dashboard/ConnectionAlert.vue`   |
 | PollingSettings   | `src/components/dashboard/PollingSettings.vue`   |
 | ConfigurationCard | `src/components/dashboard/ConfigurationCard.vue` |
-| SparklineCard     | `src/components/dashboard/SparklineCard.vue`     |
 | StatsMetricCard   | `src/components/dashboard/StatsMetricCard.vue`   |
 | StatsPieCard      | `src/components/dashboard/StatsPieCard.vue`      |
 | **Charts**        |                                                  |
+| ActivityChart     | `src/components/charts/ActivityChart.vue`        |
 | LineChart         | `src/components/charts/LineChart.vue`            |
 | BarChart          | `src/components/charts/BarChart.vue`             |
 | PieChart          | `src/components/charts/PieChart.vue`             |

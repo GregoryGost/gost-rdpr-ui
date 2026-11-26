@@ -1,7 +1,7 @@
 /**
  * Statistics API endpoints
  */
-import { apiRequest } from '@/api/client'
+import { apiRequest, apiRequestText } from '@/api/client'
 import type { StatsResponse, StatsGrowthResponse, StatsGrowthParams } from '@/api/types/stats'
 
 function toApiDate(value: string | null | undefined): string {
@@ -12,6 +12,11 @@ function toApiDate(value: string | null | undefined): string {
 export const statsApi = {
   getStats(): Promise<StatsResponse> {
     return apiRequest<StatsResponse>('/stats')
+  },
+
+  /** Reads the current OpenMetrics exposition through the configured API base URL. */
+  getMetrics(signal: AbortSignal): Promise<string> {
+    return apiRequestText('/metrics', signal)
   },
 
   getGrowth(params: StatsGrowthParams): Promise<StatsGrowthResponse> {

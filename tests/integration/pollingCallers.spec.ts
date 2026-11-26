@@ -2,13 +2,12 @@ import { createTestingPinia } from '@pinia/testing'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import HomePage from '@/pages/HomePage.vue'
-import SparklineCard from '@/components/dashboard/SparklineCard.vue'
+import MetricsActivity from '@/pages/stats/MetricsActivity.vue'
 import PollingSettings from '@/components/dashboard/PollingSettings.vue'
 import { apiRequest } from '@/api/client'
 import { statsApi } from '@/api/endpoints/stats'
-import type { StatsGrowthResponse } from '@/api/types/stats'
 import { useHealthStore, type HealthData } from '@/stores/health'
-import { deferred, growth, statistics } from '../fixtures/components/responses'
+import { deferred, statistics } from '../fixtures/components/responses'
 
 /** Replaces transport alone while preserving ApiError classes imported by error handling. */
 vi.mock('@/api/client', async (importOriginal) => ({
@@ -82,26 +81,77 @@ describe('polling callers', () => {
     expect(healthCalls()).toHaveLength(2)
   })
 
-  /** A slow chart's initial fetch cannot overlap refresh ticks; completion re-enables polling and unmount clears it. */
-  it('skips sparkline ticks while its initial request remains pending', async () => {
-    // initialGrowth keeps the mounted load unresolved for three refresh intervals.
-    const initialGrowth = deferred<StatsGrowthResponse>()
-    vi.spyOn(statsApi, 'getGrowth').mockReturnValueOnce(initialGrowth.promise).mockResolvedValue(growth())
-    // wrapper uses the actual chart, selected interval and usePolling lifecycle.
-    const wrapper = mount(SparklineCard, {
-      props: { entity: 'domains', label: 'Домены', color: '#123456', refreshInterval: 10_000 },
-    })
-    expect(statsApi.getGrowth).toHaveBeenCalledTimes(1)
-    await vi.advanceTimersByTimeAsync(30_000)
-    expect(statsApi.getGrowth).toHaveBeenCalledTimes(1)
-    initialGrowth.resolve(growth())
+  /** A busy scrape blocks later ticks and unmount aborts its fetch and releases both timers. */
+  it('keeps one metrics request pending and aborts it on unmount', async () => {
+    /** initial holds the first scrape across several configured timer ticks. */
+    const initial = deferred<Response>()
+    /** fetchMetrics serves the initial scrape and then waits for the next request's abort signal. */
+    const fetchMetrics = vi
+      .fn<typeof fetch>()
+      .mockReturnValueOnce(initial.promise)
+      .mockImplementationOnce((_url, options) => {
+        /** The executor rejects when the fetch for the pending scrape is cancelled. */
+        return new Promise((_resolve, reject) => {
+          /** The listener simulates cancellation at the same boundary as a real fetch. */
+          options?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+        })
+      })
+    vi.stubGlobal('fetch', fetchMetrics)
+
+    /** wrapper owns the real statistics activity section and its request lifetime. */
+    const wrapper = mount(MetricsActivity)
+    expect(fetchMetrics).toHaveBeenCalledTimes(1)
+    expect(fetchMetrics.mock.calls[0]?.[0]).toBe('/api/metrics')
+    await vi.advanceTimersByTimeAsync(9_000)
+    expect(fetchMetrics).toHaveBeenCalledTimes(1)
+    initial.resolve(new Response('resolution_run_snapshot{mode="new",field="selected"} 17\n# EOF\n'))
     await flushPromises()
     expect(wrapper.text()).toContain('17')
-    await vi.advanceTimersByTimeAsync(10_000)
-    expect(statsApi.getGrowth).toHaveBeenCalledTimes(2)
+
+    await vi.advanceTimersByTimeAsync(3_000)
+    expect(fetchMetrics).toHaveBeenCalledTimes(2)
+    /** signal comes from the pending fetch and records actual cancellation by the transport. */
+    const signal = fetchMetrics.mock.calls[1]?.[1]?.signal
+    expect(signal?.aborted).toBe(false)
     wrapper.unmount()
-    await vi.advanceTimersByTimeAsync(60_000)
-    expect(statsApi.getGrowth).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(9_000)
+    expect(signal?.aborted).toBe(true)
+    expect(fetchMetrics).toHaveBeenCalledTimes(2)
     expect(vi.getTimerCount()).toBe(0)
+  })
+
+  /** Elapsed time determines the rate, and a backward step in wall time clears the chart history. */
+  it('uses elapsed time for rates and clears graph history when the wall clock moves backwards', async () => {
+    /** initialTime anchors the simulated visit. monotonic is the elapsed clock controlled independently of Date. */
+    const initialTime = Date.UTC(2026, 0, 1, 12)
+    vi.setSystemTime(initialTime)
+    const monotonic = vi.spyOn(performance, 'now').mockReturnValue(0)
+    /** successes increases by three for each of the timed scrapes. */
+    let successes = 100
+    /** The mock serves cumulative counters without relying on a real backend or network timing. */
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async () => {
+        return new Response('resolution_run_events_total{mode="new",event="success"} ' + successes + '\n# EOF\n')
+      }),
+    )
+    /** wrapper mounts the actual activity section. chart contains the successful-outcome series and its legend. */
+    const wrapper = mount(MetricsActivity)
+    const chart = wrapper.get('article[aria-label="Результаты резолвинга"]')
+    await flushPromises()
+
+    vi.setSystemTime(initialTime + 2_000)
+    monotonic.mockReturnValue(3_000)
+    successes = 103
+    await vi.advanceTimersByTimeAsync(3_000)
+    expect(chart.get('dd').text()).toBe('60')
+    expect(chart.text()).not.toContain('Недостаточно данных')
+
+    vi.setSystemTime(initialTime - 60_000)
+    monotonic.mockReturnValue(6_000)
+    successes = 106
+    await vi.advanceTimersByTimeAsync(3_000)
+    expect(chart.get('dd').text()).toBe('—')
+    expect(chart.text()).toContain('Недостаточно данных')
   })
 })

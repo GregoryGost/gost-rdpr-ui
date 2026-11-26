@@ -5,7 +5,7 @@ import LineChart from '@/components/charts/LineChart.vue'
 import BarChart from '@/components/charts/BarChart.vue'
 import StatsMetricCard from '@/components/dashboard/StatsMetricCard.vue'
 import StatsPieCard from '@/components/dashboard/StatsPieCard.vue'
-import SparklineCard from '@/components/dashboard/SparklineCard.vue'
+import MetricsActivity from './MetricsActivity.vue'
 import { STATS_TEXTS } from '@/constants'
 import { errorHandler } from '@/utils/errorHandler'
 import type {
@@ -281,17 +281,7 @@ onMounted(() => {
       </p>
     </section>
 
-    <!-- Live sparklines -->
-    <section class="mt-10">
-      <h2 class="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-200">
-        {{ STATS_TEXTS.SECTION_LIVE }}
-      </h2>
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <SparklineCard entity="domains" :label="STATS_TEXTS.ENTITY_DOMAINS" color="#6366f1" date-field="updated_at" />
-        <SparklineCard entity="lists" :label="STATS_TEXTS.ENTITY_LISTS" color="#14b8a6" date-field="updated_at" />
-        <SparklineCard entity="ips" :label="STATS_TEXTS.ENTITY_IPS" color="#a855f7" date-field="updated_at" />
-      </div>
-    </section>
+    <MetricsActivity />
 
     <!-- Growth chart -->
     <section class="mt-10">
