@@ -309,3 +309,97 @@ test('isolates a network failure and starts with a fresh baseline after recovery
   await expectReading(page, 'Результаты резолвинга', /Успешно\s*—/)
   expect(scrapeCount(api)).toBe(8)
 })
+
+/** The growth card labels loading and failure with submitted filters, then preserves focus on keyboard retry. */
+test('keeps growth totals tied to the submitted filters during loading, failure and retry', async ({
+  page,
+  api,
+  baseURL,
+}) => {
+  api.expectedConsoleErrors.push(/Failed to load resource: the server responded with a status of 500/)
+  api.expectedConsoleErrors.push(/^\{type: api, severity: error, message: Контролируемая ошибка графика,/)
+  // failure holds the first IP response so the assertions can inspect the active loading state deterministically.
+  const failure = Promise.withResolvers<void>()
+  /** Matches IP growth on the local preview so other requests still go through the shared API guard. */
+  const isIpGrowth = (url: URL): boolean =>
+    url.origin === baseURL && url.pathname === '/api/stats/growth' && url.searchParams.get('entity') === 'ips'
+  // ipGrowthQueries records every outgoing IP growth query across both intercepted replies and any draft submission.
+  const ipGrowthQueries: string[] = []
+  /** Records the filter parameters of each IP growth GET request in a consistent order for comparison. */
+  page.on('request', (request) => {
+    // url holds the outgoing request, with its query ordered locally without altering the browser request.
+    const url = new URL(request.url())
+    if (request.method() !== 'GET' || !isIpGrowth(url)) return
+    url.searchParams.sort()
+    ipGrowthQueries.push(url.search)
+  })
+  /** The once-only handler waits for the test to inspect loading and then returns an HTTP error. */
+  await page.route(
+    isIpGrowth,
+    async (route) => {
+      await failure.promise
+      await route.fulfill({ status: 500, json: { error: 'Контролируемая ошибка графика' } })
+    },
+    { times: 1 },
+  )
+
+  // previousTotal is the initial domains result. chart is the stable region for status and focus.
+  // entity submits a new query. granularity edits a draft. retry repeats the failed query.
+  const previousTotal = page.getByText('Всего за период: 17', { exact: true })
+  const chart = page.getByRole('region', { name: 'График роста', exact: true })
+  const entity = page.getByRole('combobox', { name: 'Сущность', exact: true })
+  const granularity = page.getByRole('combobox', { name: 'Группировка', exact: true })
+  const retry = page.getByRole('button', { name: 'Повторить', exact: true })
+  try {
+    await page.goto('/#/stats')
+    await expect(previousTotal).toBeVisible()
+    await entity.selectOption('ips')
+    await expect(page.getByRole('heading', { name: 'IP адреса — Час', exact: true })).toBeVisible()
+    await expect(chart.getByRole('status')).toHaveText('Загрузка графика…')
+    await expect(previousTotal).toHaveCount(0)
+  } finally {
+    failure.resolve()
+  }
+  await expect(page.getByRole('alert').filter({ hasText: 'Не удалось загрузить график' })).toBeVisible()
+  await expect(previousTotal).toHaveCount(0)
+
+  await granularity.selectOption('day')
+  await expect(granularity).toHaveValue('day')
+  await expect(chart.getByRole('heading', { name: 'IP адреса — Час', exact: true })).toBeVisible()
+  await expect(chart.getByRole('alert').filter({ hasText: 'Не удалось загрузить график' })).toBeVisible()
+  expect(ipGrowthQueries).toHaveLength(1)
+  expect(ipGrowthQueries[0]).toMatch(/[?&]granularity=hour(?:&|$)/)
+
+  /** The recovery handler serves a distinct IP total and echoes the requested range and granularity. */
+  await page.route(
+    isIpGrowth,
+    async (route) => {
+      // search supplies the requested granularity and both dates to the successful synthetic reply.
+      const search = new URL(route.request().url()).searchParams
+      await route.fulfill({
+        json: {
+          entity: 'ips',
+          granularity: search.get('granularity'),
+          start_date: search.get('start_date'),
+          end_date: search.get('end_date'),
+          ip_subtype: null,
+          payload: [{ date: '2026-01-01 00:00:00', count: 29 }],
+          total_in_period: 29,
+          duration: 0.001,
+        },
+      })
+    },
+    { times: 1 },
+  )
+  await retry.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByText('Всего за период: 29', { exact: true })).toBeVisible()
+  await expect(chart).toBeFocused()
+  await expect(chart.getByRole('heading', { name: 'IP адреса — Час', exact: true })).toBeVisible()
+  await expect(granularity).toHaveValue('day')
+  expect(ipGrowthQueries).toHaveLength(2)
+  expect(ipGrowthQueries[1]).toBe(ipGrowthQueries[0])
+  await expect(previousTotal).toHaveCount(0)
+  await expect(page.getByRole('alert').filter({ hasText: 'Не удалось загрузить график' })).toHaveCount(0)
+  expect(api.mutations).toEqual([])
+})

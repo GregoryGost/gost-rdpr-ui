@@ -356,8 +356,7 @@ const executeCommand = async () => {
           на всех устройствах RouterOS внесенных в конфигурации
         </p>
         <div class="mb-4">
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Тип IP адресов</label>
-          <BaseSelect v-model="rosIpType" :options="IP_TYPE_OPTIONS" />
+          <BaseSelect label="Тип IP адресов" v-model="rosIpType" :options="IP_TYPE_OPTIONS" />
         </div>
         <BaseButton
           @click="openConfirm('ros')"

@@ -27,16 +27,20 @@ import {
  * RouterOS Configs management page
  * @component RosConfigsPage
  */
+/** waitingForRefresh identifies the refresh after a successful mutation, including the wait before it begins. */
+const waitingForRefresh = ref(false)
 const searchQuery = ref('')
 const columnFilters = ref<TableColumnFilters>({})
 const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.value))
 
-/** configs holds accepted rows; isLoading tracks the current load; pagination owns page counters;
+/** configs holds accepted rows; isLoading tracks the current load;
+ * hasError records a failed table request; pagination owns page counters.
  * The loader callback uses params as the requested page and returns its backend response.
  * requests coordinates normal, search and filtered loads; loadConfigs loads the current normal page. */
 const {
   data: configs,
   isLoading,
+  hasError,
   pagination,
   requests,
   load: loadConfigs,
@@ -101,6 +105,7 @@ const loadSearchResults = async (shouldNotify = false) => {
   const query = searchQuery.value
   const filterItem = createRosColumnFilter()
   if (!isCurrent()) return
+  hasError.value = false
   isLoading.value = true
   try {
     // response holds the filtered rows and matching total; the fetch callback reuses the captured query.
@@ -121,6 +126,7 @@ const loadSearchResults = async (shouldNotify = false) => {
   } catch (error) {
     // error belongs to this search and is reported only if its intent remains current.
     if (!isCurrent()) return
+    hasError.value = true
     errorHandler.handleError(error, {
       action: 'searchConfigs',
       component: 'RosConfigsPage',
@@ -150,6 +156,7 @@ const loadFilteredConfigs = async () => {
   const isCurrent = requests.begin()
   const filterItem = createRosColumnFilter()
   if (!isCurrent()) return
+  hasError.value = false
   isLoading.value = true
   try {
     // response contains this filtered page and total; its fetch callback forwards each backend page unchanged.
@@ -168,6 +175,7 @@ const loadFilteredConfigs = async () => {
   } catch (error) {
     // error is relevant only while this filtered load remains current.
     if (!isCurrent()) return
+    hasError.value = true
     errorHandler.handleError(error, {
       action: 'loadFilteredConfigs',
       component: 'RosConfigsPage',
@@ -200,6 +208,7 @@ const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = 
 
 /** Cancels queued input loads and immediately invalidates all earlier request continuations. */
 const cancelPendingInputLoads = () => {
+  waitingForRefresh.value = false
   requests.invalidate()
   cancelSearchConfigsDebounce()
   cancelColumnFiltersDebounce()
@@ -310,6 +319,7 @@ const createConfig = async () => {
     if (!requests.isActive()) return
     closeAddModal()
     showSuccess(`${ROS_TEXTS.CONFIG_PREFIX} "${configHost}" ${ROS_TEXTS.SUCCESS_CREATED}`)
+    if (isCurrent()) waitingForRefresh.value = true
     await delay()
     if (!requests.isActive()) return
     // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
@@ -326,7 +336,10 @@ const createConfig = async () => {
       host: configHost,
     })
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
@@ -359,6 +372,7 @@ const deleteConfig = async () => {
     showSuccess(`${ROS_TEXTS.CONFIG_PREFIX} #${configId} ${ROS_TEXTS.SUCCESS_DELETED}`)
 
     // Reload data after deletion
+    if (isCurrent()) waitingForRefresh.value = true
     await delay()
     if (!requests.isActive()) return
     // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
@@ -369,7 +383,7 @@ const deleteConfig = async () => {
 
     if (!isCurrent()) return
     // Check if we need to go to previous page (if current page is now empty)
-    if (configs.value.length === 0 && pagination.currentPage.value > 1) {
+    if (!hasError.value && configs.value.length === 0 && pagination.currentPage.value > 1) {
       // previousPageLoad starts the fallback synchronously; capture its ownership before awaiting it.
       const previousPageLoad = goToActivePage(pagination.currentPage.value - 1)
       isCurrent = requests.capture()
@@ -386,7 +400,10 @@ const deleteConfig = async () => {
     isDeleteConfirmOpen.value = false
     configToDelete.value = null
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
@@ -410,7 +427,7 @@ onMounted(() => {
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">Всего конфигураций</div>
         <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ pagination.totalItems.value }}</div>
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">{{ ROS_TEXTS.STATS_TOTAL_HINT }}</p>
+        <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">{{ ROS_TEXTS.STATS_TOTAL_HINT }}</p>
       </div>
     </div>
 
@@ -425,6 +442,7 @@ onMounted(() => {
           v-model="searchQuery"
           @input="searchConfigs"
           type="search"
+          aria-label="Поиск по хосту, пользователю или BGP списку"
           :placeholder="ROS_TEXTS.SEARCH_PLACEHOLDER"
           class="block w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-10 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
         />
@@ -442,10 +460,14 @@ onMounted(() => {
       :data="configs"
       :columns="TABLE_COLUMNS"
       :is-loading="isLoading"
+      :has-error="hasError"
+      :loading-message="waitingForRefresh ? 'Изменения сохранены. Обновляем список…' : undefined"
+      row-action-column="host"
       :column-filters="columnFilters"
       :empty-message="ROS_TEXTS.EMPTY_MESSAGE"
       @update:column-filters="updateColumnFilters"
       @row-click="openViewModal"
+      @retry="loadActiveConfigs()"
     >
       <template #cell-host="{ value }">
         <span class="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{{ value }}</span>
@@ -464,7 +486,12 @@ onMounted(() => {
       </template>
 
       <template #cell-actions="{ row }">
-        <BaseButton variant="danger" size="sm" @click.stop="openDeleteConfirm(row.id)">
+        <BaseButton
+          variant="danger"
+          size="sm"
+          :aria-label="`Удалить конфигурацию RouterOS: ${row.host}`"
+          @click.stop="openDeleteConfirm(row.id)"
+        >
           <TrashIcon class="h-4 w-4" />
         </BaseButton>
       </template>
@@ -486,74 +513,72 @@ onMounted(() => {
     <BaseModal :is-open="isAddModalOpen" :title="ROS_TEXTS.MODAL_TITLE" @close="closeAddModal">
       <form @submit.prevent="createConfig" class="space-y-4">
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ ROS_TEXTS.LABEL_HOST }} <span class="text-red-500">*</span>
-          </label>
           <BaseInput
+            :label="ROS_TEXTS.LABEL_HOST"
             v-model="formData.host"
             type="text"
             :placeholder="ROS_TEXTS.PLACEHOLDER_HOST"
             :error="formErrors.host"
             required
+            aria-describedby="rosconfigs-hint-host"
           />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p id="rosconfigs-hint-host" class="mt-1 text-xs text-gray-600 dark:text-gray-400">
             {{ ROS_TEXTS.HINT_HOST }}
           </p>
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ ROS_TEXTS.LABEL_USER }} <span class="text-red-500">*</span>
-          </label>
           <BaseInput
+            :label="ROS_TEXTS.LABEL_USER"
             v-model="formData.user"
             type="text"
             :placeholder="ROS_TEXTS.PLACEHOLDER_USER"
             :error="formErrors.user"
             required
+            aria-describedby="rosconfigs-hint-user"
           />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p id="rosconfigs-hint-user" class="mt-1 text-xs text-gray-600 dark:text-gray-400">
             {{ ROS_TEXTS.HINT_USER }}
           </p>
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ ROS_TEXTS.LABEL_PASSWORD }} <span class="text-red-500">*</span>
-          </label>
           <BaseInput
+            :label="ROS_TEXTS.LABEL_PASSWORD"
             v-model="formData.user_password"
             type="password"
             :placeholder="ROS_TEXTS.PLACEHOLDER_PASSWORD"
             :error="formErrors.user_password"
             required
+            aria-describedby="rosconfigs-hint-password"
           />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p id="rosconfigs-hint-password" class="mt-1 text-xs text-gray-600 dark:text-gray-400">
             {{ ROS_TEXTS.HINT_PASSWORD }}
           </p>
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ ROS_TEXTS.LABEL_BGP_LIST_NAME }} <span class="text-red-500">*</span>
-          </label>
           <BaseInput
+            :label="ROS_TEXTS.LABEL_BGP_LIST_NAME"
             v-model="formData.bgp_list_name"
             type="text"
             :placeholder="ROS_TEXTS.PLACEHOLDER_BGP_LIST_NAME"
             :error="formErrors.bgp_list_name"
             required
+            aria-describedby="rosconfigs-hint-bgp-list-name"
           />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p id="rosconfigs-hint-bgp-list-name" class="mt-1 text-xs text-gray-600 dark:text-gray-400">
             {{ ROS_TEXTS.HINT_BGP_LIST_NAME }}
           </p>
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ ROS_TEXTS.LABEL_DESCRIPTION }}
-          </label>
-          <BaseTextarea v-model="formData.description!" :placeholder="ROS_TEXTS.PLACEHOLDER_DESCRIPTION" :rows="2" />
+          <BaseTextarea
+            :label="ROS_TEXTS.LABEL_DESCRIPTION"
+            v-model="formData.description!"
+            :placeholder="ROS_TEXTS.PLACEHOLDER_DESCRIPTION"
+            :rows="2"
+          />
         </div>
 
         <div class="flex justify-end gap-3 pt-4">
@@ -573,36 +598,36 @@ onMounted(() => {
         <!-- Config Info (Read-only) -->
         <div class="space-y-3">
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">ID</label>
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">ID</label>
             <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedConfig.id }}</p>
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ ROS_TEXTS.LABEL_HOST }}
             </label>
             <p class="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{{ selectedConfig.host }}</p>
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ ROS_TEXTS.LABEL_USER }}
             </label>
             <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedConfig.user }}</p>
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ ROS_TEXTS.LABEL_PASSWORD }}
             </label>
             <p class="font-mono text-sm text-gray-500 dark:text-gray-400">
               {{ ROS_TEXTS.PASSWORD_MASKED }}
             </p>
-            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Пароль скрыт из соображений безопасности</p>
+            <p class="mt-1 text-xs text-gray-600 dark:text-gray-300">Пароль скрыт из соображений безопасности</p>
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ ROS_TEXTS.LABEL_BGP_LIST_NAME }}
             </label>
             <p class="font-mono text-sm font-medium text-blue-600 dark:text-blue-400">
@@ -611,7 +636,7 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ ROS_TEXTS.LABEL_DESCRIPTION }}
             </label>
             <p v-if="selectedConfig.description" class="text-sm text-gray-900 dark:text-gray-100">
@@ -627,17 +652,17 @@ onMounted(() => {
 
             <div class="space-y-2">
               <div>
-                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Создано</label>
+                <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Создано</label>
                 <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedConfig.created_at_hum }}</p>
-                <p class="font-mono text-xs text-gray-500 dark:text-gray-400">
+                <p class="font-mono text-xs text-gray-600 dark:text-gray-400">
                   Timestamp: {{ selectedConfig.created_at }}
                 </p>
               </div>
 
               <div v-if="selectedConfig.updated_at_hum">
-                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Обновлено</label>
+                <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Обновлено</label>
                 <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedConfig.updated_at_hum }}</p>
-                <p class="font-mono text-xs text-gray-500 dark:text-gray-400">
+                <p class="font-mono text-xs text-gray-600 dark:text-gray-400">
                   Timestamp: {{ selectedConfig.updated_at }}
                 </p>
               </div>

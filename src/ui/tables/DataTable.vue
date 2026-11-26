@@ -47,17 +47,40 @@ const compareIp = (a: string, b: string): number => {
   return a.localeCompare(b)
 }
 
+/** props supplies the current rows and interaction options; defaults preserve standalone filtering. */
 const props = withDefaults(defineProps<DataTableProps<T>>(), {
   isLoading: false,
   emptyMessage: 'Нет данных',
   isColumnFilteringEnabled: true,
 })
 
+/** emit reports user interactions to the page that owns the data. */
 const emit = defineEmits<{
+  /** Opens the current record through the page's row action. */
   rowClick: [row: T]
+  /** Reports the selected column and its next sort direction. */
   sort: [key: string, direction: SortDirection]
+  /** Publishes the current column filters to the page. */
   'update:columnFilters': [filters: TableColumnFilters]
+  /** Repeats the load using the page's active filters and search. */
+  retry: []
 }>()
+
+/** scrollRegion remains mounted while the retry button and data rows are replaced. */
+const scrollRegion = ref<HTMLElement | null>(null)
+
+/** Opens row for a plain-cell click. Descendant controls own their activation. */
+function activateRow(event: MouseEvent, row: T): void {
+  if (event.target instanceof Element && event.target.closest('a, button, input, select, textarea, [role="button"]'))
+    return
+  emit('rowClick', row)
+}
+
+/** Moves focus to the stable table region before retry replaces the focused button. */
+function retryLoad(): void {
+  scrollRegion.value?.focus()
+  emit('retry')
+}
 
 const sortKey = ref<string | null>(null)
 const sortDirection = ref<SortDirection>(null)
@@ -142,110 +165,163 @@ const sortedData = computed(() => {
 </script>
 
 <template>
-  <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-      <thead class="bg-gray-50 dark:bg-gray-800">
-        <tr>
-          <th
-            v-for="column in columns"
-            :key="getColumnKey(column)"
-            class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400"
-          >
-            <button
-              v-if="column.sortable"
-              type="button"
-              class="inline-flex items-center gap-1 transition-colors select-none hover:text-gray-700 dark:hover:text-gray-200"
+  <div>
+    <p role="status" class="sr-only">
+      {{ isLoading ? (loadingMessage ?? 'Загрузка...') : !hasError && sortedData.length === 0 ? emptyMessage : '' }}
+    </p>
+    <div
+      ref="scrollRegion"
+      role="region"
+      aria-label="Таблица данных"
+      tabindex="0"
+      :aria-busy="isLoading"
+      class="overflow-x-auto rounded-lg border border-gray-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:border-gray-700"
+    >
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-800">
+          <tr>
+            <th
+              v-for="column in columns"
+              :key="getColumnKey(column)"
               :aria-sort="
-                sortKey === getColumnKey(column) ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'
+                sortKey === getColumnKey(column) && sortDirection
+                  ? sortDirection === 'asc'
+                    ? 'ascending'
+                    : 'descending'
+                  : undefined
               "
-              @click="toggleSort(column)"
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400"
             >
-              {{ column.label }}
-              <span class="inline-flex flex-col">
-                <svg
-                  viewBox="0 0 10 6"
-                  class="h-2 w-2 transition-opacity"
-                  :class="
-                    sortKey === getColumnKey(column) && sortDirection === 'asc'
-                      ? 'text-blue-500 opacity-100'
-                      : 'opacity-30'
-                  "
-                  fill="currentColor"
-                >
-                  <path d="M5 0L10 6H0z" />
-                </svg>
-                <svg
-                  viewBox="0 0 10 6"
-                  class="h-2 w-2 transition-opacity"
-                  :class="
-                    sortKey === getColumnKey(column) && sortDirection === 'desc'
-                      ? 'text-blue-500 opacity-100'
-                      : 'opacity-30'
-                  "
-                  fill="currentColor"
-                >
-                  <path d="M5 6L0 0H10z" />
-                </svg>
-              </span>
-            </button>
-            <span v-else>{{ column.label }}</span>
-          </th>
-        </tr>
-        <tr v-if="hasFilterableColumns" class="border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-          <th v-for="column in columns" :key="`${getColumnKey(column)}-filter`" class="px-6 py-2 text-left">
-            <input
-              v-if="isFilterableColumn(column)"
-              :value="getColumnFilterValue(column)"
-              type="search"
-              :aria-label="`Фильтр: ${column.label}`"
-              :placeholder="column.filterPlaceholder || column.label"
-              class="block w-full min-w-24 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-normal text-gray-900 placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
-              @click.stop
-              @input="updateColumnFilter(column, ($event.target as HTMLInputElement).value)"
-            />
-          </th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-        <tr v-if="isLoading">
-          <td :colspan="columns.length" class="px-6 py-4 text-center text-gray-500">
-            <div class="flex items-center justify-center">
-              <svg class="mr-3 h-5 w-5 animate-spin" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              Загрузка...
-            </div>
-          </td>
-        </tr>
-        <tr v-else-if="sortedData.length === 0">
-          <td :colspan="columns.length" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-            {{ emptyMessage }}
-          </td>
-        </tr>
-        <tr
-          v-else
-          v-for="(row, index) in sortedData"
-          :key="index"
-          @click="emit('rowClick', row)"
-          class="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
-        >
-          <td
-            v-for="column in columns"
-            :key="String(column.key)"
-            class="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-gray-100"
+              <button
+                v-if="column.sortable"
+                type="button"
+                class="inline-flex items-center gap-1 transition-colors select-none hover:text-gray-700 dark:hover:text-gray-200"
+                @click="toggleSort(column)"
+              >
+                {{ column.label }}
+                <span aria-hidden="true" class="inline-flex flex-col">
+                  <svg
+                    viewBox="0 0 10 6"
+                    class="h-2 w-2 transition-opacity"
+                    :class="
+                      sortKey === getColumnKey(column) && sortDirection === 'asc'
+                        ? 'text-blue-500 opacity-100'
+                        : 'opacity-30'
+                    "
+                    fill="currentColor"
+                  >
+                    <path d="M5 0L10 6H0z" />
+                  </svg>
+                  <svg
+                    viewBox="0 0 10 6"
+                    class="h-2 w-2 transition-opacity"
+                    :class="
+                      sortKey === getColumnKey(column) && sortDirection === 'desc'
+                        ? 'text-blue-500 opacity-100'
+                        : 'opacity-30'
+                    "
+                    fill="currentColor"
+                  >
+                    <path d="M5 6L0 0H10z" />
+                  </svg>
+                </span>
+              </button>
+              <span v-else>{{ column.label }}</span>
+            </th>
+          </tr>
+          <tr
+            v-if="hasFilterableColumns"
+            class="border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
           >
-            <slot :name="`cell-${String(column.key)}`" :row="row" :value="row[column.key as keyof T]">
-              {{ row[column.key as keyof T] }}
-            </slot>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            <th v-for="column in columns" :key="`${getColumnKey(column)}-filter`" class="px-6 py-2 text-left">
+              <input
+                v-if="isFilterableColumn(column)"
+                :value="getColumnFilterValue(column)"
+                type="search"
+                :aria-label="`Фильтр: ${column.label}`"
+                :placeholder="column.filterPlaceholder || column.label"
+                class="block w-full min-w-24 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-normal text-gray-900 placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                @click.stop
+                @input="updateColumnFilter(column, ($event.target as HTMLInputElement).value)"
+              />
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+          <tr v-if="isLoading">
+            <td :colspan="columns.length" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+              <div class="flex items-center justify-center">
+                <svg aria-hidden="true" class="mr-3 h-5 w-5 motion-safe:animate-spin" viewBox="0 0 24 24">
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                    fill="none"
+                  />
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                {{ loadingMessage ?? 'Загрузка...' }}
+              </div>
+            </td>
+          </tr>
+          <tr v-else-if="hasError">
+            <td :colspan="columns.length" class="px-6 py-5 text-center">
+              <p role="alert" class="mb-2 text-sm font-medium text-red-700 dark:text-red-300">
+                Не удалось загрузить данные
+              </p>
+              <button
+                type="button"
+                class="rounded-md px-3 py-2 text-sm font-medium text-blue-700 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:text-blue-300"
+                @click="retryLoad"
+              >
+                Повторить
+              </button>
+            </td>
+          </tr>
+          <tr v-else-if="sortedData.length === 0">
+            <td :colspan="columns.length" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+              {{ emptyMessage }}
+            </td>
+          </tr>
+          <tr
+            v-else
+            v-for="(row, index) in sortedData"
+            :key="index"
+            :class="rowActionColumn ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : ''"
+            @click="activateRow($event, row)"
+          >
+            <td
+              v-for="column in columns"
+              :key="String(column.key)"
+              class="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-gray-100"
+            >
+              <button
+                v-if="rowActionColumn === getColumnKey(column)"
+                type="button"
+                :aria-label="`Открыть карточку: ${String(row[column.key as keyof T] ?? '')}`"
+                class="rounded-sm text-left text-blue-700 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:text-blue-300"
+                @click.stop="emit('rowClick', row)"
+              >
+                <slot :name="`cell-${String(column.key)}`" :row="row" :value="row[column.key as keyof T]">
+                  {{ row[column.key as keyof T] }}
+                </slot>
+              </button>
+              <slot v-else :name="`cell-${String(column.key)}`" :row="row" :value="row[column.key as keyof T]">
+                {{ row[column.key as keyof T] }}
+              </slot>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 

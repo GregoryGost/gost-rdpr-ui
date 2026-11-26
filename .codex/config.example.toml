@@ -22,7 +22,7 @@ args = [
   "--output-max-size", "52428800",
   "--caps=vision,devtools",
   "--isolated",
-  "--browser=chrome",
+  "--browser=chromium",
   "--headless",
 ]
 enabled = true

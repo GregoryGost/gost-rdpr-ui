@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/vue'
+import { computed, useId } from 'vue'
+import { Listbox, ListboxButton, ListboxLabel, ListboxOptions, ListboxOption } from '@headlessui/vue'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
 
 /**
@@ -13,14 +13,23 @@ interface SelectOption {
   disabled?: boolean
 }
 
+/** Configures the selected value, available options, label and validation state of the listbox. */
 interface Props {
+  /** Current selection owned by the parent. */
   modelValue: string | number | null
+  /** Available entries in display order. */
   options: SelectOption[]
+  /** Visible label registered with the listbox and its trigger. */
+  label?: string
+  /** Text used when the current value has no matching option. */
   placeholder?: string
+  /** Optional validation message associated with the trigger. */
   error?: string
+  /** Prevents opening or changing the selection. */
   isDisabled?: boolean
 }
 
+/** props provides the choices and the parent-owned selected value. */
 const props = withDefaults(defineProps<Props>(), {
   placeholder: 'Выберите опцию',
   isDisabled: false,
@@ -30,6 +39,10 @@ const emit = defineEmits<{
   'update:modelValue': [value: string | number | null]
 }>()
 
+/** errorId identifies this listbox message independently of other instances. */
+const errorId = useId()
+
+/** selectedOption resolves the visible value; opt is each candidate choice. */
 const selectedOption = computed(() => props.options.find((opt) => opt.value === props.modelValue) || null)
 </script>
 
@@ -37,7 +50,12 @@ const selectedOption = computed(() => props.options.find((opt) => opt.value === 
   <div class="w-full">
     <Listbox :model-value="modelValue" :disabled="isDisabled" @update:model-value="emit('update:modelValue', $event)">
       <div class="relative">
+        <ListboxLabel v-if="label" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          {{ label }}
+        </ListboxLabel>
         <ListboxButton
+          :aria-invalid="error ? true : undefined"
+          :aria-describedby="error ? errorId : undefined"
           class="relative w-full cursor-pointer rounded-lg border border-gray-300 bg-white py-2 pr-10 pl-3 text-left focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800"
         >
           <span class="block truncate text-gray-900 dark:text-gray-100">
@@ -91,7 +109,7 @@ const selectedOption = computed(() => props.options.find((opt) => opt.value === 
         </transition>
       </div>
     </Listbox>
-    <p v-if="error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+    <p v-if="error" :id="errorId" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
   </div>
 </template>
 

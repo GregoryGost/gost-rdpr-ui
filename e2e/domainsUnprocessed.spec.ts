@@ -41,15 +41,15 @@ test('distinguishes missing processing dates from saved attempts and zero timest
   ]
   await page.goto('/#/domains')
   await expect(unprocessedCard(page)).toHaveText('Не обработано2')
-  await expect(page.getByRole('cell', { name: 'never-null.test', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Открыть карточку: never-null.test', exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'Не обработано', exact: true }).click()
   await expect(
     page.getByRole('group', { name: 'Статус доменов', exact: true }).getByRole('button', { pressed: true }),
   ).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Не обработано', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByText('Показано 1 - 2 из 2 результатов')).toHaveCount(2)
-  await expect(page.getByRole('cell', { name: 'never-null.test', exact: true })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'never-missing.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: never-null.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: never-missing.test', exact: true })).toBeVisible()
   // name identifies each explicit negative case, rather than recomputing the fixture's predicate in the assertion.
   for (const name of [
     'attempt-only.test',
@@ -60,17 +60,17 @@ test('distinguishes missing processing dates from saved attempts and zero timest
     'service-zero.test',
     'service-negative.test',
   ]) {
-    await expect(page.getByRole('cell', { name, exact: true })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: `Открыть карточку: ${name}`, exact: true })).toHaveCount(0)
   }
   expect(api.requests.at(-1)).toContain('unprocessed=true')
   expect(api.requests.at(-1)).not.toContain('resolved=false')
   await page.getByRole('button', { name: 'Со списком', exact: true }).click()
   await expect(page.getByText('Показано 1 - 1 из 1 результатов')).toHaveCount(2)
-  await expect(page.getByRole('cell', { name: 'never-null.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: never-null.test', exact: true })).toBeVisible()
   await expect(unprocessedCard(page)).toHaveText('Не обработано2')
   await page.getByRole('button', { name: 'Без списка', exact: true }).click()
-  await expect(page.getByRole('cell', { name: 'never-missing.test', exact: true })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'never-null.test', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Открыть карточку: never-missing.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: never-null.test', exact: true })).toHaveCount(0)
   await page.getByPlaceholder('Поиск по домену...').fill('never-missing')
   /** The search keeps the same one-row range, so the request itself distinguishes it from the preceding list. */
   await expect.poll(() => api.requests.at(-1)).toContain('/domains/search?text=never-missing')
@@ -82,12 +82,12 @@ test('distinguishes missing processing dates from saved attempts and zero timest
   await expect(page.getByRole('cell', { name: 'Домены не найдены', exact: true })).toBeVisible()
   await expect(unprocessedCard(page)).toHaveText('Не обработано2')
   await page.getByRole('searchbox', { name: 'Фильтр: Комментарий', exact: true }).fill('')
-  await expect(page.getByRole('cell', { name: 'never-missing.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: never-missing.test', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Сбросить', exact: true }).click()
   /** Reset preserves the current search and rows; its new public request must lose the status flag. */
   await expect.poll(() => api.requests.at(-1)).not.toContain('unprocessed=')
   await expect(page.getByRole('combobox', { name: 'На странице:', exact: true }).first()).toBeEnabled()
-  await expect(page.getByRole('cell', { name: 'never-missing.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: never-missing.test', exact: true })).toBeVisible()
   await expect(
     page.getByRole('group', { name: 'Статус доменов', exact: true }).getByRole('button', { pressed: true }),
   ).toHaveCount(1)
@@ -121,7 +121,7 @@ test('counts and pages combined unprocessed and list filters beyond the first ba
     .getByRole('button', { name: 'Последняя страница: 6', exact: true })
     .click()
   await expect(page.getByText('Показано 51 - 51 из 51 результатов')).toHaveCount(2)
-  await expect(page.getByRole('cell', { name: 'fresh-100.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: fresh-100.test', exact: true })).toBeVisible()
   await expect(unprocessedCard(page)).toHaveText('Не обработано101')
   await page.getByRole('button', { name: 'Не определен', exact: true }).click()
   /** This category has the same count as unprocessed here; observe the changed request before checking its total. */
@@ -131,7 +131,7 @@ test('counts and pages combined unprocessed and list filters beyond the first ba
   expect(api.requests.at(-1)).toContain('resolved=false')
   expect(api.requests.at(-1)).not.toContain('unprocessed=')
   await page.getByRole('button', { name: 'Определен', exact: true }).click()
-  await expect(page.getByRole('cell', { name: 'processed-listed.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: processed-listed.test', exact: true })).toBeVisible()
   expect(api.requests.at(-1)).toContain('resolved=true')
   expect(api.requests.at(-1)).not.toContain('unprocessed=')
   await page.getByRole('button', { name: 'Все', exact: true }).click()

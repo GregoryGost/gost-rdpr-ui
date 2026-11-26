@@ -5,17 +5,49 @@ import { test, expect, type ResolveOutcome } from './fixtures'
 async function openDomains(page: Page): Promise<void> {
   await page.goto('/#/domains')
   await expect(page.getByRole('heading', { level: 1, name: 'Домены', exact: true })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })).toBeVisible()
 }
 
 /** Opens name's existing row card through the real table, without application-internal access. */
 async function openCard(page: Page, name: string): Promise<Locator> {
-  await page.getByRole('cell', { name, exact: true }).click()
+  await page.getByRole('button', { name: `Открыть карточку: ${name}`, exact: true }).click()
   // card is the saved-domain dialog, distinguishable from background and diagnostic dialogs by its title.
   const card = page.getByRole('dialog', { name: `Домен: ${name}`, exact: true })
   await expect(card.getByRole('heading', { name: `Домен: ${name}`, exact: true })).toBeVisible()
   return card
 }
+
+/** The saved-card and diagnostic buttons must remain separate actions when activated with the keyboard. */
+test('opens the saved domain by keyboard and restores focus without activating its diagnostic', async ({
+  page,
+  api,
+}) => {
+  await openDomains(page)
+  // opener is the domain's primary button; savedCard is the dialog that shows the stored record.
+  const opener = page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })
+  const savedCard = page.getByRole('dialog', { name: 'Домен: dated.example.test', exact: true })
+  await expect(opener).toHaveJSProperty('tagName', 'BUTTON')
+  await expect(opener).toHaveJSProperty('tabIndex', 0)
+  await opener.focus()
+  await opener.press('Enter')
+  await expect(savedCard.getByText('192.0.2.10', { exact: true })).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(1)
+  await page.keyboard.press('Escape')
+  await expect(savedCard).toHaveCount(0)
+  await expect(opener).toBeFocused()
+
+  // diagnostic opens its own confirmation step, which has no side effects until the user confirms.
+  const diagnostic = page.getByRole('button', { name: 'Проверить резолвинг домена: dated.example.test', exact: true })
+  await diagnostic.focus()
+  await diagnostic.press('Space')
+  await expect(
+    page
+      .getByRole('dialog', { name: 'Проверка резолвинга домена', exact: true })
+      .getByRole('heading', { name: 'Проверка резолвинга домена', exact: true }),
+  ).toBeVisible()
+  await expect(savedCard).toHaveCount(0)
+  expect(api.mutations).toEqual([])
+})
 
 /** Checks label's displayed date inside its own timestamp block, avoiding matching another date elsewhere. */
 async function expectDate(card: Locator, label: string, value: string): Promise<void> {
@@ -31,14 +63,14 @@ test('navigates between home, domains, history and an unknown hash route', async
   await page.getByRole('link', { name: 'Домены', exact: true }).click()
   await expect(page).toHaveURL(/\/#\/domains$/)
   await expect(page).toHaveTitle('Домены — GOST-RDPR Ui')
-  await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })).toBeVisible()
   await page.goBack()
   await expect(page.getByRole('heading', { level: 1, name: 'Главная' })).toBeVisible()
   await expect(page).toHaveTitle('Главная — GOST-RDPR Ui')
   await page.goForward()
   await expect(page.getByRole('heading', { level: 1, name: 'Домены', exact: true })).toBeVisible()
   await page.reload()
-  await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })).toBeVisible()
   await expect(page).toHaveTitle('Домены — GOST-RDPR Ui')
   await page.goto('/#/missing-example-route')
   await expect(page.getByRole('heading', { level: 1, name: '404' })).toBeVisible()
@@ -55,16 +87,16 @@ test('pages and combines domain filters before opening a matching card', async (
     .getByRole('navigation', { name: 'Пагинация доменов сверху' })
     .getByRole('button', { name: '2', exact: true })
     .click()
-  await expect(page.getByRole('cell', { name: 'page-11.example.test', exact: true })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Открыть карточку: page-11.example.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })).toHaveCount(0)
   await expect(page.getByText('Показано 11 - 20 из 26 результатов').first()).toBeVisible()
   await page.getByRole('button', { name: 'Не определен', exact: true }).click()
-  await expect(page.getByRole('cell', { name: 'unknown.example.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: unknown.example.test', exact: true })).toBeVisible()
   await expect(page.getByText('Показано 1 - 10 из 12 результатов').first()).toBeVisible()
   await page.getByRole('button', { name: 'Со списком', exact: true }).click()
-  await expect(page.getByText('Домены не найдены', { exact: true })).toBeVisible()
+  await expect(page.getByRole('cell', { name: 'Домены не найдены', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Сбросить', exact: true }).click()
-  await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })).toBeVisible()
   await page.getByRole('searchbox', { name: 'Фильтр: Комментарий', exact: true }).fill('primary')
   await page.getByRole('searchbox', { name: 'Фильтр: Домен', exact: true }).fill('dated')
   await expect(page.getByText('Показано 1 - 1 из 1 результатов').first()).toBeVisible()
@@ -207,7 +239,7 @@ test('validates creation, creates the submitted domain, cancels then confirms de
   // row is the newly created entity, identified by its visible name rather than a positional index.
   const row = page
     .getByRole('row')
-    .filter({ has: page.getByRole('cell', { name: 'created.example.test', exact: true }) })
+    .filter({ has: page.getByRole('button', { name: 'Открыть карточку: created.example.test', exact: true }) })
   // The condition allows the application's real seven-second acceptance delay without replacing browser focus timers.
   await expect(row).toBeVisible({ timeout: 10_000 })
   await row.getByRole('button', { name: 'Удалить домен', exact: true }).click()
@@ -235,6 +267,8 @@ test('shows loading, empty results, API failure notification and recovery', asyn
   await expect(page.getByRole('cell', { name: 'Загрузка...', exact: true })).toBeVisible()
   /** The poll callback waits until the list request has reached the fixture before releasing its empty reply. */
   await expect.poll(() => api.heldDomains.length).toBe(1)
+  // recoveredDomains holds the successful response used to verify that retry reloads the table.
+  const recoveredDomains = api.domains.slice(0, 1)
   api.domains = []
   await api.releaseDomains()
   await expect(page.getByRole('cell', { name: 'Домены не найдены', exact: true })).toBeVisible()
@@ -243,10 +277,16 @@ test('shows loading, empty results, API failure notification and recovery', asyn
   api.expectedConsoleErrors.push(/^\{type: api, severity: error, message: Контролируемая ошибка списка доменов,/)
   await page.getByRole('button', { name: 'Все', exact: true }).click()
   await expect(page.getByRole('alert').filter({ hasText: 'Контролируемая ошибка списка доменов' })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'Домены не найдены', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Все', exact: true }).click()
-  await expect(page.getByRole('cell', { name: 'Домены не найдены', exact: true })).toBeVisible()
+  // table scopes the durable error and retry to the list itself, outside its transient alert notification.
+  const table = page.getByRole('table')
+  await expect(table.getByText('Не удалось загрузить данные', { exact: true })).toBeVisible()
+  await expect(table.getByText('Домены не найдены', { exact: true })).toHaveCount(0)
+  api.domains = recoveredDomains
+  await table.getByRole('button', { name: 'Повторить', exact: true }).click()
+  await expect(table.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })).toBeVisible()
+  await expect(table.getByText('Не удалось загрузить данные', { exact: true })).toHaveCount(0)
   expect(api.nextDomainStatus).toBeNull()
+  expect(api.mutations).toEqual([])
 })
 
 /** New input invalidates an older in-flight search immediately, before its replacement debounce expires. */
@@ -263,7 +303,7 @@ test('rejects an old search response during the new input debounce gap', async (
   await page.getByPlaceholder('Поиск по домену...').fill('dated')
   await api.releaseSearch('legacy')
   await page.clock.runFor(100)
-  await expect(page.getByRole('cell', { name: 'legacy.example.test', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Открыть карточку: legacy.example.test', exact: true })).toHaveCount(0)
   await expect(page.getByRole('cell', { name: 'Загрузка...', exact: true })).toBeVisible()
   expect(api.heldSearches.has('dated')).toBe(false)
   await expect(page.getByRole('alert').filter({ hasText: 'Найдено доменов:' })).toHaveCount(0)
@@ -272,8 +312,8 @@ test('rejects an old search response during the new input debounce gap', async (
   await expect.poll(() => api.heldSearches.has('dated')).toBe(true)
   await api.releaseSearch('dated')
   await page.clock.resume()
-  await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'legacy.example.test', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: legacy.example.test', exact: true })).toHaveCount(0)
   await expect(page.getByRole('alert').filter({ hasText: 'Найдено доменов: 1' })).toHaveCount(1)
 })
 
@@ -289,7 +329,7 @@ test('preserves the newest search when responses complete in inverse order', asy
   /** The poll callback establishes that both requests are pending before inverse completion. */
   await expect.poll(() => api.heldSearches.has('dated')).toBe(true)
   await api.releaseSearch('dated')
-  await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })).toBeVisible()
   // oldResponse's predicate selects the legacy response so its completion precedes the rendering check.
   const oldResponse = page.waitForResponse((response) => new URL(response.url()).searchParams.get('text') === 'legacy')
   await api.releaseSearch('legacy')
@@ -299,8 +339,8 @@ test('preserves the newest search when responses complete in inverse order', asy
   await page.evaluate(
     () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
   )
-  await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'legacy.example.test', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: legacy.example.test', exact: true })).toHaveCount(0)
   await expect(page.getByRole('alert').filter({ hasText: 'Найдено доменов: 1' })).toHaveCount(1)
 })
 
@@ -336,8 +376,8 @@ test('refreshes saved counts and the current search after creation during a quer
   await expect(page.getByText('Показано 1 - 1 из 1 результатов').first()).toBeVisible()
   await page.clock.fastForward(7000)
   await expect(page.getByText('Всего доменов', { exact: true }).locator('..')).toHaveText('Всего доменов4')
-  await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'created.example.test', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: created.example.test', exact: true })).toHaveCount(0)
   await page.getByPlaceholder('Поиск по домену...').fill('created')
-  await expect(page.getByRole('cell', { name: 'created.example.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: created.example.test', exact: true })).toBeVisible()
 })

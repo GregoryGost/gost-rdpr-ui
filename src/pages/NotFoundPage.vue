@@ -9,6 +9,7 @@ import {
   MapPinIcon,
   Cog6ToothIcon,
   CommandLineIcon,
+  ChartBarIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/vue/24/outline'
 
@@ -16,15 +17,21 @@ import {
  * 404 Not Found page
  * @component NotFoundPage
  */
+/** Describes a destination and the reason to open it from the recovery page. */
 interface PageLink {
+  /** Visible destination name used as the link text. */
   label: string
+  /** Public hash-router path for the destination. */
   path: string
+  /** Decorative icon that helps identify the destination. */
   icon: typeof HomeIcon
+  /** Short explanation of the page's purpose. */
   description: string
 }
 
 const router = useRouter()
 
+/** availablePages lists destinations that help visitors recover from an unknown address. */
 const availablePages: PageLink[] = [
   {
     label: 'Главная',
@@ -74,6 +81,12 @@ const availablePages: PageLink[] = [
     icon: CommandLineIcon,
     description: 'Выполнение команд для конфигураций',
   },
+  {
+    label: 'Статистика',
+    path: '/stats',
+    icon: ChartBarIcon,
+    description: 'Сводные данные и графики активности',
+  },
 ]
 
 const goToHome = () => {
@@ -91,7 +104,7 @@ const goToHome = () => {
         </div>
         <h1 class="mb-2 text-6xl font-bold text-gray-900 dark:text-gray-100">404</h1>
         <p class="text-xl text-gray-600 dark:text-gray-400">Страница не найдена</p>
-        <p class="mt-2 text-sm text-gray-500 dark:text-gray-500">
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
           К сожалению, запрашиваемая страница не существует или была перемещена
         </p>
       </div>
@@ -100,7 +113,7 @@ const goToHome = () => {
       <div class="mb-8 flex justify-center">
         <button
           @click="goToHome"
-          class="rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+          class="rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
         >
           <HomeIcon class="mr-2 inline-block h-5 w-5" />
           Вернуться на главную

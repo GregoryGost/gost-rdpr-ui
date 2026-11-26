@@ -35,7 +35,7 @@ describe('modal components', () => {
     const body = new DOMWrapper(document.body)
     expect(body.get('[role="dialog"]').text()).toContain('Карточка домена')
     expect(body.get('[role="dialog"]').text()).toContain('example.test')
-    await body.get('[role="dialog"] button').trigger('click')
+    await body.get('[role="dialog"] button[aria-label="Закрыть окно"]').trigger('click')
     expect(wrapper.emitted('close')).toEqual([[]])
     expect(wrapper.props('isOpen')).toBe(true)
     await wrapper.setProps({ isOpen: false })
@@ -61,7 +61,10 @@ describe('modal components', () => {
     // body contains the actual portalled dialog and its real BaseButton descendants.
     const body = new DOMWrapper(document.body)
     expect(body.get('[role="dialog"]').text()).toContain('Удалить домен?')
-    expect(body.get('[role="dialog"]').text()).toContain('Это действие удалит example.test')
+    // descriptionId links the modal to the explanation a screen reader should announce.
+    const descriptionId = body.get('[role="dialog"]').attributes('aria-describedby')
+    if (!descriptionId) throw new Error('The confirmation dialog has no accessible description')
+    expect(document.getElementById(descriptionId)?.textContent?.trim()).toBe('Это действие удалит example.test')
     expect(
       body
         .findAll('[role="dialog"] button')

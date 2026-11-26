@@ -209,7 +209,7 @@ onMounted(() => {
         />
       </div>
 
-      <p v-if="stats" class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+      <p v-if="stats" class="mt-2 text-xs text-gray-600 dark:text-gray-300">
         {{ STATS_TEXTS.GENERATED_AT }}: {{ stats.generated_at }}
       </p>
     </div>

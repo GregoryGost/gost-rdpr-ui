@@ -39,6 +39,8 @@ import {
  * Domains management page
  * @component DomainsPage
  */
+/** waitingForRefresh identifies the refresh after a successful mutation, including the wait before it begins. */
+const waitingForRefresh = ref(false)
 const searchQuery = ref('')
 /** Exclusive table status; unprocessed is independent of the domain's saved resolved flag. */
 type DomainStatusFilter = 'all' | 'resolved' | 'unresolved' | 'unprocessed'
@@ -61,6 +63,8 @@ const statsRequests = useLatestRequest()
 const requests = useLatestRequest()
 const domains = ref<Domain[]>([])
 const isLoading = ref(false)
+/** hasError records a failure in the current table query, including search and filters. */
+const hasError = ref(false)
 
 // Global stats (always unfiltered — used for stat cards)
 const globalTotalResolved = ref(0)
@@ -233,9 +237,10 @@ const loadGlobalStats = async (isCurrent: () => boolean = () => true) => {
 }
 
 /**
- * Load domains (paginated, with active filters)
+ * Load domains (paginated, with active filters).
+ * @param useKnownTotal - Allows the statistics count to shorten a filtered scan on regular page loads.
  */
-const loadDomainsWithStats = async () => {
+const loadDomainsWithStats = async (useKnownTotal = true) => {
   // isCurrent guards this load; filterItem freezes row matching; pageParams freezes the requested page.
   const isCurrent = requests.begin()
   const filterItem = createDomainFilter()
@@ -247,6 +252,7 @@ const loadDomainsWithStats = async () => {
   // forceClientPagination keeps the original list/column filtering policy for this request.
   const forceClientPagination = listFilter.value !== 'all' || hasActiveColumnFilters.value
   if (!isCurrent()) return
+  hasError.value = false
   isLoading.value = true
   try {
     if (listFilter.value !== 'all' && !isGlobalStatsLoaded.value) {
@@ -255,28 +261,39 @@ const loadDomainsWithStats = async () => {
     }
 
     // The known total is read only while this request still owns the unchanged filter intent.
-    const knownListFilterTotal = getKnownListFilterTotal()
-    // response combines backend batches; fetch callbacks use only the parameters captured above.
-    const response = await loadClientFilteredPage(
-      (params) =>
-        domainsApi.getAll({
-          ...params,
-          resolved,
-          unprocessed,
-        }),
-      pageParams,
-      filterItem,
-      {
-        forceClientPagination,
-        knownTotal: knownListFilterTotal,
-        stopWhenPageFilled: knownListFilterTotal !== undefined,
-      },
-    )
+    const knownListFilterTotal = useKnownTotal ? getKnownListFilterTotal() : undefined
+    // fetchFilteredPage scans the captured filter; totalHint reuses the statistics count when available.
+    const fetchFilteredPage = (totalHint?: number) =>
+      loadClientFilteredPage(
+        // params sets each backend slice while the captured API filters stay fixed.
+        (params) =>
+          domainsApi.getAll({
+            ...params,
+            resolved,
+            unprocessed,
+          }),
+        pageParams,
+        filterItem,
+        {
+          forceClientPagination,
+          knownTotal: totalHint,
+          stopWhenPageFilled: totalHint !== undefined,
+        },
+      )
 
-    await publishDomainPage(response, isCurrent)
+    // response is the first page calculation, which can carry a count from before the latest deletion.
+    const response = await fetchFilteredPage(knownListFilterTotal)
+    if (!isCurrent()) return
+    // verifyTotal requests an exact scan only when a cached count accompanies an empty later page.
+    const verifyTotal = knownListFilterTotal !== undefined && pageParams.offset > 0 && response.payload.length === 0
+    // The reload callback omits the hint for the corrected page when the previous page needed an exact scan.
+    await publishDomainPage(verifyTotal ? await fetchFilteredPage() : response, isCurrent, () =>
+      loadDomainsWithStats(useKnownTotal && !verifyTotal),
+    )
   } catch (error) {
     // error belongs to this load; an obsolete failure must not clear or notify over a newer intent.
     if (!isCurrent()) return
+    hasError.value = true
     errorHandler.handleError(error, {
       action: 'loadDomainsWithStats',
       component: 'DomainsPage',
@@ -284,7 +301,10 @@ const loadDomainsWithStats = async () => {
     domains.value = []
     totalItems.value = 0
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
@@ -314,6 +334,7 @@ const runSearchDomains = async () => {
   const query = searchQuery.value
   const notifySearch = hasActiveSearch()
   if (!isCurrent()) return
+  hasError.value = false
   isLoading.value = true
   try {
     // response combines backend batches; fetch callbacks use only the parameters captured above.
@@ -341,6 +362,7 @@ const runSearchDomains = async () => {
   } catch (error) {
     // error belongs to this load; an obsolete failure must not clear or notify over a newer intent.
     if (!isCurrent()) return
+    hasError.value = true
     errorHandler.handleError(error, {
       action: 'searchDomains',
       component: 'DomainsPage',
@@ -349,12 +371,25 @@ const runSearchDomains = async () => {
     domains.value = []
     totalItems.value = 0
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
-/** Publishes the current response and reloads a valid final page if concurrent backend changes shortened the result. */
-const publishDomainPage = async (response: DomainsResponse, isCurrent: () => boolean): Promise<boolean> => {
+/**
+ * Publishes an accepted domain page and reloads a valid final page when the result set shrank.
+ * @param response - The current backend or client-filtered page and its query total.
+ * @param isCurrent - Reports whether the original request still owns the table.
+ * @param reloadPage - Loads the corrected page with the current data source and count policy.
+ * @returns Whether this request published the accepted page.
+ */
+const publishDomainPage = async (
+  response: DomainsResponse,
+  isCurrent: () => boolean,
+  reloadPage: () => Promise<void> = loadActiveDomains,
+): Promise<boolean> => {
   if (!isCurrent()) return false
   totalItems.value = response.total_query
   // lastPage keeps empty results on page one while bounding every nonempty selection by its current filtered total.
@@ -362,7 +397,7 @@ const publishDomainPage = async (response: DomainsResponse, isCurrent: () => boo
   if (currentPage.value > lastPage) {
     currentPage.value = lastPage
     if (response.total_query > 0) {
-      await loadActiveDomains()
+      await reloadPage()
       return false
     }
   }
@@ -379,10 +414,10 @@ const loadActiveDomains = () => {
 }
 
 /**
- * Refresh domains and global stats (after create/delete)
+ * Refreshes domains and global stats after create/delete without dropping the refresh status.
  */
 const refreshDomains = () => {
-  cancelPendingInputLoads()
+  cancelPendingInputLoads(false)
   loadGlobalStats()
   return loadActiveDomains()
 }
@@ -400,8 +435,9 @@ const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = 
   await loadActiveDomains()
 })
 
-/** Clears queued input loads and rejects earlier responses immediately, including during the debounce gap. */
-const cancelPendingInputLoads = () => {
+/** Clears queued input loads and rejects earlier responses. clearRefreshStatus stays false when writes request a reload. */
+const cancelPendingInputLoads = (clearRefreshStatus = true) => {
+  if (clearRefreshStatus) waitingForRefresh.value = false
   requests.invalidate()
   cancelSearchDomainsDebounce()
   cancelColumnFiltersDebounce()
@@ -476,7 +512,7 @@ const filterByList = async (value: DomainListFilter) => {
     'with-list': 'домены со списком',
     'without-list': 'домены без списка',
   }
-  if (domains.value.length === 0) {
+  if (!hasError.value && domains.value.length === 0) {
     showInfo(`Нет доменов для фильтра: ${filterLabels[value]}`, 'Фильтрация')
   }
 }
@@ -602,6 +638,7 @@ const createDomain = async () => {
     if (!requests.isActive()) return
     closeAddModal()
     showSuccess(`Домен "${domainName}" успешно добавлен`)
+    if (isCurrent()) waitingForRefresh.value = true
     await delay()
     if (!requests.isActive()) return
     // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
@@ -618,7 +655,10 @@ const createDomain = async () => {
       domain: domainName,
     })
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
@@ -659,6 +699,7 @@ const deleteDomain = async () => {
     showSuccess(`Домен #${domainId} успешно удален`)
 
     // Reload data after deletion
+    if (isCurrent()) waitingForRefresh.value = true
     await delay()
     if (!requests.isActive()) return
     // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
@@ -666,16 +707,6 @@ const deleteDomain = async () => {
     isCurrent = requests.capture()
     await pendingLoad
     if (!requests.isActive()) return
-
-    if (!isCurrent()) return
-    // Check if we need to go to previous page (if current page is now empty)
-    if (domains.value.length === 0 && currentPage.value > 1) {
-      currentPage.value -= 1
-      // previousPageLoad is the reload for the preceding page after an empty deletion result.
-      const previousPageLoad = loadActiveDomains()
-      isCurrent = requests.capture()
-      await previousPageLoad
-    }
   } catch (error) {
     // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
     if (!requests.isActive()) return
@@ -687,7 +718,10 @@ const deleteDomain = async () => {
     isDeleteConfirmOpen.value = false
     domainToDelete.value = null
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
@@ -751,6 +785,7 @@ onMounted(() => {
             v-model="searchQuery"
             @input="searchDomains"
             type="search"
+            aria-label="Поиск по домену"
             placeholder="Поиск по домену..."
             class="block w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-10 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
@@ -793,13 +828,19 @@ onMounted(() => {
         </div>
 
         <!-- Filter by List -->
-        <div class="flex flex-wrap gap-2">
-          <BaseButton @click="filterByList('all')" :variant="listFilter === 'all' ? 'secondary' : 'ghost'" size="sm">
+        <div role="group" aria-label="Списки доменов" class="flex flex-wrap gap-2">
+          <BaseButton
+            @click="filterByList('all')"
+            :variant="listFilter === 'all' ? 'secondary' : 'ghost'"
+            :aria-pressed="listFilter === 'all'"
+            size="sm"
+          >
             Все списки
           </BaseButton>
           <BaseButton
             @click="filterByList('with-list')"
             :variant="listFilter === 'with-list' ? 'secondary' : 'ghost'"
+            :aria-pressed="listFilter === 'with-list'"
             size="sm"
           >
             Со списком
@@ -807,6 +848,7 @@ onMounted(() => {
           <BaseButton
             @click="filterByList('without-list')"
             :variant="listFilter === 'without-list' ? 'secondary' : 'ghost'"
+            :aria-pressed="listFilter === 'without-list'"
             size="sm"
           >
             Без списка
@@ -857,10 +899,14 @@ onMounted(() => {
       :data="domains"
       :columns="TABLE_COLUMNS"
       :is-loading="isLoading"
+      :has-error="hasError"
+      :loading-message="waitingForRefresh ? 'Изменения сохранены. Обновляем список…' : undefined"
+      row-action-column="name"
       :column-filters="columnFilters"
       empty-message="Домены не найдены"
       @update:column-filters="updateColumnFilters"
       @row-click="openViewModal"
+      @retry="loadActiveDomains()"
     >
       <template #cell-name="{ value }">
         <span class="font-mono text-sm font-medium">{{ value }}</span>
@@ -873,7 +919,7 @@ onMounted(() => {
         >
           Список #{{ value }}
         </span>
-        <span v-else class="text-sm text-gray-400">Без списка</span>
+        <span v-else class="text-sm text-gray-600 dark:text-gray-300">Без списка</span>
       </template>
 
       <template #cell-resolved="{ value }">
@@ -989,8 +1035,8 @@ onMounted(() => {
     <BaseModal :is-open="isAddModalOpen" title="Добавить Домен" @close="closeAddModal">
       <form @submit.prevent="createDomain" class="space-y-4">
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"> Доменное имя * </label>
           <BaseInput
+            label="Доменное имя"
             v-model="formData.domain"
             type="text"
             placeholder="example.com"
@@ -1000,10 +1046,12 @@ onMounted(() => {
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Комментарий для RouterOS
-          </label>
-          <BaseTextarea v-model="formData.ros_comment!" placeholder="Комментарий для RouterOS" :rows="2" />
+          <BaseTextarea
+            label="Комментарий для RouterOS"
+            v-model="formData.ros_comment!"
+            placeholder="Комментарий для RouterOS"
+            :rows="2"
+          />
         </div>
 
         <div class="flex justify-end gap-3 pt-4">

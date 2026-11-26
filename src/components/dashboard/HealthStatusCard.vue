@@ -117,7 +117,7 @@ const formatServerTime = (timestamp: number): string => {
             shouldShowError
               ? 'text-red-600 dark:text-red-400'
               : health?.status === 'OK'
-                ? 'text-green-600 dark:text-green-400'
+                ? 'text-green-700 dark:text-green-400'
                 : health
                   ? 'text-red-600 dark:text-red-400'
                   : 'text-gray-900 dark:text-gray-100',
