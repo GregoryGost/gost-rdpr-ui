@@ -311,7 +311,9 @@ const getDnsServerType = (server: DnsServer): 'classic' | 'DoH' => {
       >
         <div>
           <div class="text-xs font-medium text-gray-500 dark:text-gray-400">Доменное имя</div>
-          <div class="mt-1 font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{{ domain.name }}</div>
+          <div class="mt-1 font-mono text-sm font-medium break-all text-gray-900 dark:text-gray-100">
+            {{ domain.name }}
+          </div>
         </div>
         <div>
           <div class="text-xs font-medium text-gray-500 dark:text-gray-400">ID</div>
@@ -320,10 +322,8 @@ const getDnsServerType = (server: DnsServer): 'classic' | 'DoH' => {
       </div>
 
       <div v-else>
-        <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          {{ DOMAIN_RESOLVE_CHECK_TEXTS.DOMAIN_LABEL }}
-        </label>
         <BaseInput
+          :label="DOMAIN_RESOLVE_CHECK_TEXTS.DOMAIN_LABEL"
           v-model="domainName"
           type="text"
           :placeholder="DOMAIN_RESOLVE_CHECK_TEXTS.DOMAIN_PLACEHOLDER"

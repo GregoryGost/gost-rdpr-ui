@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue'
+import { Dialog, DialogDescription, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue'
 import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import BaseButton from '../buttons/BaseButton.vue'
 
@@ -36,10 +36,10 @@ const emit = defineEmits<{
     <Dialog @close="emit('cancel')" class="relative z-50">
       <TransitionChild
         as="template"
-        enter="ease-out duration-300"
+        enter="ease-out motion-safe:duration-300 motion-reduce:transition-none"
         enter-from="opacity-0"
         enter-to="opacity-100"
-        leave="ease-in duration-200"
+        leave="ease-in motion-safe:duration-200 motion-reduce:transition-none"
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
@@ -50,10 +50,10 @@ const emit = defineEmits<{
         <div class="flex min-h-full items-center justify-center p-4">
           <TransitionChild
             as="template"
-            enter="ease-out duration-300"
+            enter="ease-out motion-safe:duration-300 motion-reduce:transition-none"
             enter-from="opacity-0 scale-95"
             enter-to="opacity-100 scale-100"
-            leave="ease-in duration-200"
+            leave="ease-in motion-safe:duration-200 motion-reduce:transition-none"
             leave-from="opacity-100 scale-100"
             leave-to="opacity-0 scale-95"
           >
@@ -78,13 +78,13 @@ const emit = defineEmits<{
                   <DialogTitle class="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {{ title }}
                   </DialogTitle>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                  <DialogDescription class="text-sm text-gray-600 dark:text-gray-400">
                     {{ message }}
-                  </p>
+                  </DialogDescription>
                 </div>
               </div>
 
-              <div class="mt-6 flex justify-end gap-3">
+              <div class="mt-6 flex flex-wrap justify-end gap-3">
                 <BaseButton variant="ghost" @click="emit('cancel')" :is-disabled="isLoading">
                   {{ cancelText }}
                 </BaseButton>

@@ -117,6 +117,12 @@ export class BrowserApi {
   holdPaths = new Set<string>()
   /** Pending routes grouped by their backend path; each test owns and releases its own routes. */
   heldPaths = new Map<string, Route[]>()
+  /** One synthetic HTTP 200 result per exact command path and query, consumed by the next matching POST. */
+  nextCommandResults = new Map<string, string>()
+  /** Complete OpenMetrics body returned on each scrape until the test replaces it. */
+  metricsBody = '# EOF\n'
+  /** Aborts one scrape before a response exists so recovery can be exercised against the next successful response. */
+  failNextMetricsRequest = false
 
   /** Installs routing and browser-error observers on page before any application navigation. */
   async install(page: Page): Promise<void> {
@@ -249,12 +255,47 @@ export class BrowserApi {
       this.heldPaths.set(path, routes)
       return
     }
+    if (method === 'POST' && path.startsWith('/commands/') && route.request().postData() === null) {
+      // target includes the query so a change to an API parameter cannot accidentally match the scripted reply.
+      const target = `${path}${url.search}`
+      // result is set by the test for this stage of the simulated queue, independently of the browser's response handling.
+      const result = this.nextCommandResults.get(target)
+      if (result !== undefined) {
+        this.nextCommandResults.delete(target)
+        await route.fulfill({ status: 200, json: { result } })
+        return
+      }
+    }
     if (method === 'GET' && path === '/health') {
       await route.fulfill({ json: { status: 'OK', ts: 1700000000, uptime: 120, db_pool: 'isolated' } })
       return
     }
     if (method === 'GET' && path === '/config') {
       await route.fulfill({ json: configuration })
+      return
+    }
+    if (method === 'GET' && path === '/metrics') {
+      if (this.failNextMetricsRequest) {
+        this.failNextMetricsRequest = false
+        await route.abort('failed')
+        return
+      }
+      await route.fulfill({ contentType: 'text/plain', body: this.metricsBody })
+      return
+    }
+    if (method === 'GET' && path === '/stats/growth') {
+      await route.fulfill({
+        json: {
+          entity: url.searchParams.get('entity'),
+          granularity: url.searchParams.get('granularity'),
+          start_date: url.searchParams.get('start_date'),
+          end_date: url.searchParams.get('end_date'),
+          ip_subtype: url.searchParams.has('ip_subtype') ? Number(url.searchParams.get('ip_subtype')) : null,
+          payload: [{ date: url.searchParams.get('start_date') ?? '2026-01-01 00:00:00', count: 17 }],
+          total_in_period: 17,
+          duration: 0.001,
+        },
+      })
       return
     }
     if (method === 'GET' && path === '/stats') {

@@ -100,3 +100,32 @@ export async function apiRequest<T>(
     throw new NetworkError(ERROR_MESSAGES.UNKNOWN_CONNECTION_ERROR)
   }
 }
+
+/**
+ * Fetches a text response through the configured API base URL. The deadline includes reading the body.
+ * The caller's signal cancels the request on page disposal, and HTTP errors retain their response status.
+ */
+export async function apiRequestText(endpoint: string, signal: AbortSignal): Promise<string> {
+  /** controller receives both the caller's cancellation and the local request deadline. */
+  const controller = new AbortController()
+  /** Cancels the fetch and any pending body read without aborting the caller's other requests. */
+  const abort = () => controller.abort()
+  if (signal.aborted) abort()
+  else signal.addEventListener('abort', abort, { once: true })
+
+  /** deadline bounds the lifetime of a stalled text response. */
+  const deadline = setTimeout(abort, API.TIMEOUT)
+  try {
+    /** response must come from a fresh scrape even if a browser is allowed to cache the URL. */
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, { signal: controller.signal, cache: 'no-store' })
+    if (!response.ok) {
+      // Fetch resolves as soon as headers arrive. Abort any unread error body before the next poll can start.
+      abort()
+      throw new ApiError(response.status, 'Request failed')
+    }
+    return await response.text()
+  } finally {
+    clearTimeout(deadline)
+    signal.removeEventListener('abort', abort)
+  }
+}

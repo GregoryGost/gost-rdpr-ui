@@ -24,16 +24,14 @@ const settingsStore = useSettingsStore()
 <template>
   <div class="mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex items-center gap-3">
-        <label class="text-sm font-medium text-gray-700 dark:text-gray-300"> Частота обновления статуса: </label>
-        <div class="w-48">
-          <BaseSelect
-            :model-value="settingsStore.pollingInterval"
-            :options="settingsStore.pollingIntervalOptions"
-            placeholder="Выберите интервал"
-            @update:model-value="settingsStore.setPollingInterval($event as number)"
-          />
-        </div>
+      <div class="w-full sm:max-w-64">
+        <BaseSelect
+          label="Частота обновления статуса:"
+          :model-value="settingsStore.pollingInterval"
+          :options="settingsStore.pollingIntervalOptions"
+          placeholder="Выберите интервал"
+          @update:model-value="settingsStore.setPollingInterval($event as number)"
+        />
       </div>
       <div class="flex items-center gap-3">
         <button
@@ -42,7 +40,7 @@ const settingsStore = useSettingsStore()
           :disabled="isManualRefreshing"
           class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400"
         >
-          <ArrowPathIcon :class="['h-4 w-4', isManualRefreshing ? 'animate-spin' : '']" />
+          <ArrowPathIcon :class="['h-4 w-4', isManualRefreshing ? 'motion-safe:animate-spin' : '']" />
           {{ isManualRefreshing ? 'Обновление...' : 'Обновить вручную' }}
         </button>
         <span
@@ -56,7 +54,7 @@ const settingsStore = useSettingsStore()
         >
           <span
             class="h-2 w-2 rounded-full"
-            :class="[isActive ? 'animate-pulse bg-green-600 dark:bg-green-400' : 'bg-gray-400']"
+            :class="[isActive ? 'bg-green-600 motion-safe:animate-pulse dark:bg-green-400' : 'bg-gray-400']"
           />
           {{ isActive ? 'Автообновление' : 'Остановлено' }}
         </span>

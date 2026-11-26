@@ -9,7 +9,7 @@ for (const width of [375, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 })
       await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })
       await page.goto('/#/domains')
-      await page.getByRole('cell', { name: 'dated.example.test', exact: true }).click()
+      await page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true }).click()
       // card identifies the visible saved-domain dialog; heading identifies its public title.
       const card = page.getByRole('dialog', { name: 'Домен: dated.example.test', exact: true })
       const heading = card.getByRole('heading', { name: 'Домен: dated.example.test', exact: true })
@@ -45,7 +45,7 @@ for (const width of [375, 768, 1440]) {
 /** Escape must dismiss a real Headless UI dialog and return focus to its keyboard-reachable opener. */
 test('closes a modal with Escape and restores focus to its opener', async ({ page, api }) => {
   await page.goto('/#/domains')
-  await expect(page.getByRole('cell', { name: 'dated.example.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })).toBeVisible()
   // opener is the normal create action; dialog is its keyboard-managed modal.
   const opener = page.getByRole('button', { name: 'Добавить Домен', exact: true })
   const dialog = page.getByRole('dialog', { name: 'Добавить Домен', exact: true })
@@ -57,6 +57,63 @@ test('closes a modal with Escape and restores focus to its opener', async ({ pag
   await page.keyboard.press('Escape')
   await expect(page.locator('[role="dialog"]')).toHaveCount(0)
   await expect(opener).toBeFocused()
+  expect(api.mutations).toEqual([])
+})
+
+/** At mobile width, keyboard access enters the labelled drawer and Escape returns focus to its trigger. */
+test('opens and dismisses the mobile navigation by keyboard', async ({ page, api }) => {
+  await page.setViewportSize({ width: 375, height: 900 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/#/domains')
+  await expect(page.getByRole('heading', { level: 1, name: 'Домены', exact: true })).toBeVisible()
+  // menuButton opens the mobile navigation. drawer is the modal that owns focus while open.
+  const menuButton = page.getByRole('button', { name: 'Открыть меню', exact: true })
+  const drawer = page.getByRole('dialog', { name: 'Навигация', exact: true })
+  await menuButton.focus()
+  await menuButton.press('Enter')
+  await expect(drawer.getByRole('button', { name: 'Закрыть меню', exact: true })).toBeVisible()
+  /** The browser callback checks that the rendered mobile dialog contains the active element. */
+  await expect.poll(() => drawer.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+  await page.keyboard.press('Escape')
+  await expect(drawer).toHaveCount(0)
+  await expect(menuButton).toBeFocused()
+
+  await menuButton.press('Space')
+  await drawer
+    .getByRole('navigation', { name: 'Основная навигация', exact: true })
+    .getByRole('link', { name: 'DNS Серверы', exact: true })
+    .press('Enter')
+  await expect(page.getByRole('heading', { level: 1, name: 'DNS Серверы', exact: true })).toBeVisible()
+  await expect(drawer).toHaveCount(0)
+  expect(api.mutations).toEqual([])
+})
+
+/** Crossing to desktop dismisses mobile navigation so the drawer cannot trap keyboard focus on return. */
+test('keeps the mobile drawer closed after resizing across the desktop breakpoint', async ({ page, api }) => {
+  await page.setViewportSize({ width: 375, height: 900 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/#/domains')
+  // menuButton exposes the drawer state. drawer is the mobile dialog; desktopNavigation replaces it at 1440 px.
+  const menuButton = page.getByRole('button', { name: 'Открыть меню', exact: true })
+  const drawer = page.getByRole('dialog', { name: 'Навигация', exact: true })
+  const desktopNavigation = page.getByRole('navigation', { name: 'Основная навигация', exact: true })
+  await menuButton.press('Enter')
+  await expect(drawer.getByRole('button', { name: 'Закрыть меню', exact: true })).toBeVisible()
+
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await expect(desktopNavigation.getByRole('link', { name: 'Домены', exact: true })).toBeVisible()
+
+  await page.setViewportSize({ width: 375, height: 900 })
+  await expect(menuButton).toHaveAttribute('aria-expanded', 'false')
+  await expect(drawer).toHaveCount(0)
+  // cardOpener exercises focus and activation on the page that was inert while the drawer was open.
+  const cardOpener = page.getByRole('button', { name: 'Открыть карточку: dated.example.test', exact: true })
+  await cardOpener.focus()
+  await expect(cardOpener).toBeFocused()
+  await page.keyboard.press('Enter')
+  // card scopes the visible heading to the dialog, whose fixed panel leaves the root without a visible box.
+  const card = page.getByRole('dialog', { name: 'Домен: dated.example.test', exact: true })
+  await expect(card.getByRole('heading', { name: 'Домен: dated.example.test', exact: true })).toBeVisible()
   expect(api.mutations).toEqual([])
 })
 

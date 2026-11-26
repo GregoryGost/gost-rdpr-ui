@@ -23,7 +23,7 @@ const SIZE_CLASSES = {
 <template>
   <div class="flex flex-col items-center justify-center gap-3">
     <svg
-      :class="[SIZE_CLASSES[size], 'animate-spin text-blue-600 dark:text-blue-400']"
+      :class="[SIZE_CLASSES[size], 'text-blue-600 motion-safe:animate-spin dark:text-blue-400']"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"

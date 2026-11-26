@@ -40,7 +40,7 @@ test('shares pagination state and one request per action across both panels', as
   await expect(top.getByRole('button', { name: 'Последняя страница: 13', exact: true })).toHaveCount(1)
   await top.getByRole('button', { name: 'Последняя страница: 13', exact: true }).click()
   await expect(page.getByText('Показано 121 - 121 из 121 результатов')).toHaveCount(2)
-  await expect(page.getByRole('cell', { name: 'pager-120.test', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Открыть карточку: pager-120.test', exact: true })).toBeVisible()
   await expect(bottom.getByRole('button', { name: '13', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(bottom.getByText('...', { exact: true })).toHaveCount(0)
   expect(
@@ -69,6 +69,92 @@ test('shares pagination state and one request per action across both panels', as
   await expect(bottom.getByRole('button', { name: '3', exact: true })).toHaveCount(0)
 })
 
+/**
+ * Deletes the only row on page two and checks that the active list filter still exposes every remaining row.
+ * page drives the browser, api holds saved rows and records deletion, and baseURL keeps the stats override local.
+ */
+test('returns to the first filtered domain page after deletion while statistics lag', async ({
+  page,
+  api,
+  baseURL,
+}) => {
+  // listedDomains keeps the original rows for assertions after the API fixture replaces its saved collection.
+  // The factory uses index for a distinct saved ID and domain name. The _ argument is unused.
+  const listedDomains = Array.from({ length: 21 }, (_, index) =>
+    makeDomain(index + 1, `listed-${index + 1}.example.test`),
+  )
+  api.domains = listedDomains
+  await page.clock.install()
+
+  /**
+   * The predicate checks url against this preview's statistics endpoint. The handler fulfills route with a fixed
+   * pre-delete snapshot for GET requests and sends other methods through the shared network guard.
+   */
+  await page.route(
+    (url) => url.origin === baseURL && url.pathname === '/api/stats',
+    async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.fallback()
+        return
+      }
+      await route.fulfill({
+        json: {
+          generated_at: '2023-11-14 22:20:00',
+          dns: { total: 1, classic: 1, doh: 0 },
+          domains: {
+            total: 21,
+            resolved: 21,
+            unresolved: 0,
+            unprocessed: 0,
+            lists_total: 1,
+            per_list: [{ list_id: 7, list_name: 'Example list', total: 21, resolved: 21, unresolved: 0, attempts: 0 }],
+          },
+          ips: { total: 0, v4_total: 0, v6_total: 0, linked_to_domain: 0, standalone: 0, lists_total: 0, per_list: [] },
+          ros: { total: 0 },
+        },
+      })
+    },
+  )
+
+  await page.goto('/#/domains')
+  // listFilter selects list members. pagination identifies the upper controls used to open page two.
+  const listFilter = page.getByRole('button', { name: 'Со списком', exact: true })
+  const pagination = page.getByRole('navigation', { name: 'Пагинация доменов сверху', exact: true })
+  await expect(page.getByText('Показано 1 - 20 из 21 результатов', { exact: true })).toHaveCount(2)
+  await listFilter.click()
+  await expect(listFilter).toHaveAttribute('aria-pressed', 'true')
+  await pagination.getByRole('button', { name: '2', exact: true }).click()
+  await expect(page.getByText('Показано 21 - 21 из 21 результатов', { exact: true })).toHaveCount(2)
+
+  // table scopes row assertions to saved domains. lastOpener identifies the page-two row from within each candidate row.
+  const table = page.getByRole('table')
+  const lastOpener = page.getByRole('button', { name: 'Открыть карточку: listed-21.example.test', exact: true })
+  await expect(table.getByRole('button', { name: /^Открыть карточку: / })).toHaveCount(1)
+  await table
+    .getByRole('row')
+    .filter({ has: lastOpener })
+    .getByRole('button', { name: 'Удалить домен', exact: true })
+    .click()
+  await page
+    .getByRole('dialog', { name: 'Удалить Домен', exact: true })
+    .getByRole('button', { name: 'Удалить', exact: true })
+    .click()
+  await expect(table.getByText('Изменения сохранены. Обновляем список…', { exact: true })).toBeVisible()
+  await page.clock.fastForward(7_200)
+
+  await expect(page.getByText('Показано 1 - 20 из 20 результатов', { exact: true })).toHaveCount(2)
+  await expect(pagination.getByRole('button', { name: '1', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(pagination.getByRole('button', { name: '2', exact: true })).toHaveCount(0)
+  await expect(listFilter).toHaveAttribute('aria-pressed', 'true')
+  await expect(lastOpener).toHaveCount(0)
+  await expect(table.getByRole('button', { name: /^Открыть карточку: / })).toHaveCount(20)
+  // domain is each original member of the first page, which must remain individually reachable.
+  for (const domain of listedDomains.slice(0, 20)) {
+    await expect(table.getByRole('button', { name: `Открыть карточку: ${domain.name}`, exact: true })).toBeVisible()
+  }
+  expect(api.mutations).toEqual([{ method: 'DELETE', path: '/domains/21', body: null }])
+})
+
 // width is each responsive boundary; theme is initialized before application startup.
 for (const width of [375, 768, 1440]) {
   for (const theme of ['light', 'dark'] as const) {
@@ -79,7 +165,7 @@ for (const width of [375, 768, 1440]) {
       /** Gives each index a stable independent row. */
       api.domains = Array.from({ length: 121 }, (_, index) => makeDomain(index + 1000, `layout-${index}.test`))
       await page.goto('/#/domains')
-      await expect(page.getByRole('cell', { name: 'layout-0.test', exact: true })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Открыть карточку: layout-0.test', exact: true })).toBeVisible()
       // label identifies a public statistic caption; card selects its containing rendered value block.
       for (const label of ['Всего доменов', 'Определено', 'Не определено', 'Не обработано']) {
         const card = page.getByText(label, { exact: true }).and(page.locator('div')).locator('..')
@@ -112,12 +198,12 @@ for (const width of [375, 768, 1440]) {
         if (!navigationBounds || !selectorBounds) throw new Error('Missing compact pagination geometry')
         expect(selectorBounds.y).toBeGreaterThanOrEqual(navigationBounds.y + navigationBounds.height)
         await top.getByRole('button', { name: 'Последняя страница: 7', exact: true }).click()
-        await expect(page.getByRole('cell', { name: 'layout-120.test', exact: true })).toBeVisible()
+        await expect(page.getByRole('button', { name: 'Открыть карточку: layout-120.test', exact: true })).toBeVisible()
         await expect(bottom.locator('[aria-current="page"]')).toHaveText('7')
         await expect(bottom.getByRole('button', { name: 'Вперёд', exact: true })).toBeDisabled()
         await bottom.getByRole('button', { name: 'Назад', exact: true }).click()
         await expect(top.locator('[aria-current="page"]')).toHaveText('6')
-        await expect(page.getByRole('cell', { name: 'layout-100.test', exact: true })).toBeVisible()
+        await expect(page.getByRole('button', { name: 'Открыть карточку: layout-100.test', exact: true })).toBeVisible()
       }
       expect(api.mutations).toEqual([])
     })

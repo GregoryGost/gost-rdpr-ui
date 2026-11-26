@@ -2,8 +2,13 @@
 
 ## Activation and authorization
 
-- This conditional bootstrap support rule is mandatory when a target project's `CODEX_PROJECT.md` enables subagents for authorized executable application/test-code work. `AGENTS.md` activates it without an optional `Active Rules` entry. If it is missing, do not delegate; report the incomplete setup.
-- The PRIMARY reads it before delegating; each subagent reads it after `request_routing.md` and `AGENTS.md`. This rule never authorizes delegation for documentation-only, comments-only, instruction-only or unrelated work, or new repository/external/Obsidian writes. The current user's request and every applicable gate remain controlling.
+- This conditional bootstrap rule is mandatory when a target project's `CODEX_PROJECT.md` enables subagents.
+  `AGENTS.md` activates it independently of Active Rules. Report a missing rule and stop delegation.
+- The PRIMARY reads this rule before dispatch. Each subagent reads it after `request_routing.md` and
+  `AGENTS.md`. The current request, project profile and role must all allow the assignment.
+- For read-only evaluation, name the eligible role, the question, the evidence it may inspect and the reviewed
+  snapshot. Assign zero writable paths and collect findings in the session. Existing code-change and architecture
+  gates govern any subsequent implementation.
 - A fresh subagent thread has no inherited conversation turns, but still uses applicable system and project instructions, tools, permissions, workspace and external state. Its OWN long work may still undergo context compaction.
 - Editing policy files in this template repository does not itself activate subagent work.
 

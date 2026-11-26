@@ -31,7 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
   showLastPage: false,
   compactMobile: false,
   isLoading: false,
-  ariaLabel: 'Pagination',
+  ariaLabel: 'Пагинация',
 })
 
 /** emit requests parent-owned changes without fetching data or mutating pagination props. */

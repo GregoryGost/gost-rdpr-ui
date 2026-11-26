@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { ipsApi } from '@/api/endpoints/ips'
 import { statsApi } from '@/api/endpoints/stats'
+import type { PaginatedResponse } from '@/api/types/common'
 import type { IpAddress, IpAddressCreateData } from '@/api/types/ips'
 import { PAGINATION, IPS_TEXTS, RIPESTAT_PREFIX_CHECK_TEXTS, UI_TEXTS, SEARCH, ERROR_MESSAGES } from '@/constants'
 import DataTable from '@/ui/tables/DataTable.vue'
@@ -36,6 +37,8 @@ import {
  * IPs management page
  * @component IpsPage
  */
+/** waitingForRefresh identifies the refresh after a successful mutation, including the wait before it begins. */
+const waitingForRefresh = ref(false)
 const searchQuery = ref('')
 type IpTypeFilter = 'all' | 'ipv4' | 'ipv6'
 type IpListFilter = 'all' | 'with-list' | 'without-list'
@@ -55,6 +58,8 @@ const statsRequests = useLatestRequest()
 const requests = useLatestRequest()
 const ips = ref<IpAddress[]>([])
 const isLoading = ref(false)
+/** hasError records a failure in the current table query, including search and filters. */
+const hasError = ref(false)
 const totalIps = ref(0)
 const totalIpv4 = ref(0)
 const totalIpv6 = ref(0)
@@ -274,9 +279,10 @@ const getKnownIpFilterTotal = (): number | undefined => {
 }
 
 /**
- * Load IPs with stats
+ * Load IPs with stats.
+ * @param useKnownTotal - Allows the statistics count to shorten a filtered scan on regular page loads.
  */
-const loadIpsWithStats = async () => {
+const loadIpsWithStats = async (useKnownTotal = true) => {
   // isCurrent guards this load; filterItem freezes row matching; pageParams freezes the requested page.
   const isCurrent = requests.begin()
   const filterItem = createIpFilter()
@@ -287,6 +293,7 @@ const loadIpsWithStats = async () => {
   // forceClientPagination retains the existing search/button/column filtering policy.
   const forceClientPagination = shouldUseClientPagination()
   if (!isCurrent()) return
+  hasError.value = false
   isLoading.value = true
   try {
     if (hasActiveButtonFilters.value && totalIps.value === 0) {
@@ -305,30 +312,39 @@ const loadIpsWithStats = async () => {
     }
 
     // The known total is read only while this request still owns the unchanged filter intent.
-    const knownFilterTotal = getKnownIpFilterTotal()
-    // response combines backend batches; fetch callbacks use only the parameters captured above.
-    const response = await loadClientFilteredPage(
-      (params) =>
-        ipsApi.getAll({
-          ...params,
-          type,
-          default_gw: defaultGateway,
-        }),
-      pageParams,
-      filterItem,
-      {
-        forceClientPagination,
-        knownTotal: knownFilterTotal,
-        stopWhenPageFilled: knownFilterTotal !== undefined,
-      },
-    )
+    const knownFilterTotal = useKnownTotal ? getKnownIpFilterTotal() : undefined
+    // fetchFilteredPage scans the captured filter; totalHint reuses the statistics count when available.
+    const fetchFilteredPage = (totalHint?: number) =>
+      loadClientFilteredPage(
+        // params sets each backend slice while the captured API filters stay fixed.
+        (params) =>
+          ipsApi.getAll({
+            ...params,
+            type,
+            default_gw: defaultGateway,
+          }),
+        pageParams,
+        filterItem,
+        {
+          forceClientPagination,
+          knownTotal: totalHint,
+          stopWhenPageFilled: totalHint !== undefined,
+        },
+      )
 
+    // response is the first page calculation, which can carry a count from before the latest deletion.
+    const response = await fetchFilteredPage(knownFilterTotal)
     if (!isCurrent()) return
-    totalItems.value = response.total
-    ips.value = response.payload
+    // verifyTotal requests an exact scan only when a cached count accompanies an empty later page.
+    const verifyTotal = knownFilterTotal !== undefined && pageParams.offset > 0 && response.payload.length === 0
+    // The reload callback omits the hint for the corrected page when the previous page needed an exact scan.
+    await publishIpPage(verifyTotal ? await fetchFilteredPage() : response, isCurrent, () =>
+      loadIpsWithStats(useKnownTotal && !verifyTotal),
+    )
   } catch (error) {
     // error belongs to this load; an obsolete failure must not clear or notify over a newer intent.
     if (!isCurrent()) return
+    hasError.value = true
     errorHandler.handleError(error, {
       action: 'loadIpsWithStats',
       component: 'IpsPage',
@@ -336,7 +352,10 @@ const loadIpsWithStats = async () => {
     ips.value = []
     totalItems.value = 0
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
@@ -363,6 +382,7 @@ const runSearchIps = async () => {
   const query = searchQuery.value
   const notifySearch = hasActiveSearch()
   if (!isCurrent()) return
+  hasError.value = false
   isLoading.value = true
   try {
     // response combines backend batches; fetch callbacks use only the parameters captured above.
@@ -377,11 +397,9 @@ const runSearchIps = async () => {
       filterItem,
     )
 
-    if (!isCurrent()) return
-    totalItems.value = response.total
-    ips.value = response.payload
+    if (!(await publishIpPage(response, isCurrent))) return
 
-    if (notifySearch) {
+    if (isCurrent() && notifySearch) {
       if (response.total === 0) {
         showInfo(`${IPS_TEXTS.SEARCH_NOT_FOUND_PREFIX} "${query}" ${UI_TEXTS.NOTHING_FOUND}`, UI_TEXTS.SEARCH_RESULTS)
       } else {
@@ -391,6 +409,7 @@ const runSearchIps = async () => {
   } catch (error) {
     // error belongs to this load; an obsolete failure must not clear or notify over a newer intent.
     if (!isCurrent()) return
+    hasError.value = true
     errorHandler.handleError(error, {
       action: 'searchIps',
       component: 'IpsPage',
@@ -399,8 +418,38 @@ const runSearchIps = async () => {
     ips.value = []
     totalItems.value = 0
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
+}
+
+/**
+ * Publishes an accepted IP page, reloading at the last valid offset if the result set shrank.
+ * @param response - The current backend or client-filtered page and its total.
+ * @param isCurrent - Reports whether the original request still owns the table.
+ * @param reloadPage - Loads the corrected page with the current data source and count policy.
+ * @returns Whether this request published rows, allowing search to announce the accepted result.
+ */
+const publishIpPage = async (
+  response: PaginatedResponse<IpAddress>,
+  isCurrent: () => boolean,
+  reloadPage: () => Promise<void> = loadActiveIps,
+): Promise<boolean> => {
+  if (!isCurrent()) return false
+  totalItems.value = response.total
+  // lastPage bounds the selection by the accepted total and keeps an empty result on page one.
+  const lastPage = Math.max(1, totalPages.value)
+  if (currentPage.value > lastPage) {
+    currentPage.value = lastPage
+    if (response.total > 0) {
+      await reloadPage()
+      return false
+    }
+  }
+  ips.value = response.payload
+  return true
 }
 
 /**
@@ -426,6 +475,7 @@ const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = 
 
 /** Clears queued input loads and rejects earlier responses immediately, including during the debounce gap. */
 const cancelPendingInputLoads = () => {
+  waitingForRefresh.value = false
   requests.invalidate()
   cancelSearchIpsDebounce()
   cancelColumnFiltersDebounce()
@@ -637,7 +687,7 @@ const createIp = async () => {
   // ipAddress retains the submitted entity name for success and error messages after form reset.
   const ipAddress = formData.value.addr
   cancelPendingInputLoads()
-  // isCurrent controls table loading and empty-page fallback; accepted mutation outcomes depend only on scope lifetime.
+  // isCurrent tracks loading ownership; accepted mutation outcomes depend on scope lifetime.
   let isCurrent = requests.begin()
   if (!isCurrent()) return
   isLoading.value = true
@@ -646,15 +696,15 @@ const createIp = async () => {
     if (!requests.isActive()) return
     closeAddModal()
     showSuccess(`${IPS_TEXTS.IP_PREFIX} "${ipAddress}" ${IPS_TEXTS.SUCCESS_CREATED}`)
+    if (isCurrent()) waitingForRefresh.value = true
     await delay()
     if (!requests.isActive()) return
-    // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
+    // pendingLoad starts the table refresh; capture its generation before awaiting it.
     const pendingLoad = loadActiveIps()
     isCurrent = requests.capture()
     await pendingLoad
     if (!requests.isActive()) return
     await loadGlobalStats()
-    if (!isCurrent()) return
   } catch (error) {
     // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
     if (!requests.isActive()) return
@@ -664,7 +714,10 @@ const createIp = async () => {
       addr: ipAddress,
     })
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
@@ -685,7 +738,7 @@ const deleteIp = async () => {
   cancelPendingInputLoads()
   // ipId captures the confirmed row before selection state is cleared.
   const ipId = ipToDelete.value
-  // isCurrent controls table loading and empty-page fallback; accepted mutation outcomes depend only on scope lifetime.
+  // isCurrent tracks loading ownership; accepted mutation outcomes depend on scope lifetime.
   let isCurrent = requests.begin()
   if (!isCurrent()) return
   isLoading.value = true
@@ -697,23 +750,15 @@ const deleteIp = async () => {
     showSuccess(`${IPS_TEXTS.IP_PREFIX} #${ipId} ${IPS_TEXTS.SUCCESS_DELETED}`)
 
     // Reload data after deletion
+    if (isCurrent()) waitingForRefresh.value = true
     await delay()
     if (!requests.isActive()) return
-    // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
+    // pendingLoad starts the table refresh; capture its generation before awaiting it.
     const pendingLoad = loadActiveIps()
     isCurrent = requests.capture()
     await pendingLoad
     if (!requests.isActive()) return
     await loadGlobalStats()
-
-    if (!isCurrent()) return
-    // Check if we need to go to previous page (if current page is now empty)
-    if (ips.value.length === 0 && currentPage.value > 1) {
-      // previousPageLoad starts the fallback; capture its generation before awaiting completion.
-      const previousPageLoad = goToPage(currentPage.value - 1)
-      isCurrent = requests.capture()
-      await previousPageLoad
-    }
   } catch (error) {
     // error reports this submitted mutation even if table input changed; teardown still suppresses publication.
     if (!requests.isActive()) return
@@ -725,7 +770,10 @@ const deleteIp = async () => {
     isDeleteConfirmOpen.value = false
     ipToDelete.value = null
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
@@ -777,27 +825,27 @@ onMounted(() => {
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">Всего IP</div>
         <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ totalIps }}</div>
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">{{ IPS_TEXTS.STATS_TOTAL_HINT }}</p>
+        <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">{{ IPS_TEXTS.STATS_TOTAL_HINT }}</p>
       </div>
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">IPv4</div>
         <div class="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">{{ totalIpv4 }}</div>
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">{{ IPS_TEXTS.STATS_IPV4_HINT }}</p>
+        <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">{{ IPS_TEXTS.STATS_IPV4_HINT }}</p>
       </div>
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">IPv6</div>
         <div class="mt-1 text-2xl font-bold text-purple-600 dark:text-purple-400">{{ totalIpv6 }}</div>
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">{{ IPS_TEXTS.STATS_IPV6_HINT }}</p>
+        <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">{{ IPS_TEXTS.STATS_IPV6_HINT }}</p>
       </div>
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">Со списком</div>
         <div class="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">{{ totalWithList }}</div>
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">{{ IPS_TEXTS.STATS_WITH_LIST_HINT }}</p>
+        <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">{{ IPS_TEXTS.STATS_WITH_LIST_HINT }}</p>
       </div>
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">С доменом</div>
         <div class="mt-1 text-2xl font-bold text-orange-600 dark:text-orange-400">{{ totalWithDomain }}</div>
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">{{ IPS_TEXTS.STATS_WITH_DOMAIN_HINT }}</p>
+        <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">{{ IPS_TEXTS.STATS_WITH_DOMAIN_HINT }}</p>
       </div>
     </div>
 
@@ -814,6 +862,7 @@ onMounted(() => {
             v-model="searchQuery"
             @input="searchIps"
             type="search"
+            aria-label="Поиск по IP адресу"
             :placeholder="IPS_TEXTS.SEARCH_PLACEHOLDER"
             class="block w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-10 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
@@ -823,13 +872,28 @@ onMounted(() => {
         <div class="flex flex-wrap gap-2">
           <!-- Type Filter -->
           <div class="flex gap-1">
-            <BaseButton @click="filterByType('all')" :variant="typeFilter === 'all' ? 'primary' : 'ghost'" size="sm">
+            <BaseButton
+              @click="filterByType('all')"
+              :aria-pressed="typeFilter === 'all'"
+              :variant="typeFilter === 'all' ? 'primary' : 'ghost'"
+              size="sm"
+            >
               {{ IPS_TEXTS.FILTER_ALL }}
             </BaseButton>
-            <BaseButton @click="filterByType('ipv4')" :variant="typeFilter === 'ipv4' ? 'primary' : 'ghost'" size="sm">
+            <BaseButton
+              @click="filterByType('ipv4')"
+              :aria-pressed="typeFilter === 'ipv4'"
+              :variant="typeFilter === 'ipv4' ? 'primary' : 'ghost'"
+              size="sm"
+            >
               {{ IPS_TEXTS.FILTER_IPV4 }}
             </BaseButton>
-            <BaseButton @click="filterByType('ipv6')" :variant="typeFilter === 'ipv6' ? 'primary' : 'ghost'" size="sm">
+            <BaseButton
+              @click="filterByType('ipv6')"
+              :aria-pressed="typeFilter === 'ipv6'"
+              :variant="typeFilter === 'ipv6' ? 'primary' : 'ghost'"
+              size="sm"
+            >
               {{ IPS_TEXTS.FILTER_IPV6 }}
             </BaseButton>
           </div>
@@ -838,6 +902,7 @@ onMounted(() => {
           <div class="flex gap-1">
             <BaseButton
               @click="filterByList('with-list')"
+              :aria-pressed="listFilter === 'with-list'"
               :variant="listFilter === 'with-list' ? 'primary' : 'ghost'"
               size="sm"
             >
@@ -845,6 +910,7 @@ onMounted(() => {
             </BaseButton>
             <BaseButton
               @click="filterByList('without-list')"
+              :aria-pressed="listFilter === 'without-list'"
               :variant="listFilter === 'without-list' ? 'primary' : 'ghost'"
               size="sm"
             >
@@ -856,6 +922,7 @@ onMounted(() => {
           <div class="flex gap-1">
             <BaseButton
               @click="filterByDomain('with-domain')"
+              :aria-pressed="domainFilter === 'with-domain'"
               :variant="domainFilter === 'with-domain' ? 'primary' : 'ghost'"
               size="sm"
             >
@@ -863,6 +930,7 @@ onMounted(() => {
             </BaseButton>
             <BaseButton
               @click="filterByDomain('without-domain')"
+              :aria-pressed="domainFilter === 'without-domain'"
               :variant="domainFilter === 'without-domain' ? 'primary' : 'ghost'"
               size="sm"
             >
@@ -874,6 +942,7 @@ onMounted(() => {
           <div class="flex gap-1">
             <BaseButton
               @click="filterByGateway('default-gateway')"
+              :aria-pressed="gatewayFilter === 'default-gateway'"
               :variant="gatewayFilter === 'default-gateway' ? 'primary' : 'ghost'"
               size="sm"
             >
@@ -881,6 +950,7 @@ onMounted(() => {
             </BaseButton>
             <BaseButton
               @click="filterByGateway('vpn-gateway')"
+              :aria-pressed="gatewayFilter === 'vpn-gateway'"
               :variant="gatewayFilter === 'vpn-gateway' ? 'primary' : 'ghost'"
               size="sm"
             >
@@ -919,10 +989,14 @@ onMounted(() => {
       :data="ips"
       :columns="TABLE_COLUMNS"
       :is-loading="isLoading"
+      :has-error="hasError"
+      :loading-message="waitingForRefresh ? 'Изменения сохранены. Обновляем список…' : undefined"
+      row-action-column="addr"
       :column-filters="columnFilters"
       :empty-message="IPS_TEXTS.EMPTY_MESSAGE"
       @update:column-filters="updateColumnFilters"
       @row-click="openViewModal"
+      @retry="loadActiveIps()"
     >
       <template #cell-type="{ value }">
         <span
@@ -943,7 +1017,7 @@ onMounted(() => {
       <template #cell-ip_list_name="{ value, row }">
         <div v-if="value" class="text-sm">
           <span class="text-gray-900 dark:text-gray-100">{{ value }}</span>
-          <span class="ml-1 text-xs text-gray-500 dark:text-gray-400">(ID: {{ row.ip_list_id }})</span>
+          <span class="ml-1 text-xs text-gray-600 dark:text-gray-400">(ID: {{ row.ip_list_id }})</span>
         </div>
         <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
       </template>
@@ -951,7 +1025,7 @@ onMounted(() => {
       <template #cell-domain_name="{ value, row }">
         <div v-if="value" class="text-sm">
           <span class="text-gray-900 dark:text-gray-100">{{ value }}</span>
-          <span class="ml-1 text-xs text-gray-500 dark:text-gray-400">(ID: {{ row.domain_id }})</span>
+          <span class="ml-1 text-xs text-gray-600 dark:text-gray-400">(ID: {{ row.domain_id }})</span>
         </div>
         <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
       </template>
@@ -984,7 +1058,12 @@ onMounted(() => {
           >
             <MapPinIcon class="h-4 w-4" />
           </BaseButton>
-          <BaseButton variant="danger" size="sm" @click.stop="openDeleteConfirm(row.id)">
+          <BaseButton
+            variant="danger"
+            size="sm"
+            :aria-label="`Удалить IP-адрес: ${row.addr}`"
+            @click.stop="openDeleteConfirm(row.id)"
+          >
             <TrashIcon class="h-4 w-4" />
           </BaseButton>
         </div>
@@ -1007,59 +1086,59 @@ onMounted(() => {
     <BaseModal :is-open="isAddModalOpen" :title="IPS_TEXTS.MODAL_TITLE" @close="closeAddModal">
       <form @submit.prevent="createIp" class="space-y-4">
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ IPS_TEXTS.LABEL_ADDR }} <span class="text-red-500">*</span>
-          </label>
           <BaseInput
+            :label="IPS_TEXTS.LABEL_ADDR"
             v-model="formData.addr"
             type="text"
             :placeholder="IPS_TEXTS.PLACEHOLDER_ADDR"
             :error="formErrors.addr"
             required
+            aria-describedby="ips-hint-addr"
           />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p id="ips-hint-addr" class="mt-1 text-xs text-gray-600 dark:text-gray-400">
             {{ IPS_TEXTS.HINT_ADDR }}
           </p>
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ IPS_TEXTS.LABEL_LIST_ID }}
-          </label>
           <BaseInput
+            :label="IPS_TEXTS.LABEL_LIST_ID"
             :model-value="formData.list_id ?? ''"
             @update:model-value="(val) => (formData.list_id = val === '' ? undefined : Number(val))"
             type="number"
             :placeholder="IPS_TEXTS.PLACEHOLDER_LIST_ID"
             min="1"
+            aria-describedby="ips-hint-list-id"
           />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p id="ips-hint-list-id" class="mt-1 text-xs text-gray-600 dark:text-gray-400">
             {{ IPS_TEXTS.HINT_LIST_ID }}
           </p>
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ IPS_TEXTS.LABEL_DOMAIN_ID }}
-          </label>
           <BaseInput
+            :label="IPS_TEXTS.LABEL_DOMAIN_ID"
             :model-value="formData.domain_id ?? ''"
             @update:model-value="(val) => (formData.domain_id = val === '' ? undefined : Number(val))"
             type="number"
             :placeholder="IPS_TEXTS.PLACEHOLDER_DOMAIN_ID"
             min="0"
+            aria-describedby="ips-hint-domain-id"
           />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p id="ips-hint-domain-id" class="mt-1 text-xs text-gray-600 dark:text-gray-400">
             {{ IPS_TEXTS.HINT_DOMAIN_ID }}
           </p>
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ IPS_TEXTS.LABEL_ROS_COMMENT }}
-          </label>
-          <BaseTextarea v-model="formData.ros_comment!" :placeholder="IPS_TEXTS.PLACEHOLDER_ROS_COMMENT" :rows="2" />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <BaseTextarea
+            :label="IPS_TEXTS.LABEL_ROS_COMMENT"
+            v-model="formData.ros_comment!"
+            :placeholder="IPS_TEXTS.PLACEHOLDER_ROS_COMMENT"
+            :rows="2"
+            aria-describedby="ips-hint-ros-comment"
+          />
+          <p id="ips-hint-ros-comment" class="mt-1 text-xs text-gray-600 dark:text-gray-400">
             {{ IPS_TEXTS.HINT_ROS_COMMENT }}
           </p>
         </div>
@@ -1076,7 +1155,7 @@ onMounted(() => {
             />
             <span class="text-sm text-gray-700 dark:text-gray-300">Использовать дефолтный gateway вместо VPN</span>
           </label>
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
             {{ IPS_TEXTS.HINT_USE_DEFAULT_GATEWAY }}
           </p>
         </div>
@@ -1098,12 +1177,12 @@ onMounted(() => {
         <!-- IP Info (Read-only) -->
         <div class="space-y-3">
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">ID</label>
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">ID</label>
             <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedIp.id }}</p>
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ IPS_TEXTS.COLUMN_TYPE }}
             </label>
             <span
@@ -1118,36 +1197,36 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ IPS_TEXTS.LABEL_ADDR }}
             </label>
             <p class="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{{ selectedIp.addr }}</p>
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ IPS_TEXTS.COLUMN_IP_LIST }}
             </label>
             <div v-if="selectedIp.ip_list_name">
               <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedIp.ip_list_name }}</p>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">ID: {{ selectedIp.ip_list_id }}</p>
+              <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">ID: {{ selectedIp.ip_list_id }}</p>
             </div>
             <p v-else class="text-sm text-gray-500 dark:text-gray-400">Не привязан</p>
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ IPS_TEXTS.COLUMN_DOMAIN }}
             </label>
             <div v-if="selectedIp.domain_name">
               <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedIp.domain_name }}</p>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">ID: {{ selectedIp.domain_id }}</p>
+              <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">ID: {{ selectedIp.domain_id }}</p>
             </div>
             <p v-else class="text-sm text-gray-500 dark:text-gray-400">Не привязан</p>
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ IPS_TEXTS.COLUMN_ROS_COMMENT }}
             </label>
             <p v-if="selectedIp.ros_comment" class="text-sm text-gray-900 dark:text-gray-100">
@@ -1157,7 +1236,7 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ IPS_TEXTS.COLUMN_USE_DEFAULT_GATEWAY }}
             </label>
             <p class="text-sm text-gray-900 dark:text-gray-100">
@@ -1172,15 +1251,15 @@ onMounted(() => {
 
             <div class="space-y-2">
               <div>
-                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Создано</label>
+                <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Создано</label>
                 <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedIp.created_at_hum }}</p>
-                <p class="font-mono text-xs text-gray-500 dark:text-gray-400">Timestamp: {{ selectedIp.created_at }}</p>
+                <p class="font-mono text-xs text-gray-600 dark:text-gray-400">Timestamp: {{ selectedIp.created_at }}</p>
               </div>
 
               <div v-if="selectedIp.updated_at_hum">
-                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Обновлено</label>
+                <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Обновлено</label>
                 <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedIp.updated_at_hum }}</p>
-                <p class="font-mono text-xs text-gray-500 dark:text-gray-400">Timestamp: {{ selectedIp.updated_at }}</p>
+                <p class="font-mono text-xs text-gray-600 dark:text-gray-400">Timestamp: {{ selectedIp.updated_at }}</p>
               </div>
             </div>
           </div>

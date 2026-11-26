@@ -36,15 +36,17 @@ test('retains the polling setting when local storage rejects its update', async 
     }
   })
   await page.goto('/#/')
-  await expect(page.getByRole('button', { name: '3 секунды', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: '3 секунды', exact: true }).click()
+  // interval identifies the labelled selector while it still shows the last saved choice.
+  const interval = page.getByRole('button', { name: /^Частота обновления статуса:\s*3 секунды$/ })
+  await expect(interval).toBeVisible()
+  await interval.click()
   await page.getByRole('option', { name: 'Отключено', exact: true }).click()
   await expect(
     page
       .getByRole('alert')
       .filter({ hasText: 'Не удалось сохранить частоту обновления. Предыдущее значение сохранено.' }),
   ).toBeVisible()
-  await expect(page.getByRole('button', { name: '3 секунды', exact: true })).toBeVisible()
+  await expect(interval).toBeVisible()
   await expect(page.getByRole('button', { name: 'Обновить вручную', exact: true })).toHaveCount(0)
   /** The browser callback inspects the persisted public preference without importing the application store. */
   expect(await page.evaluate(() => localStorage.getItem('polling-interval'))).toBe('3000')

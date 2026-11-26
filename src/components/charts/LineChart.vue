@@ -334,4 +334,10 @@ const lineStrokeWidth = computed(() => {
 .point-label--visible {
   opacity: 1;
 }
+@media (prefers-reduced-motion: reduce) {
+  .point-dot,
+  .point-label {
+    transition: none;
+  }
+}
 </style>

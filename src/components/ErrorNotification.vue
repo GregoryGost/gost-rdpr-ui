@@ -76,8 +76,7 @@ const getIcon = (severity: string): Component => {
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  max-width: 24rem;
-  width: 100%;
+  width: min(24rem, calc(100% - 2rem));
   pointer-events: none;
 }
 
@@ -236,11 +235,14 @@ const getIcon = (severity: string): Component => {
   }
 }
 
-@media (max-width: 640px) {
-  .notification-container {
-    left: 1rem;
-    right: 1rem;
-    max-width: none;
+@media (prefers-reduced-motion: reduce) {
+  .notification-list-enter-active,
+  .notification-list-leave-active {
+    animation: none;
+  }
+
+  .notification-list-move {
+    transition: none;
   }
 }
 </style>

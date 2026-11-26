@@ -23,9 +23,9 @@ const total = computed(() => props.slices.reduce((s, sl) => s + sl.value, 0))
     </p>
 
     <div v-if="loading" class="flex items-center justify-center gap-4">
-      <div class="h-40 w-40 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+      <div class="h-40 w-40 rounded-full bg-gray-200 motion-safe:animate-pulse dark:bg-gray-700" />
       <div class="flex-1 space-y-2">
-        <div v-for="n in 2" :key="n" class="h-4 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+        <div v-for="n in 2" :key="n" class="h-4 rounded bg-gray-200 motion-safe:animate-pulse dark:bg-gray-700" />
       </div>
     </div>
 

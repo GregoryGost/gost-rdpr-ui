@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { apiRequest, ApiError, NetworkError } from '@/api/client'
+import { apiRequest, apiRequestText, ApiError, NetworkError } from '@/api/client'
 
 /** Gives every transport scenario a virtual timeout clock; fetch is always replaced locally. */
 beforeEach(() => {
@@ -129,6 +129,22 @@ describe('apiRequest', () => {
   it('releases its timer when a successful response contains invalid JSON', async () => {
     vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(new Response('invalid json')))
     await expect(apiRequest('/health')).rejects.toBeInstanceOf(SyntaxError)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+})
+
+/** HTTP failure releases the response body before another metrics request can start. */
+describe('apiRequestText', () => {
+  /** An HTTP error can arrive before the body, so the request signal must abort even when fetch has resolved. */
+  it('aborts an unread error body and preserves its HTTP status', async () => {
+    /** response provides the error headers while its synthetic body remains readable. */
+    const response = new Response(new ReadableStream<Uint8Array>(), { status: 503 })
+    /** fetchMock exposes the actual signal passed to fetch so the cancellation is observable. */
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(apiRequestText('/metrics', new AbortController().signal)).rejects.toMatchObject({ status: 503 })
+    expect(fetchMock.mock.calls[0]?.[1]?.signal?.aborted).toBe(true)
     expect(vi.getTimerCount()).toBe(0)
   })
 })

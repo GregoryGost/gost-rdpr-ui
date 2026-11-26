@@ -35,10 +35,10 @@ const SIZE_CLASSES = {
     <Dialog @close="emit('close')" class="relative z-50">
       <TransitionChild
         as="template"
-        enter="ease-out duration-300"
+        enter="ease-out motion-safe:duration-300 motion-reduce:transition-none"
         enter-from="opacity-0"
         enter-to="opacity-100"
-        leave="ease-in duration-200"
+        leave="ease-in motion-safe:duration-200 motion-reduce:transition-none"
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
@@ -49,10 +49,10 @@ const SIZE_CLASSES = {
         <div class="flex min-h-full items-center justify-center p-4 text-center">
           <TransitionChild
             as="template"
-            enter="ease-out duration-300"
+            enter="ease-out motion-safe:duration-300 motion-reduce:transition-none"
             enter-from="opacity-0"
             enter-to="opacity-100"
-            leave="ease-in duration-200"
+            leave="ease-in motion-safe:duration-200 motion-reduce:transition-none"
             leave-from="opacity-100"
             leave-to="opacity-0"
           >
@@ -67,8 +67,10 @@ const SIZE_CLASSES = {
                   {{ title }}
                 </DialogTitle>
                 <button
+                  type="button"
+                  aria-label="Закрыть окно"
                   @click="emit('close')"
-                  class="cursor-pointer rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                  class="shrink-0 cursor-pointer rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
                   <XMarkIcon class="h-6 w-6" />
                 </button>

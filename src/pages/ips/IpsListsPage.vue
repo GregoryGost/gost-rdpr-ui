@@ -28,6 +28,8 @@ import {
  * IPs Lists management page
  * @component IpsListsPage
  */
+/** waitingForRefresh identifies the refresh after a successful mutation, including the wait before it begins. */
+const waitingForRefresh = ref(false)
 const searchQuery = ref('')
 const attemptsFilter = ref<AttemptsFilter>('all')
 const columnFilters = ref<TableColumnFilters>({})
@@ -42,12 +44,14 @@ const totalLists = ref(0)
 const totalWithErrors = ref(0)
 const totalCritical = ref(0)
 
-/** lists holds accepted rows; isLoading tracks the current load; pagination owns page counters;
+/** lists holds accepted rows; isLoading tracks the current load;
+ * hasError records a failed table request; pagination owns page counters.
  * The loader callback uses params as the requested page and returns its backend response.
  * requests coordinates normal, search and filtered loads; loadLists loads the current normal page. */
 const {
   data: lists,
   isLoading,
+  hasError,
   pagination,
   requests,
   load: loadLists,
@@ -132,6 +136,7 @@ const loadSearchResults = async (shouldNotify = false) => {
   const query = searchQuery.value
   const filterItem = createListColumnFilter()
   if (!isCurrent()) return
+  hasError.value = false
   isLoading.value = true
   try {
     // response holds the filtered rows and matching total; the fetch callback reuses the captured query.
@@ -156,6 +161,7 @@ const loadSearchResults = async (shouldNotify = false) => {
   } catch (error) {
     // error belongs to this search and is reported only if its intent remains current.
     if (!isCurrent()) return
+    hasError.value = true
     errorHandler.handleError(error, {
       action: 'searchLists',
       component: 'IpsListsPage',
@@ -198,6 +204,7 @@ const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = 
 
 /** Cancels queued input loads and immediately invalidates all earlier request continuations. */
 const cancelPendingInputLoads = () => {
+  waitingForRefresh.value = false
   requests.invalidate()
   cancelSearchListsDebounce()
   cancelColumnFiltersDebounce()
@@ -351,6 +358,7 @@ const createList = async () => {
     if (!requests.isActive()) return
     closeAddModal()
     showSuccess(`${IPS_LISTS_TEXTS.LIST_PREFIX} "${listName}" ${IPS_LISTS_TEXTS.SUCCESS_CREATED}`)
+    if (isCurrent()) waitingForRefresh.value = true
     await delay()
     if (!requests.isActive()) return
     // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
@@ -369,7 +377,10 @@ const createList = async () => {
       name: listName,
     })
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
@@ -402,6 +413,7 @@ const deleteList = async () => {
     showSuccess(`${IPS_LISTS_TEXTS.LIST_PREFIX} #${listId} ${IPS_LISTS_TEXTS.SUCCESS_DELETED}`)
 
     // Reload data after deletion
+    if (isCurrent()) waitingForRefresh.value = true
     await delay()
     if (!requests.isActive()) return
     // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
@@ -413,7 +425,7 @@ const deleteList = async () => {
 
     if (!isCurrent()) return
     // Check if we need to go to previous page (if current page is now empty)
-    if (lists.value.length === 0 && pagination.currentPage.value > 1) {
+    if (!hasError.value && lists.value.length === 0 && pagination.currentPage.value > 1) {
       // previousPageLoad starts the fallback synchronously; capture its ownership before awaiting it.
       const previousPageLoad = goToActivePage(pagination.currentPage.value - 1)
       isCurrent = requests.capture()
@@ -430,7 +442,10 @@ const deleteList = async () => {
     isDeleteConfirmOpen.value = false
     listToDelete.value = null
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
@@ -455,24 +470,24 @@ onMounted(() => {
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">Всего списков</div>
         <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ totalLists }}</div>
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">{{ IPS_LISTS_TEXTS.STATS_TOTAL_HINT }}</p>
+        <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">{{ IPS_LISTS_TEXTS.STATS_TOTAL_HINT }}</p>
       </div>
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">Без ошибок</div>
         <div class="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">
           {{ totalLists - totalWithErrors - totalCritical }}
         </div>
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">{{ IPS_LISTS_TEXTS.STATS_SUCCESS_HINT }}</p>
+        <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">{{ IPS_LISTS_TEXTS.STATS_SUCCESS_HINT }}</p>
       </div>
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">С ошибками</div>
         <div class="mt-1 text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ totalWithErrors }}</div>
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">{{ IPS_LISTS_TEXTS.STATS_ERRORS_HINT }}</p>
+        <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">{{ IPS_LISTS_TEXTS.STATS_ERRORS_HINT }}</p>
       </div>
       <div class="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-sm text-gray-600 dark:text-gray-400">Критические</div>
         <div class="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">{{ totalCritical }}</div>
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">{{ IPS_LISTS_TEXTS.STATS_CRITICAL_HINT }}</p>
+        <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">{{ IPS_LISTS_TEXTS.STATS_CRITICAL_HINT }}</p>
       </div>
     </div>
 
@@ -489,6 +504,7 @@ onMounted(() => {
             v-model="searchQuery"
             @input="searchLists"
             type="search"
+            aria-label="Поиск по названию или URL"
             :placeholder="IPS_LISTS_TEXTS.SEARCH_PLACEHOLDER"
             class="block w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-10 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
@@ -498,6 +514,7 @@ onMounted(() => {
         <div class="flex flex-wrap gap-2">
           <BaseButton
             @click="filterByAttempts('all')"
+            :aria-pressed="attemptsFilter === 'all'"
             :variant="attemptsFilter === 'all' ? 'primary' : 'ghost'"
             size="sm"
           >
@@ -505,6 +522,7 @@ onMounted(() => {
           </BaseButton>
           <BaseButton
             @click="filterByAttempts('success')"
+            :aria-pressed="attemptsFilter === 'success'"
             :variant="attemptsFilter === 'success' ? 'primary' : 'ghost'"
             size="sm"
           >
@@ -512,6 +530,7 @@ onMounted(() => {
           </BaseButton>
           <BaseButton
             @click="filterByAttempts('errors')"
+            :aria-pressed="attemptsFilter === 'errors'"
             :variant="attemptsFilter === 'errors' ? 'primary' : 'ghost'"
             size="sm"
           >
@@ -519,6 +538,7 @@ onMounted(() => {
           </BaseButton>
           <BaseButton
             @click="filterByAttempts('critical')"
+            :aria-pressed="attemptsFilter === 'critical'"
             :variant="attemptsFilter === 'critical' ? 'primary' : 'ghost'"
             size="sm"
           >
@@ -550,10 +570,14 @@ onMounted(() => {
       :data="lists"
       :columns="TABLE_COLUMNS"
       :is-loading="isLoading"
+      :has-error="hasError"
+      :loading-message="waitingForRefresh ? 'Изменения сохранены. Обновляем список…' : undefined"
+      row-action-column="name"
       :column-filters="columnFilters"
       :empty-message="IPS_LISTS_TEXTS.EMPTY_MESSAGE"
       @update:column-filters="updateColumnFilters"
       @row-click="openViewModal"
+      @retry="loadActiveLists()"
     >
       <template #cell-name="{ value }">
         <span class="font-medium text-gray-900 dark:text-gray-100">{{ value }}</span>
@@ -609,7 +633,12 @@ onMounted(() => {
       </template>
 
       <template #cell-actions="{ row }">
-        <BaseButton variant="danger" size="sm" @click.stop="openDeleteConfirm(row.id)">
+        <BaseButton
+          variant="danger"
+          size="sm"
+          :aria-label="`Удалить список IP-адресов: ${row.name}`"
+          @click.stop="openDeleteConfirm(row.id)"
+        >
           <TrashIcon class="h-4 w-4" />
         </BaseButton>
       </template>
@@ -631,10 +660,8 @@ onMounted(() => {
     <BaseModal :is-open="isAddModalOpen" :title="IPS_LISTS_TEXTS.MODAL_TITLE" @close="closeAddModal">
       <form @submit.prevent="createList" class="space-y-4">
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ IPS_LISTS_TEXTS.LABEL_NAME }} <span class="text-red-500">*</span>
-          </label>
           <BaseInput
+            :label="IPS_LISTS_TEXTS.LABEL_NAME"
             v-model="formData.name"
             type="text"
             :placeholder="IPS_LISTS_TEXTS.PLACEHOLDER_NAME"
@@ -644,26 +671,23 @@ onMounted(() => {
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ IPS_LISTS_TEXTS.LABEL_URL }} <span class="text-red-500">*</span>
-          </label>
           <BaseInput
+            :label="IPS_LISTS_TEXTS.LABEL_URL"
             v-model="formData.url"
             type="url"
             :placeholder="IPS_LISTS_TEXTS.PLACEHOLDER_URL"
             :error="formErrors.url"
             required
+            aria-describedby="ipslists-hint-url"
           />
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p id="ipslists-hint-url" class="mt-1 text-xs text-gray-600 dark:text-gray-400">
             {{ IPS_LISTS_TEXTS.HINT_URL }}
           </p>
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ IPS_LISTS_TEXTS.LABEL_DESCRIPTION }}
-          </label>
           <BaseTextarea
+            :label="IPS_LISTS_TEXTS.LABEL_DESCRIPTION"
             v-model="formData.description!"
             :placeholder="IPS_LISTS_TEXTS.PLACEHOLDER_DESCRIPTION"
             :rows="2"
@@ -687,19 +711,19 @@ onMounted(() => {
         <!-- List Info (Read-only) -->
         <div class="space-y-3">
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">ID</label>
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">ID</label>
             <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedList.id }}</p>
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ IPS_LISTS_TEXTS.LABEL_NAME }}
             </label>
             <p class="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{{ selectedList.name }}</p>
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ IPS_LISTS_TEXTS.LABEL_URL }}
             </label>
             <a
@@ -713,7 +737,7 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ IPS_LISTS_TEXTS.LABEL_DESCRIPTION }}
             </label>
             <p v-if="selectedList.description" class="text-sm text-gray-900 dark:text-gray-100">
@@ -723,7 +747,7 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Hash</label>
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Hash</label>
             <p v-if="selectedList.hash" class="font-mono text-xs break-all text-gray-900 dark:text-gray-100">
               {{ selectedList.hash }}
             </p>
@@ -731,7 +755,7 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ IPS_LISTS_TEXTS.COLUMN_ATTEMPTS }}
             </label>
             <div class="flex items-center gap-2">
@@ -759,7 +783,7 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ IPS_LISTS_TEXTS.COLUMN_IPS_COUNT }}
             </label>
             <p class="text-sm text-gray-900 dark:text-gray-100">
@@ -769,7 +793,7 @@ onMounted(() => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                 {{ IPS_LISTS_TEXTS.COLUMN_IPV4_COUNT }}
               </label>
               <span
@@ -780,7 +804,7 @@ onMounted(() => {
             </div>
 
             <div>
-              <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                 {{ IPS_LISTS_TEXTS.COLUMN_IPV6_COUNT }}
               </label>
               <span
@@ -798,17 +822,17 @@ onMounted(() => {
 
             <div class="space-y-2">
               <div>
-                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Создано</label>
+                <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Создано</label>
                 <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedList.created_at_hum }}</p>
-                <p class="font-mono text-xs text-gray-500 dark:text-gray-400">
+                <p class="font-mono text-xs text-gray-600 dark:text-gray-400">
                   Timestamp: {{ selectedList.created_at }}
                 </p>
               </div>
 
               <div v-if="selectedList.updated_at_hum">
-                <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Обновлено</label>
+                <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Обновлено</label>
                 <p class="text-sm text-gray-900 dark:text-gray-100">{{ selectedList.updated_at_hum }}</p>
-                <p class="font-mono text-xs text-gray-500 dark:text-gray-400">
+                <p class="font-mono text-xs text-gray-600 dark:text-gray-400">
                   Timestamp: {{ selectedList.updated_at }}
                 </p>
               </div>

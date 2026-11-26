@@ -13,7 +13,7 @@
 - `src/api/endpoints/ips.ts` — методы для IP адресов и операций RIPEstat
 - `src/api/endpoints/ros.ts` — методы для конфигураций RouterOS
 - `src/api/endpoints/commands.ts` — методы для выполнения команд
-- `src/api/endpoints/stats.ts` — глобальная статистика (`getStats()`, `getGrowth()`)
+- `src/api/endpoints/stats.ts` — глобальная статистика, динамика роста и снимки OpenMetrics
 - `src/api/endpoints/index.ts` — централизованный экспорт
 
 ### 2. Composables ✅
@@ -37,8 +37,9 @@
 
 - **General:** `AppLogo`, `ErrorNotification`
 - **Dashboard:** `HealthStatusCard`, `VersionInfoCard`, `ConnectionAlert`, `PollingSettings`,
-  `ConfigurationCard`, `SparklineCard`, `StatsMetricCard`, `StatsPieCard`
-- **Charts:** `LineChart`, `BarChart`, `PieChart`
+  `ConfigurationCard`, `StatsMetricCard`, `StatsPieCard`
+- **Charts:** `ActivityChart`, `LineChart`, `BarChart`, `PieChart`
+- **Statistics:** `MetricsActivity` — общий опрос, графики активности и карточка последних проходов
 - **Domains:** `DomainResolveCheckModal`, `DomainResolveNowModal`
 - **IPs:** `IpRipePrefixModal`
 
@@ -224,9 +225,10 @@ Bootstrap находится в [AGENTS.md](../AGENTS.md), а активные �
 Тег и коммит импортированных материалов [agent-projects-tools](https://github.com/GregoryGost/agent-projects-tools)
 указаны в разделе [Material Provenance And Updates](../CODEX_PROJECT.md#material-provenance-and-updates).
 
-- **Субагенты:** девять специализированных ролей для изменений исполняемого кода и тестов;
-  для задач только по документации, комментариям и инструкциям делегирование отключено.
-  Координатор соблюдает Architecture Gate, независимую проверку и правила владения файлами.
+- Девять ролей поддерживают работу над изменениями кода и тестов. Для оценки текущей реализации, UI/UX,
+  объёма работ или покрытия тестами можно назначить `code_explorer` или `code_reviewer` в режиме чтения.
+  Субагенты передают результаты в текущей сессии. Правки документации, комментариев и инструкций выполняет
+  ведущий агент. Для изменений кода применяются Architecture Gate и правила владения файлами.
 - **Техническая документация:** сначала версии и конфигурация проекта, затем Context7;
   при отсутствии подходящих материалов — официальные первичные источники.
 - **Документация кода:** каждая функция, метод, тип, поле, переменная и константа

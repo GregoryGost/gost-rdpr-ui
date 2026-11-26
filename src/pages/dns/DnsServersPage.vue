@@ -27,16 +27,20 @@ import {
  * DNS Servers management page
  * @component DnsServersPage
  */
+/** waitingForRefresh identifies the refresh after a successful mutation, including the wait before it begins. */
+const waitingForRefresh = ref(false)
 const searchQuery = ref('')
 const columnFilters = ref<TableColumnFilters>({})
 const hasActiveColumnFilters = computed(() => hasColumnFilters(columnFilters.value))
 
-/** servers holds accepted rows; isLoading tracks the current load; pagination owns page counters;
+/** servers holds accepted rows; isLoading tracks the current load;
+ * hasError records a failed table request; pagination owns page counters.
  * The loader callback uses params as the requested page and returns its backend response.
  * requests coordinates normal, search and filtered loads; loadServers loads the current normal page. */
 const {
   data: servers,
   isLoading,
+  hasError,
   pagination,
   requests,
   load: loadServers,
@@ -61,8 +65,8 @@ const formErrors = ref<Record<string, string>>({})
  */
 const TABLE_COLUMNS: TableColumn<DnsServer>[] = [
   { key: 'id', label: 'ID', sortable: true },
-  { key: 'server', label: 'DNS Server', sortable: true },
-  { key: 'doh_server', label: 'DoH Server', sortable: true },
+  { key: 'server', label: 'DNS-сервер', sortable: true },
+  { key: 'doh_server', label: 'DoH-сервер', sortable: true },
   { key: 'description', label: 'Описание', sortable: true },
   { key: 'created_at_hum', label: 'Создано', sortable: true },
   { key: 'actions', label: 'Действия' },
@@ -94,6 +98,7 @@ const loadSearchResults = async (shouldNotify = false) => {
   const query = searchQuery.value
   const filterItem = createDnsColumnFilter()
   if (!isCurrent()) return
+  hasError.value = false
   isLoading.value = true
   try {
     // response holds the filtered rows and matching total; the fetch callback reuses the captured query.
@@ -114,6 +119,7 @@ const loadSearchResults = async (shouldNotify = false) => {
   } catch (error) {
     // error belongs to this search and is reported only if its intent remains current.
     if (!isCurrent()) return
+    hasError.value = true
     errorHandler.handleError(error, {
       action: 'searchServers',
       component: 'DnsServersPage',
@@ -143,6 +149,7 @@ const loadFilteredServers = async () => {
   const isCurrent = requests.begin()
   const filterItem = createDnsColumnFilter()
   if (!isCurrent()) return
+  hasError.value = false
   isLoading.value = true
   try {
     // response contains this filtered page and total; its fetch callback forwards each backend page unchanged.
@@ -161,6 +168,7 @@ const loadFilteredServers = async () => {
   } catch (error) {
     // error is relevant only while this filtered load remains current.
     if (!isCurrent()) return
+    hasError.value = true
     errorHandler.handleError(error, {
       action: 'loadFilteredServers',
       component: 'DnsServersPage',
@@ -193,6 +201,7 @@ const { run: runColumnFiltersDebounced, cancel: cancelColumnFiltersDebounce } = 
 
 /** Cancels queued input loads and immediately invalidates all earlier request continuations. */
 const cancelPendingInputLoads = () => {
+  waitingForRefresh.value = false
   requests.invalidate()
   cancelSearchServersDebounce()
   cancelColumnFiltersDebounce()
@@ -301,6 +310,7 @@ const createServer = async () => {
     if (!requests.isActive()) return
     closeAddModal()
     showSuccess(`DNS сервер "${serverName}" успешно добавлен`)
+    if (isCurrent()) waitingForRefresh.value = true
     await delay()
     if (!requests.isActive()) return
     // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
@@ -317,7 +327,10 @@ const createServer = async () => {
       server: serverName,
     })
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
@@ -350,6 +363,7 @@ const deleteServer = async () => {
     showSuccess(`DNS сервер #${serverId} успешно удален`)
 
     // Reload data after deletion
+    if (isCurrent()) waitingForRefresh.value = true
     await delay()
     if (!requests.isActive()) return
     // pendingLoad starts the current table reload; its generation now owns completion and page fallback.
@@ -360,7 +374,7 @@ const deleteServer = async () => {
 
     if (!isCurrent()) return
     // Check if we need to go to previous page (if current page is now empty)
-    if (servers.value.length === 0 && pagination.currentPage.value > 1) {
+    if (!hasError.value && servers.value.length === 0 && pagination.currentPage.value > 1) {
       // previousPageLoad starts the fallback synchronously; capture its ownership before awaiting it.
       const previousPageLoad = goToActivePage(pagination.currentPage.value - 1)
       isCurrent = requests.capture()
@@ -377,7 +391,10 @@ const deleteServer = async () => {
     isDeleteConfirmOpen.value = false
     serverToDelete.value = null
   } finally {
-    if (isCurrent()) isLoading.value = false
+    if (isCurrent()) {
+      waitingForRefresh.value = false
+      isLoading.value = false
+    }
   }
 }
 
@@ -405,6 +422,7 @@ onMounted(() => {
           v-model="searchQuery"
           @input="searchServers"
           type="search"
+          aria-label="Поиск по серверу"
           placeholder="Поиск по серверу..."
           class="block w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-10 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
         />
@@ -422,9 +440,12 @@ onMounted(() => {
       :data="servers"
       :columns="TABLE_COLUMNS"
       :is-loading="isLoading"
+      :has-error="hasError"
+      :loading-message="waitingForRefresh ? 'Изменения сохранены. Обновляем список…' : undefined"
       :column-filters="columnFilters"
       empty-message="DNS серверы не найдены"
       @update:column-filters="updateColumnFilters"
+      @retry="loadActiveServers()"
     >
       <template #cell-server="{ value }">
         <span class="font-mono text-sm">{{ value || '-' }}</span>
@@ -439,7 +460,12 @@ onMounted(() => {
       </template>
 
       <template #cell-actions="{ row }">
-        <BaseButton variant="danger" size="sm" @click.stop="openDeleteConfirm(row.id)">
+        <BaseButton
+          variant="danger"
+          size="sm"
+          :aria-label="`Удалить DNS-сервер: ${row.server || row.doh_server || row.id}`"
+          @click.stop="openDeleteConfirm(row.id)"
+        >
           <TrashIcon class="h-4 w-4" />
         </BaseButton>
       </template>
@@ -461,10 +487,8 @@ onMounted(() => {
     <BaseModal :is-open="isAddModalOpen" title="Добавить DNS Сервер" @close="closeAddModal">
       <form @submit.prevent="createServer" class="space-y-4">
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            DNS Server (IPv4/IPv6)
-          </label>
           <BaseInput
+            label="DNS-сервер (IPv4/IPv6)"
             v-model="formData.server!"
             type="text"
             placeholder="8.8.8.8 или 2001:4860:4860::8888"
@@ -473,15 +497,17 @@ onMounted(() => {
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            DoH Server (DNS over HTTPS)
-          </label>
-          <BaseInput v-model="formData.doh_server!" type="url" placeholder="https://dns.google/dns-query" />
+          <BaseInput
+            label="DoH-сервер (DNS через HTTPS)"
+            v-model="formData.doh_server!"
+            :error="formErrors.doh_server"
+            type="url"
+            placeholder="https://dns.google/dns-query"
+          />
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Описание</label>
-          <BaseTextarea v-model="formData.description!" placeholder="Описание DNS сервера" :rows="2" />
+          <BaseTextarea label="Описание" v-model="formData.description!" placeholder="Описание DNS сервера" :rows="2" />
         </div>
 
         <div class="flex justify-end gap-3 pt-4">

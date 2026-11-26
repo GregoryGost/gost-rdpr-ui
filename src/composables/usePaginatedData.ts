@@ -29,7 +29,7 @@ export type DataLoader<T> = (params: PaginationParams) => Promise<PaginatedRespo
 
 /**
  * Combines pagination state with explicit data loading. Only the latest load may publish rows,
- * totals or loading completion. Pages sharing these refs with custom loaders must use requests too.
+ * totals, errors or loading completion. Pages sharing these refs with custom loaders use the same request guards.
  *
  * @template T - Type of data items
  * @param {DataLoader<T>} loader - Function to load data with pagination params
@@ -52,6 +52,8 @@ export function usePaginatedData<T>(loader: DataLoader<T>, initialPageSize: numb
   // data contains the latest accepted page; isLoading describes the active load.
   const data = ref<T[]>([])
   const isLoading = ref(false)
+  /** hasError distinguishes a failed load from an empty successful page. */
+  const hasError = ref(false)
   // pagination owns the selected page, requested size and accepted result total.
   const pagination = usePagination(initialPageSize)
   // requests also lets custom page loaders invalidate this composable's pending responses.
@@ -64,6 +66,7 @@ export function usePaginatedData<T>(loader: DataLoader<T>, initialPageSize: numb
     // isCurrent checks whether this load still owns the shared result state.
     const isCurrent = requests.begin()
     if (!isCurrent()) return
+    hasError.value = false
     isLoading.value = true
     try {
       // response contains rows and the total for the page selected at invocation time.
@@ -78,6 +81,7 @@ export function usePaginatedData<T>(loader: DataLoader<T>, initialPageSize: numb
       // error is this load's failure; obsolete failures must not erase a newer result.
       if (!isCurrent()) return
       console.error('Failed to load paginated data:', error)
+      hasError.value = true
       data.value = []
       pagination.totalItems.value = 0
     } finally {
@@ -133,6 +137,7 @@ export function usePaginatedData<T>(loader: DataLoader<T>, initialPageSize: numb
   return {
     data,
     isLoading,
+    hasError,
     pagination,
     load,
     refresh,

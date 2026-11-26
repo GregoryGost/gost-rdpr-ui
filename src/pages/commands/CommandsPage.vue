@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { commandsApi } from '@/api/endpoints/commands'
 import { ipsApi } from '@/api/endpoints/ips'
+import type { OkResponse } from '@/api/types/common'
 import { COMMANDS_TEXTS } from '@/constants'
 import BaseButton from '@/ui/buttons/BaseButton.vue'
 import ConfirmDialog from '@/ui/modals/ConfirmDialog.vue'
@@ -13,6 +14,7 @@ import {
   ServerIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
+  InformationCircleIcon,
   SparklesIcon,
   TrashIcon,
 } from '@heroicons/vue/24/outline'
@@ -41,7 +43,26 @@ const confirmVariant = ref<'danger' | 'primary'>('primary')
 const forcedReload = ref(false)
 const rosIpType = ref<number | null>(4)
 
-const lastResult = ref<{ type: 'success' | 'error'; message: string } | null>(null)
+/** Holds the latest request outcome until the next confirmation opens. */
+const lastResult = ref<{
+  /** Controls how the outcome is presented, including informational replies about background work. */
+  type: 'success' | 'error' | 'info'
+  /** User-facing text displayed in the inline command outcome. */
+  message: string
+} | null>(null)
+
+/** Border, surface and text colors for the inline outcome in both themes. */
+const COMMAND_RESULT_CLASSES = {
+  /** Success colors used by list loading and IP cleanup. */
+  success: 'border-green-500 bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+  /** Failure colors used when a request rejects. */
+  error: 'border-red-500 bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300',
+  /** Informational colors used for responses about background command admission. */
+  info: 'border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
+}
+
+/** Exact HTTP 200 result returned when the server already has an active or queued RouterOS update. */
+const ROUTER_OS_ALREADY_ACTIVE_RESULT = 'Job [ros_update] is now active'
 
 const IP_TYPE_OPTIONS = [
   { value: '', label: 'Все типы IP', disabled: true },
@@ -49,20 +70,33 @@ const IP_TYPE_OPTIONS = [
   { value: 6, label: 'Только IPv6', disabled: true },
 ]
 
+/** Confirmation text, request feedback and known duplicate replies for both domain resolution modes. */
 const DOMAIN_RESOLVE_COMMAND_CONFIG = {
+  /** NEW resolves only new domains and has no distinct duplicate reply in the API. */
   'domains-new': {
+    /** Resolution mode included in error reports. */
     mode: 'new',
+    /** Heading of the NEW confirmation dialog. */
     confirmTitle: COMMANDS_TEXTS.DOMAIN_RESOLVE_NEW_CONFIRM_TITLE,
+    /** Scope of the work described before the request is sent. */
     confirmMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_NEW_CONFIRM_MESSAGE,
-    progressMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_NEW_PROGRESS,
-    successMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_NEW_SUCCESS,
+    /** Text shown after the server accepts the request. */
+    acceptedMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_NEW_ACCEPTED,
+    /** NEW returns no separate result for a repeated request. */
+    alreadyActiveResult: undefined,
   },
+  /** STALE resolves outdated domains and can wait for a RouterOS update to finish. */
   'domains-stale': {
+    /** Resolution mode included in error reports. */
     mode: 'stale',
+    /** Heading of the STALE confirmation dialog. */
     confirmTitle: COMMANDS_TEXTS.DOMAIN_RESOLVE_STALE_CONFIRM_TITLE,
+    /** Scope and expected duration of the work described before submission. */
     confirmMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_STALE_CONFIRM_MESSAGE,
-    progressMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_STALE_PROGRESS,
-    successMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_STALE_SUCCESS,
+    /** Text shown after the server accepts the request. */
+    acceptedMessage: COMMANDS_TEXTS.DOMAIN_RESOLVE_STALE_ACCEPTED,
+    /** Exact HTTP 200 result for a STALE request that is already active or queued. */
+    alreadyActiveResult: 'Job [domains_resolve] is now active',
   },
 } as const
 
@@ -103,11 +137,33 @@ const openConfirm = (command: CommandType) => {
 }
 
 /**
- * Execute command
+ * Shows the same admission outcome on the page and in a toast. The API reply describes request admission.
+ * response is the decoded HTTP 200 body, acceptedMessage describes this command's background work,
+ * and alreadyActiveResult is the API's exact duplicate reply when the command has one.
  */
+const reportBackgroundCommandResult = (response: OkResponse, acceptedMessage: string, alreadyActiveResult?: string) => {
+  /** The result value is inspected at runtime because an HTTP 200 alone leaves admission undetermined. */
+  const result = response?.result
+  /** The API uses OK when it accepts the request for background processing. */
+  const accepted = result === 'OK'
+  /** Text shared by the inline outcome and the toast, including the fallback for an unknown reply. */
+  let message: string = COMMANDS_TEXTS.BACKGROUND_COMMAND_UNKNOWN_RESULT
+
+  if (accepted) {
+    message = acceptedMessage
+  } else if (alreadyActiveResult !== undefined && result === alreadyActiveResult) {
+    message = COMMANDS_TEXTS.BACKGROUND_COMMAND_ALREADY_ACTIVE
+  }
+
+  lastResult.value = { type: 'info', message }
+  showInfo(message, accepted ? COMMANDS_TEXTS.BACKGROUND_COMMAND_ACCEPTED_TITLE : undefined)
+}
+
+/** Sends the confirmed command, displays the API outcome and releases the dialog when the HTTP request settles. */
 const executeCommand = async () => {
   if (!confirmCommand.value) return
 
+  /** Command chosen in the dialog, captured before waiting for the API. */
   const command = confirmCommand.value
 
   try {
@@ -123,32 +179,32 @@ const executeCommand = async () => {
         )
         break
       case 'domains-new':
-      case 'domains-stale':
+      case 'domains-stale': {
+        /** Text and duplicate response contract for the selected resolution mode. */
+        const config = DOMAIN_RESOLVE_COMMAND_CONFIG[command]
         if (command === 'domains-new') {
           isLoadingNewDomains.value = true
         } else {
           isLoadingStaleDomains.value = true
         }
 
-        showInfo(DOMAIN_RESOLVE_COMMAND_CONFIG[command].progressMessage, 'Выполнение команды')
-
-        if (command === 'domains-new') {
-          await commandsApi.resolveNewDomains()
-        } else {
-          await commandsApi.resolveStaleDomains()
-        }
-
-        lastResult.value = { type: 'success', message: DOMAIN_RESOLVE_COMMAND_CONFIG[command].successMessage }
-        showSuccess(DOMAIN_RESOLVE_COMMAND_CONFIG[command].successMessage, 'Команда выполнена')
+        /** Both resolution endpoints return the same result field for reporting request admission. */
+        const response =
+          command === 'domains-new' ? await commandsApi.resolveNewDomains() : await commandsApi.resolveStaleDomains()
+        reportBackgroundCommandResult(response, config.acceptedMessage, config.alreadyActiveResult)
         break
-      case 'ros':
+      }
+      case 'ros': {
         isLoadingRouterOS.value = true
-        const ipTypeText = rosIpType.value ? ` (IPv${rosIpType.value})` : ''
-        showInfo(`Обновление RouterOS${ipTypeText}...`, 'Выполнение команды')
-        await commandsApi.updateRouterOS(rosIpType.value || undefined)
-        lastResult.value = { type: 'success', message: 'RouterOS успешно обновлен' }
-        showSuccess(`RouterOS успешно обновлен${ipTypeText}`, 'Команда выполнена')
+        /** Admission reply to the update request with the selected IP type, normally IPv4. */
+        const response = await commandsApi.updateRouterOS(rosIpType.value || undefined)
+        reportBackgroundCommandResult(
+          response,
+          COMMANDS_TEXTS.ROUTER_OS_UPDATE_ACCEPTED,
+          ROUTER_OS_ALREADY_ACTIVE_RESULT,
+        )
         break
+      }
       case 'ips-cleanup-not-allowed':
         isLoadingNotAllowedIpsCleanup.value = true
         showInfo(COMMANDS_TEXTS.IP_NOT_ALLOWED_CLEANUP_PROGRESS, 'Выполнение команды')
@@ -158,6 +214,7 @@ const executeCommand = async () => {
         break
     }
   } catch (error) {
+    // error is the failed request or response parsing exception. The shared handler publishes the error toast.
     lastResult.value = {
       type: 'error',
       message: error instanceof Error ? error.message : 'Произошла ошибка при выполнении команды',
@@ -193,24 +250,15 @@ const executeCommand = async () => {
     </div>
 
     <!-- Result Message -->
-    <div
-      v-if="lastResult"
-      :class="[
-        lastResult.type === 'success'
-          ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-          : 'border-red-500 bg-red-50 dark:bg-red-900/20',
-        'mb-6 rounded-lg border-l-4 p-4',
-      ]"
-    >
+    <div v-if="lastResult" class="mb-6 rounded-lg border-l-4 p-4" :class="COMMAND_RESULT_CLASSES[lastResult.type]">
       <div class="flex items-center gap-3">
         <CheckCircleIcon v-if="lastResult.type === 'success'" class="h-6 w-6 text-green-600 dark:text-green-400" />
+        <InformationCircleIcon
+          v-else-if="lastResult.type === 'info'"
+          class="h-6 w-6 shrink-0 text-blue-600 dark:text-blue-400"
+        />
         <ExclamationCircleIcon v-else class="h-6 w-6 text-red-600 dark:text-red-400" />
-        <p
-          :class="[
-            lastResult.type === 'success' ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300',
-            'font-medium',
-          ]"
-        >
+        <p class="font-medium">
           {{ lastResult.message }}
         </p>
       </div>
@@ -308,10 +356,15 @@ const executeCommand = async () => {
           на всех устройствах RouterOS внесенных в конфигурации
         </p>
         <div class="mb-4">
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Тип IP адресов</label>
-          <BaseSelect v-model="rosIpType" :options="IP_TYPE_OPTIONS" />
+          <BaseSelect label="Тип IP адресов" v-model="rosIpType" :options="IP_TYPE_OPTIONS" />
         </div>
-        <BaseButton @click="openConfirm('ros')" variant="primary" class="w-full" :is-loading="isLoadingRouterOS">
+        <BaseButton
+          @click="openConfirm('ros')"
+          variant="primary"
+          class="w-full"
+          :is-loading="isLoadingRouterOS"
+          aria-label="Отправить команду обновления RouterOS"
+        >
           Отправить команду
         </BaseButton>
       </div>

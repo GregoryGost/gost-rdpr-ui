@@ -40,8 +40,12 @@ After compaction or resumption, re-establish the bootstrap and applicable entryp
 
 ## Agent Roles And Model Selection
 
-- Subagents enabled: yes, only for authorized executable application/test-code changes.
-- Delegation scope excludes documentation-only, comment-only, docstring-only and instruction-only tasks.
+- Subagents enabled for authorized executable application/test-code changes and bounded read-only evaluation.
+- In `review-only` or `analysis-only`, the primary may assign `code_explorer` or `code_reviewer` to evaluate the
+  current application, proposed work, UI/UX findings or existing test coverage when the current request permits it.
+  Limit assignments to evidence gathering and findings in the session. File edits, generated artifacts and external
+  mutations are outside this scope.
+- Documentation-only, comment-only, docstring-only and instruction-only edits stay with the primary.
 - Primary agent model/effort: `gpt-6.2-sol / xhigh`; select in the client or local `.codex/config.toml`.
 - Mandatory coordination support: `.codex/rules/subagent_coordination.md`.
 - Selected role files:
@@ -128,7 +132,7 @@ After compaction or resumption, re-establish the bootstrap and applicable entryp
 Rule filenames above resolve under `.codex/rules/`.
 Conditional bootstrap support, independent of this optional list:
 `.codex/rules/material_dependencies.md` for hard dependencies and
-`.codex/rules/subagent_coordination.md` for delegated code/test work.
+`.codex/rules/subagent_coordination.md` for all enabled subagent work.
 
 ## Active Skills
 
@@ -181,7 +185,8 @@ Commands may write generated output only when the current request permits it.
 
 For agent-instruction/documentation-only changes, validate the affected materials and links; application build,
 lint and browser checks are required only when their inputs or visible behavior change.
-Imported materials remain verbatim upstream and are excluded from Prettier by `.prettierignore`.
+Keep imported materials verbatim except for the local adaptations documented below.
+Imported materials are excluded from Prettier by `.prettierignore`.
 Use `.markdownlint.json` for project-maintained Markdown; do not reformat imported examples or prose wholesale.
 
 ## TypeScript / JavaScript Profile
@@ -370,8 +375,9 @@ invent commands, claim passing tests or install missing tools without authorizat
 - Source: [agent-projects-tools](https://github.com/GregoryGost/agent-projects-tools).
 - Imported revision: [`v1.22.0`](https://github.com/GregoryGost/agent-projects-tools/tree/v1.22.0),
   commit `29bf0e1b0651a8f9cdc80fdd9faa853b176d2af1` (2026-11-25).
-- Imported bootstrap, rules, role definitions and complete skill packages are copied verbatim.
-  This profile adapts the applicable parts of the upstream `.codex/project.template.md`.
+- This profile adapts the applicable parts of the upstream `.codex/project.template.md`.
+- Local read-only evaluation policy adapts `AGENTS.md`, `.codex/rules/subagent_coordination.md` and the
+  `code_explorer` and `code_reviewer` role files. Review these changes when updating the upstream baseline.
 - Local supplement: `eslint-typescript/references/review-checklist.md` supplies a reference missing upstream.
 - Update bootstrap, routing, coordination, selected roles and dependent materials together.
   Revalidate exact names, activation signals, dependency closure, references and hashes after an authorized update.

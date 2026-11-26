@@ -131,10 +131,19 @@ export const COMMANDS_TEXTS = {
   DOMAIN_RESOLVE_STALE_CONFIRM_TITLE: 'Определить устаревшие домены',
   DOMAIN_RESOLVE_STALE_CONFIRM_MESSAGE:
     'Будут определены устаревшие домены. Эта команда может выполняться долго и должна запускаться редко. Продолжить?',
-  DOMAIN_RESOLVE_NEW_PROGRESS: 'Определение новых доменов...',
-  DOMAIN_RESOLVE_STALE_PROGRESS: 'Определение устаревших доменов... Это может занять больше времени.',
-  DOMAIN_RESOLVE_NEW_SUCCESS: 'Новые домены успешно определены в IP адреса',
-  DOMAIN_RESOLVE_STALE_SUCCESS: 'Устаревшие домены успешно определены в IP адреса',
+  /** Acceptance text for a background NEW command. */
+  DOMAIN_RESOLVE_NEW_ACCEPTED: 'Команда определения новых доменов принята в обработку. Определение выполняется в фоне.',
+  /** Acceptance text for a background STALE command. */
+  DOMAIN_RESOLVE_STALE_ACCEPTED:
+    'Команда определения устаревших доменов принята в обработку. Определение выполняется в фоне.',
+  /** Acceptance text for a background RouterOS update. */
+  ROUTER_OS_UPDATE_ACCEPTED: 'Команда обновления RouterOS принята в обработку. Обновление выполняется в фоне.',
+  /** Toast heading for confirmed acceptance of background work. */
+  BACKGROUND_COMMAND_ACCEPTED_TITLE: 'Команда принята',
+  /** The API uses the same duplicate response for active and queued work. */
+  BACKGROUND_COMMAND_ALREADY_ACTIVE: 'Команда уже выполняется или ожидает запуска',
+  /** Fallback for a response whose result does not establish an admission outcome. */
+  BACKGROUND_COMMAND_UNKNOWN_RESULT: 'Сервер вернул неожиданный ответ. Статус приёма команды неизвестен.',
   IP_NOT_ALLOWED_CLEANUP_TITLE: 'Очистка запрещённых IP',
   IP_NOT_ALLOWED_CLEANUP_DESCRIPTION:
     'Поставить в очередь удаление IP адресов, соответствующих настройке IP_NOT_ALLOWED. Выполнение происходит в фоне.',
@@ -145,8 +154,9 @@ export const COMMANDS_TEXTS = {
     'Сервер начнёт фоновую очистку IP адресов из IP_NOT_ALLOWED. Количество удалений и момент завершения будут неизвестны. Продолжить?',
   IP_NOT_ALLOWED_CLEANUP_PROGRESS: 'Запрос на очистку запрещённых IP отправляется...',
   IP_NOT_ALLOWED_CLEANUP_SUCCESS: 'Задача очистки запрещённых IP принята в обработку',
+  /** Explains the shared queue and how much the commands API reports to the user. */
   BACKGROUND_COMMANDS_NOTE:
-    'Команды выполняются в фоновом режиме. Ответ подтверждает принятие команды, а не завершение; результат будет заметен через некоторое время.',
+    'Определение устаревших доменов (STALE) и обновление RouterOS выполняются по очереди в фоне. Принятая команда может ждать завершения другой. В успешном ответе сервер сообщает о приёме команды или о том, что она уже выполняется либо ждёт запуска.',
 }
 
 /**
@@ -369,7 +379,60 @@ export const STATS_TEXTS = {
   PAGE_DESCRIPTION: 'Графики и аналитика по данным системы',
   NAV_TITLE: 'Статистика',
   SECTION_OVERVIEW: 'Обзор данных',
-  SECTION_LIVE: 'Активность за последний час',
+  /** Title of the live metrics section. */
+  ACTIVITY_TITLE: 'Активность сервиса',
+  /** Label of the shared polling delay selector. */
+  ACTIVITY_INTERVAL: 'Интервал опроса',
+  /** Label of the viewing window selector. */
+  ACTIVITY_PERIOD: 'Период графиков',
+  /** Status shown while the first scrape is pending. */
+  ACTIVITY_LOADING: 'Загрузка метрик…',
+  /** Status displayed when the latest poll cannot supply a complete scrape. */
+  ACTIVITY_ERROR: 'Метрики недоступны. Опрос продолжится.',
+  /** Prefix for the first observation time when history covers part of the selected window. */
+  ACTIVITY_COVERAGE: 'Наблюдения с',
+  /** Plot placeholder for an interval with no numeric points. */
+  ACTIVITY_NO_POINTS: 'Недостаточно данных',
+  /** Heading of the resolution outcome chart. */
+  ACTIVITY_RESOLUTION: 'Результаты резолвинга',
+  /** Unit of the normalized outcome rates. */
+  ACTIVITY_PER_MINUTE: 'Обработок в минуту',
+  /** Legend label for successful outcomes. */
+  ACTIVITY_SUCCESS: 'Успешно',
+  /** Legend label for partial outcomes. */
+  ACTIVITY_PARTIAL: 'Частично',
+  /** Legend label for failed outcomes. */
+  ACTIVITY_FAILURE: 'Ошибки',
+  /** Heading of the DNS duration chart. */
+  ACTIVITY_DNS: 'Задержка DNS и DoH',
+  /** Legend label for classic DNS observations. */
+  ACTIVITY_CLASSIC_DNS: 'DNS',
+  /** Legend label for DNS-over-HTTPS observations. */
+  ACTIVITY_DOH: 'DoH',
+  /** Heading of the SQLite writer queue residence chart. */
+  ACTIVITY_WRITER: 'Ожидание в очереди SQLite',
+  /** Unit of the mean duration observations. */
+  ACTIVITY_MS: 'Средняя задержка, мс',
+  /** Legend label for the SQLite duration series. */
+  ACTIVITY_MEAN: 'Среднее',
+  /** Heading of the run snapshot card. */
+  ACTIVITY_RUNS: 'Последние проходы',
+  /** Display name of the new domain resolving mode. */
+  ACTIVITY_RUN_NEW: 'Новые',
+  /** Display name of the stale domain resolving mode. */
+  ACTIVITY_RUN_STALE: 'Устаревшие',
+  /** Display name of the stored domain resolving mode. */
+  ACTIVITY_RUN_STORED: 'Сохранённые',
+  /** Label for the number of domains selected by a run. */
+  ACTIVITY_RUN_SELECTED: 'Выбрано',
+  /** Label for the number of physical attempts that started. */
+  ACTIVITY_RUN_ATTEMPTED: 'Попыток',
+  /** Label for write commands with confirmed persistence. */
+  ACTIVITY_RUN_CONFIRMED: 'Подтверждено',
+  /** Label for write commands awaiting a persistence result. */
+  ACTIVITY_RUN_PENDING: 'Ожидают',
+  /** Placeholder shown until the backend publishes a snapshot for a mode. */
+  ACTIVITY_NO_RUN: 'Нет данных о запуске',
   SECTION_GROWTH: 'Динамика роста',
   LABEL_ENTITY: 'Сущность',
   LABEL_GRANULARITY: 'Группировка',

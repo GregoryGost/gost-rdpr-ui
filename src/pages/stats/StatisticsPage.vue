@@ -5,12 +5,14 @@ import LineChart from '@/components/charts/LineChart.vue'
 import BarChart from '@/components/charts/BarChart.vue'
 import StatsMetricCard from '@/components/dashboard/StatsMetricCard.vue'
 import StatsPieCard from '@/components/dashboard/StatsPieCard.vue'
-import SparklineCard from '@/components/dashboard/SparklineCard.vue'
+import MetricsActivity from './MetricsActivity.vue'
 import { STATS_TEXTS } from '@/constants'
 import { errorHandler } from '@/utils/errorHandler'
+import { useLatestRequest } from '@/composables'
 import type {
   StatsResponse,
   StatsGrowthResponse,
+  StatsGrowthParams,
   GrowthEntity,
   GrowthGranularity,
   GrowthDateField,
@@ -34,7 +36,16 @@ function todayRange(): { start: string; end: string } {
 const stats = ref<StatsResponse | null>(null)
 const growth = ref<StatsGrowthResponse | null>(null)
 const isStatsLoading = ref(false)
+/** isGrowthLoading is true while the submitted filter request is in flight. */
 const isGrowthLoading = ref(false)
+/** growthError records the latest chart failure independently of an empty result. */
+const growthError = ref(false)
+/** growthRequests discards older chart responses and any responses received after unmount. */
+const growthRequests = useLatestRequest()
+/** submittedGrowth holds the latest requested filters while the user edits the form or retries a failure. */
+const submittedGrowth = ref<StatsGrowthParams | null>(null)
+/** growthRegion is a stable focus target when retry replaces the error controls. */
+const growthRegion = ref<HTMLElement | null>(null)
 
 const selectedEntity = ref<GrowthEntity>('domains')
 const selectedGranularity = ref<GrowthGranularity>('hour')
@@ -67,13 +78,15 @@ const DATE_FIELDS: { value: GrowthDateField; label: string; onlyFor?: GrowthEnti
 
 const availableDateFields = computed(() => DATE_FIELDS.filter((f) => !f.onlyFor || f.onlyFor === selectedEntity.value))
 
+/** chartColor uses the accepted result rather than any unapplied edits to the filters. */
 const chartColor = computed(() => {
+  /** map assigns the chart color to each supported entity. */
   const map: Record<GrowthEntity, string> = {
     domains: '#6366f1',
     lists: '#14b8a6',
     ips: '#a855f7',
   }
-  return map[selectedEntity.value]
+  return map[growth.value?.entity ?? selectedEntity.value]
 })
 
 const growthPoints = computed(() => growth.value?.payload ?? [])
@@ -150,31 +163,52 @@ function defaultStartDate(granularity: GrowthGranularity): string {
   return formatApiDate(d)
 }
 
-const loadGrowth = async () => {
+/** Loads the submitted range or retries retryParams. A superseded request cannot publish its data or error. */
+const loadGrowth = async (retryParams?: StatsGrowthParams) => {
+  /** isCurrent guards publication of data, failure and completion from this request. */
+  const isCurrent = growthRequests.begin()
+  if (!retryParams && selectedDateField.value === 'last_resolved_at' && selectedEntity.value !== 'domains') {
+    selectedDateField.value = 'created_at'
+  }
+  /** params uses the submitted filters on retry and captures the form values for a new request. */
+  const params = retryParams ?? {
+    entity: selectedEntity.value,
+    granularity: selectedGranularity.value,
+    start_date: startDate.value || defaultStartDate(selectedGranularity.value),
+    end_date: endDate.value || null,
+    ip_subtype: selectedEntity.value === 'ips' && ipSubtype.value !== '' ? Number(ipSubtype.value) : null,
+    date_filter_field: selectedDateField.value,
+  }
+  submittedGrowth.value = params
+  growth.value = null
+  growthError.value = false
   isGrowthLoading.value = true
   try {
-    if (selectedDateField.value === 'last_resolved_at' && selectedEntity.value !== 'domains') {
-      selectedDateField.value = 'created_at'
-    }
-    growth.value = await statsApi.getGrowth({
-      entity: selectedEntity.value,
-      granularity: selectedGranularity.value,
-      start_date: startDate.value || defaultStartDate(selectedGranularity.value),
-      end_date: endDate.value || null,
-      ip_subtype: selectedEntity.value === 'ips' && ipSubtype.value !== '' ? Number(ipSubtype.value) : null,
-      date_filter_field: selectedDateField.value,
-    })
+    /** response holds the server data for the filters captured in this request. */
+    const response = await statsApi.getGrowth(params)
+    if (isCurrent()) growth.value = response
   } catch (error) {
+    // error belongs to this chart request; an obsolete failure cannot replace the current chart or announce an error.
+    if (!isCurrent()) return
+    growthError.value = true
     errorHandler.handleError(error, {
       action: 'loadGrowth',
       component: 'StatisticsPage',
-      silent: false,
+      silent: true,
     })
   } finally {
-    isGrowthLoading.value = false
+    if (isCurrent()) isGrowthLoading.value = false
   }
 }
 
+/** Repeats the failed query and keeps keyboard focus in the chart while it reloads. */
+function retryGrowth(): void {
+  if (!submittedGrowth.value) return
+  growthRegion.value?.focus()
+  void loadGrowth(submittedGrowth.value)
+}
+
+/** Applies the form drafts as a new chart query. */
 const applyFilters = () => loadGrowth()
 
 const resetFilters = () => {
@@ -276,22 +310,12 @@ onMounted(() => {
         />
       </div>
 
-      <p v-if="stats" class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+      <p v-if="stats" class="mt-2 text-xs text-gray-600 dark:text-gray-300">
         {{ STATS_TEXTS.GENERATED_AT }}: {{ stats.generated_at }}
       </p>
     </section>
 
-    <!-- Live sparklines -->
-    <section class="mt-10">
-      <h2 class="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-200">
-        {{ STATS_TEXTS.SECTION_LIVE }}
-      </h2>
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <SparklineCard entity="domains" :label="STATS_TEXTS.ENTITY_DOMAINS" color="#6366f1" date-field="updated_at" />
-        <SparklineCard entity="lists" :label="STATS_TEXTS.ENTITY_LISTS" color="#14b8a6" date-field="updated_at" />
-        <SparklineCard entity="ips" :label="STATS_TEXTS.ENTITY_IPS" color="#a855f7" date-field="updated_at" />
-      </div>
-    </section>
+    <MetricsActivity />
 
     <!-- Growth chart -->
     <section class="mt-10">
@@ -304,10 +328,11 @@ onMounted(() => {
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <!-- Entity selector -->
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+            <label for="growth-entity" class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
               {{ STATS_TEXTS.LABEL_ENTITY }}
             </label>
             <select
+              id="growth-entity"
               v-model="selectedEntity"
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
@@ -319,10 +344,11 @@ onMounted(() => {
 
           <!-- Granularity selector -->
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+            <label for="growth-granularity" class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
               {{ STATS_TEXTS.LABEL_GRANULARITY }}
             </label>
             <select
+              id="growth-granularity"
               v-model="selectedGranularity"
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
@@ -334,10 +360,11 @@ onMounted(() => {
 
           <!-- Date field -->
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+            <label for="growth-date-field" class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
               {{ STATS_TEXTS.LABEL_DATE_FIELD }}
             </label>
             <select
+              id="growth-date-field"
               v-model="selectedDateField"
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
@@ -349,10 +376,11 @@ onMounted(() => {
 
           <!-- IP subtype (only for ips) -->
           <div v-if="selectedEntity === 'ips'">
-            <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+            <label for="growth-ip-subtype" class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
               {{ STATS_TEXTS.LABEL_IP_SUBTYPE }}
             </label>
             <select
+              id="growth-ip-subtype"
               v-model="ipSubtype"
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
@@ -364,10 +392,11 @@ onMounted(() => {
 
           <!-- Start date -->
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+            <label for="growth-start" class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
               {{ STATS_TEXTS.LABEL_START_DATE }}
             </label>
             <input
+              id="growth-start"
               v-model="startDate"
               type="datetime-local"
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
@@ -376,10 +405,11 @@ onMounted(() => {
 
           <!-- End date -->
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+            <label for="growth-end" class="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
               {{ STATS_TEXTS.LABEL_END_DATE }}
             </label>
             <input
+              id="growth-end"
               v-model="endDate"
               type="datetime-local"
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
@@ -406,29 +436,78 @@ onMounted(() => {
       </div>
 
       <!-- Growth chart card -->
-      <div class="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div
+        ref="growthRegion"
+        tabindex="-1"
+        role="region"
+        aria-label="График роста"
+        class="rounded-lg border border-gray-200 bg-white p-6 focus-visible:outline-2 focus-visible:outline-blue-500 dark:border-gray-700 dark:bg-gray-800"
+      >
         <div class="mb-4 flex items-center justify-between">
           <div>
+            <!-- Each find callback resolves the label of the rendered or most recently submitted query. -->
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">
-              {{ ENTITIES.find((e) => e.value === selectedEntity)?.label ?? selectedEntity }}
+              {{
+                ENTITIES.find((e) => e.value === (growth?.entity ?? submittedGrowth?.entity ?? selectedEntity))?.label
+              }}
               —
-              {{ GRANULARITIES.find((g) => g.value === selectedGranularity)?.label ?? selectedGranularity }}
+              {{
+                GRANULARITIES.find(
+                  (g) => g.value === (growth?.granularity ?? submittedGrowth?.granularity ?? selectedGranularity),
+                )?.label
+              }}
             </h3>
             <p v-if="growth" class="text-sm text-gray-500 dark:text-gray-400">
               {{ STATS_TEXTS.TOTAL_IN_PERIOD }}: {{ growth.total_in_period }}
             </p>
           </div>
-          <div
-            v-if="isGrowthLoading"
-            class="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"
-          />
         </div>
 
-        <div v-if="!isGrowthLoading && growthPoints.length === 0" class="py-12 text-center text-gray-400">
+        <p v-if="isGrowthLoading" role="status" class="py-12 text-center text-sm text-gray-600 dark:text-gray-300">
+          Загрузка графика…
+        </p>
+        <div v-else-if="growthError" class="py-12 text-center">
+          <p role="alert" class="mb-2 text-sm font-medium text-red-700 dark:text-red-300">
+            Не удалось загрузить график
+          </p>
+          <button
+            type="button"
+            class="rounded px-3 py-2 text-sm text-blue-700 underline dark:text-blue-300"
+            @click="retryGrowth"
+          >
+            Повторить
+          </button>
+        </div>
+        <p v-else-if="growthPoints.length === 0" class="py-12 text-center text-gray-600 dark:text-gray-300">
           {{ STATS_TEXTS.NO_DATA }}
-        </div>
-
-        <LineChart v-else :points="growthPoints" :height="280" :color="chartColor" />
+        </p>
+        <template v-else>
+          <LineChart :points="growthPoints" :height="280" :color="chartColor" />
+          <details class="mt-3 text-sm text-gray-700 dark:text-gray-200">
+            <summary class="cursor-pointer rounded py-2 focus-visible:outline-2 focus-visible:outline-blue-500">
+              Значения по времени
+            </summary>
+            <table class="w-full text-left">
+              <thead>
+                <tr class="border-b border-gray-200 dark:border-gray-600">
+                  <th scope="col" class="py-2 pr-4 font-medium">Период</th>
+                  <th scope="col" class="py-2 font-medium">Количество</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- point carries the period and count of one plotted sample, in API order. -->
+                <tr
+                  v-for="point in growthPoints"
+                  :key="point.date"
+                  class="border-b border-gray-200 dark:border-gray-600"
+                >
+                  <td class="py-2 pr-4">{{ point.date }}</td>
+                  <td class="py-2 tabular-nums">{{ point.count.toLocaleString('ru-RU') }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </details>
+        </template>
       </div>
     </section>
 
@@ -450,6 +529,8 @@ onMounted(() => {
                 v-for="s in SORT_ORDERS"
                 :key="s.value"
                 :title="s.label"
+                :aria-label="s.label"
+                :aria-pressed="domainsSortOrder === s.value"
                 class="px-2.5 py-1 text-sm transition-colors"
                 :class="
                   domainsSortOrder === s.value
@@ -479,6 +560,8 @@ onMounted(() => {
                 v-for="s in SORT_ORDERS"
                 :key="s.value"
                 :title="s.label"
+                :aria-label="s.label"
+                :aria-pressed="ipsSortOrder === s.value"
                 class="px-2.5 py-1 text-sm transition-colors"
                 :class="
                   ipsSortOrder === s.value

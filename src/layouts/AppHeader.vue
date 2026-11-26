@@ -8,7 +8,10 @@ import HeaderPatternBackground from '@/components/images/backgrounds/HeaderPatte
  * @component AppHeader
  */
 defineProps<{
+  /** Opens the mobile navigation dialog. */
   onMenuToggle: () => void
+  /** Indicates whether the mobile navigation dialog is open. */
+  isMenuOpen: boolean
 }>()
 
 const darkMode = useDarkModeStore()
@@ -19,14 +22,22 @@ const darkMode = useDarkModeStore()
     <HeaderPatternBackground />
 
     <div class="header-content flex h-16 items-center gap-x-4">
-      <button @click="onMenuToggle" class="rounded-lg p-2 hover:bg-gray-100 lg:hidden dark:hover:bg-gray-700">
+      <button
+        type="button"
+        aria-label="Открыть меню"
+        aria-haspopup="dialog"
+        :aria-expanded="isMenuOpen"
+        class="rounded-lg p-2 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-blue-500 lg:hidden dark:hover:bg-gray-700"
+        @click="onMenuToggle"
+      >
         <Bars3Icon class="h-6 w-6 text-gray-600 dark:text-gray-400" />
       </button>
       <div class="flex flex-1 justify-end gap-x-4">
         <button
           @click="darkMode.set(null, true)"
           class="rounded-lg p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-          title="Переключить тему"
+          aria-label="Переключить тему"
+          :aria-pressed="darkMode.isEnabled"
         >
           <SunIcon v-if="darkMode.isEnabled" class="h-5 w-5 text-gray-600 dark:text-gray-400" />
           <MoonIcon v-else class="h-5 w-5 text-gray-600 dark:text-gray-400" />

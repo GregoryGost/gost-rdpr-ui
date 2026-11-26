@@ -19,6 +19,28 @@ describe('DataTable', () => {
     expect(wrapper.get('tbody').text()).toBe('example.test')
   })
 
+  /** A failed load replaces stale rows and offers a retry distinct from a legitimate empty result. */
+  it('shows a failed load and requests a retry before rendering recovered rows', async () => {
+    // wrapper starts with an old row so the failure cannot be mistaken for an empty response.
+    const wrapper = mount(DataTable, {
+      props: { columns: [{ key: 'name', label: 'Домен' }], data: [{ name: 'old.example.test' }], hasError: true },
+    })
+    expect(wrapper.get('tbody').text()).toContain('Не удалось загрузить данные')
+    expect(wrapper.get('tbody').text()).not.toContain('old.example.test')
+    // retry is the native button in the failed table body, separate from header and row controls.
+    const retry = wrapper.get('tbody button')
+    expect(retry.text()).toBe('Повторить')
+    await retry.trigger('click')
+    expect(wrapper.emitted('retry')).toEqual([[]])
+
+    await wrapper.setProps({ isLoading: true })
+    expect(wrapper.get('tbody').text()).toBe('Загрузка...')
+    expect(wrapper.find('tbody button').exists()).toBe(false)
+    await wrapper.setProps({ isLoading: false, hasError: false, data: [{ name: 'recovered.example.test' }] })
+    expect(wrapper.get('tbody').text()).toBe('recovered.example.test')
+    expect(wrapper.find('tbody button').exists()).toBe(false)
+  })
+
   /** Numeric sorting must use arithmetic order, preserve input and reset on the third click. */
   it('cycles numeric sorting and emits directions without mutating input', async () => {
     // data uses lexically misleading numbers; columns enables the public sorting control.
@@ -31,12 +53,14 @@ describe('DataTable', () => {
     expect(values()).toEqual(['10', '2', '30'])
     await wrapper.get('thead button').trigger('click')
     expect(values()).toEqual(['2', '10', '30'])
-    expect(wrapper.get('thead button').attributes('aria-sort')).toBe('ascending')
+    expect(wrapper.get('th').attributes('aria-sort')).toBe('ascending')
+    expect(wrapper.get('thead button').attributes('aria-sort')).toBeUndefined()
     await wrapper.get('thead button').trigger('click')
     expect(values()).toEqual(['30', '10', '2'])
+    expect(wrapper.get('th').attributes('aria-sort')).toBe('descending')
     await wrapper.get('thead button').trigger('click')
     expect(values()).toEqual(['10', '2', '30'])
-    expect(wrapper.get('thead button').attributes('aria-sort')).toBe('none')
+    expect(wrapper.get('th').attributes('aria-sort') ?? 'none').toBe('none')
     expect(wrapper.emitted('sort')).toEqual([
       ['value', 'asc'],
       ['value', 'desc'],

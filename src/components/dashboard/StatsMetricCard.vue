@@ -38,23 +38,23 @@ const valueClass = () => valueColorMap[props.color] ?? valueColorMap.blue
 
 <template>
   <div :class="['rounded-lg border p-4', cardClass()]">
-    <p class="mb-1 text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+    <p class="mb-1 text-xs font-medium tracking-wide text-gray-600 uppercase dark:text-gray-300">
       {{ title }}
     </p>
-    <div v-if="loading" class="mt-1 h-8 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+    <div v-if="loading" class="mt-1 h-8 w-16 rounded bg-gray-200 motion-safe:animate-pulse dark:bg-gray-700" />
     <p v-else :class="['text-3xl font-bold', valueClass()]">
       {{ value ?? '—' }}
     </p>
-    <p v-if="subtitle" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+    <p v-if="subtitle" class="mt-1 text-xs text-gray-600 dark:text-gray-300">
       {{ subtitle }}
     </p>
     <div
       v-if="secondaryLabel !== undefined || secondaryValue !== undefined"
       class="mt-3 border-t border-current/10 pt-2"
     >
-      <div v-if="loading" class="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+      <div v-if="loading" class="h-4 w-20 rounded bg-gray-200 motion-safe:animate-pulse dark:bg-gray-700" />
       <template v-else>
-        <p class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+        <p class="text-xs font-medium tracking-wide text-gray-600 uppercase dark:text-gray-300">
           {{ secondaryLabel }}
         </p>
         <p :class="['text-xl font-semibold', valueClass()]">
