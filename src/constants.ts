@@ -131,10 +131,19 @@ export const COMMANDS_TEXTS = {
   DOMAIN_RESOLVE_STALE_CONFIRM_TITLE: 'Определить устаревшие домены',
   DOMAIN_RESOLVE_STALE_CONFIRM_MESSAGE:
     'Будут определены устаревшие домены. Эта команда может выполняться долго и должна запускаться редко. Продолжить?',
-  DOMAIN_RESOLVE_NEW_PROGRESS: 'Определение новых доменов...',
-  DOMAIN_RESOLVE_STALE_PROGRESS: 'Определение устаревших доменов... Это может занять больше времени.',
-  DOMAIN_RESOLVE_NEW_SUCCESS: 'Новые домены успешно определены в IP адреса',
-  DOMAIN_RESOLVE_STALE_SUCCESS: 'Устаревшие домены успешно определены в IP адреса',
+  /** Acceptance text for a background NEW command. */
+  DOMAIN_RESOLVE_NEW_ACCEPTED: 'Команда определения новых доменов принята в обработку. Определение выполняется в фоне.',
+  /** Acceptance text for a background STALE command. */
+  DOMAIN_RESOLVE_STALE_ACCEPTED:
+    'Команда определения устаревших доменов принята в обработку. Определение выполняется в фоне.',
+  /** Acceptance text for a background RouterOS update. */
+  ROUTER_OS_UPDATE_ACCEPTED: 'Команда обновления RouterOS принята в обработку. Обновление выполняется в фоне.',
+  /** Toast heading for confirmed acceptance of background work. */
+  BACKGROUND_COMMAND_ACCEPTED_TITLE: 'Команда принята',
+  /** The API uses the same duplicate response for active and queued work. */
+  BACKGROUND_COMMAND_ALREADY_ACTIVE: 'Команда уже выполняется или ожидает запуска',
+  /** Fallback for a response whose result does not establish an admission outcome. */
+  BACKGROUND_COMMAND_UNKNOWN_RESULT: 'Сервер вернул неожиданный ответ. Статус приёма команды неизвестен.',
   IP_NOT_ALLOWED_CLEANUP_TITLE: 'Очистка запрещённых IP',
   IP_NOT_ALLOWED_CLEANUP_DESCRIPTION:
     'Поставить в очередь удаление IP адресов, соответствующих настройке IP_NOT_ALLOWED. Выполнение происходит в фоне.',
@@ -145,8 +154,9 @@ export const COMMANDS_TEXTS = {
     'Сервер начнёт фоновую очистку IP адресов из IP_NOT_ALLOWED. Количество удалений и момент завершения будут неизвестны. Продолжить?',
   IP_NOT_ALLOWED_CLEANUP_PROGRESS: 'Запрос на очистку запрещённых IP отправляется...',
   IP_NOT_ALLOWED_CLEANUP_SUCCESS: 'Задача очистки запрещённых IP принята в обработку',
+  /** Explains the shared queue and how much the commands API reports to the user. */
   BACKGROUND_COMMANDS_NOTE:
-    'Команды выполняются в фоновом режиме. Ответ подтверждает принятие команды, а не завершение; результат будет заметен через некоторое время.',
+    'Определение устаревших доменов (STALE) и обновление RouterOS выполняются по очереди в фоне. Принятая команда может ждать завершения другой. В успешном ответе сервер сообщает о приёме команды или о том, что она уже выполняется либо ждёт запуска.',
 }
 
 /**
