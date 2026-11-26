@@ -221,9 +221,8 @@ pnpm format       # Форматирование кода
 Bootstrap находится в [AGENTS.md](../AGENTS.md), а активные правила, скиллы, роли,
 команды и ограничения — в [CODEX_PROJECT.md](../CODEX_PROJECT.md).
 Каждый новый запрос проходит через обязательное правило `request_routing.md`.
-Профиль подключает материалы из
-[agent-projects-tools](https://github.com/GregoryGost/agent-projects-tools)
-с зафиксированными commit и хешами в `.codex/agent-projects-tools.lock.json`.
+Тег и коммит импортированных материалов [agent-projects-tools](https://github.com/GregoryGost/agent-projects-tools)
+указаны в разделе [Material Provenance And Updates](../CODEX_PROJECT.md#material-provenance-and-updates).
 
 - **Субагенты:** девять специализированных ролей для изменений исполняемого кода и тестов;
   для задач только по документации, комментариям и инструкциям делегирование отключено.
@@ -240,17 +239,18 @@ Bootstrap находится в [AGENTS.md](../AGENTS.md), а активные �
 
 Профили Vitest, тестирования Router/Pinia, Playwright E2E и Playwright MCP активны как правила и скиллы.
 Их обязательные зависимости среди агентных материалов также активированы.
-Тестовые раннеры, конфигурации и команды пока не настроены. Playwright MCP подключён в локальной
-`.codex/config.toml` через npx с Edge: выходные файлы сохраняются в `.playwright-mcp/`,
-профиль браузера — в `.playwright-mcp/user-data/`, рабочая директория процесса — корень проекта.
-Для загрузки подключения требуется перезапуск MCP-клиента; запуск браузера пока не проверен.
+Юнит- и компонентные тесты запускаются через `pnpm test` (`vitest.config.ts`),
+а браузерные E2E — через `pnpm test:e2e` (`playwright.config.ts`) в Chromium с API-фикстурами.
+
+Playwright MCP настроен в локальной `.codex/config.toml` через `pnpm dlx @playwright/mcp@latest`.
+Он использует изолированный Chrome в headless-режиме. Каталог артефактов — `.playwright-mcp/`
+относительно корня проекта. Подключение и работу браузера проверяйте в текущей сессии.
 При недоступности инструментов агент сообщает об этом, сохраняя активные правила
 и не устанавливая зависимости автоматически.
 
 Локальная `.codex/config.toml` остаётся в Git ignore; пример без секретов находится
 в `.codex/config.example.toml`. При настройке другого checkout объединяйте нужные параметры
-с существующим конфигом. Импортированные материалы сохраняют исходную лицензию MIT
-в `.codex/agent-projects-tools.LICENSE`.
+с существующим конфигом.
 
 ---
 

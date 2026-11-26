@@ -42,21 +42,21 @@ After compaction or resumption, re-establish the bootstrap and applicable entryp
 
 - Subagents enabled: yes, only for authorized executable application/test-code changes.
 - Delegation scope excludes documentation-only, comment-only, docstring-only and instruction-only tasks.
-- Primary agent model/effort: `gpt-6.1-sol / xhigh`; select in the client or local `.codex/config.toml`.
+- Primary agent model/effort: `gpt-6.2-sol / xhigh`; select in the client or local `.codex/config.toml`.
 - Mandatory coordination support: `.codex/rules/subagent_coordination.md`.
 - Selected role files:
 
 | Role | Custom agent file | Model | Effort |
 | --- | --- | --- | --- |
-| Architecture: stability | `.codex/agents/architect_stability.toml` | gpt-6.1-sol | xhigh |
-| Architecture: evolution | `.codex/agents/architect_evolution.toml` | gpt-6.1-sol | xhigh |
+| Architecture: stability | `.codex/agents/architect_stability.toml` | gpt-6.2-sol | xhigh |
+| Architecture: evolution | `.codex/agents/architect_evolution.toml` | gpt-6.2-sol | xhigh |
 | Codebase research | `.codex/agents/code_explorer.toml` | gpt-6-luna | high |
 | Documentation/API research | `.codex/agents/docs_researcher.toml` | gpt-6-luna | high |
-| Complex implementation | `.codex/agents/complex_implementer.toml` | gpt-6.1-sol | high |
+| Complex implementation | `.codex/agents/complex_implementer.toml` | gpt-6.2-sol | high |
 | Small fixes | `.codex/agents/simple_implementer.toml` | gpt-6-luna | high |
-| Independent test engineering | `.codex/agents/test_engineer.toml` | gpt-6.1-sol | high |
-| Independent code review | `.codex/agents/code_reviewer.toml` | gpt-6.1-sol | high |
-| Difficult bugs / design disputes | `.codex/agents/deep_debugger.toml` | gpt-6-astra | xhigh |
+| Independent test engineering | `.codex/agents/test_engineer.toml` | gpt-6.2-sol | high |
+| Independent code review | `.codex/agents/code_reviewer.toml` | gpt-6.2-sol | high |
+| Difficult bugs / design disputes | `.codex/agents/deep_debugger.toml` | gpt-6.2-astra | xhigh |
 
 - Model availability: verify with the current client/account before dispatch;
   never silently substitute models or effort.
@@ -147,6 +147,7 @@ Conditional bootstrap support, independent of this optional list:
 - `tailwind-expert`
 - `scss-expert`
 - `ui-ux-review`
+- `apple-hig-design`
 - `playwright-ui-checks-mcp`
 - `eslint-typescript`
 - `prettier-formatting`
@@ -282,16 +283,15 @@ Use `.markdownlint.json` for project-maintained Markdown; do not reformat import
 - UI checks: Russian text/accessible names, keyboard/focus, light/dark themes, loading/empty/error states,
   responsive layout at 375, 768 and 1440 CSS-pixel widths when relevant.
 - Screenshot/artifact path: `.playwright-mcp/`, already ignored by Git; create evidence only when authorized.
-- Output settings: `--output-dir .playwright-mcp --output-mode file` in the local MCP configuration.
-- Persistent browser profile: `.playwright-mcp/user-data/`, selected with `--user-data-dir`.
+- Output directory: `--output-dir .playwright-mcp` in the local MCP configuration.
+- Browser session: headless Chrome with `--isolated`.
 - MCP process working directory: repository root, explicitly set by `cwd` in local `.codex/config.toml`.
-  Resolve output/profile paths from that root; keep explicit artifact filenames under `.playwright-mcp/` too.
+  Resolve output paths from that root and keep explicit artifact filenames under `.playwright-mcp/`.
 - Playwright MCP validation enabled: yes, as an agent instruction profile.
 - Active Playwright MCP rule/skill: `playwright_ui_validation.md + playwright-ui-checks-mcp`.
-- Playwright MCP server name: `playwright`; configured locally through `npx @playwright/mcp@0.0.78` with Edge.
-- MCP connection status: configuration is present; client startup and browser operations are not yet verified.
-- The current session exposes browser computer-use tools, but they do not establish a Playwright MCP connection.
-  Report actual browser/tool coverage and do not claim Playwright or cross-browser execution from manual evidence.
+- Playwright MCP server name: `playwright`, configured locally through `pnpm dlx @playwright/mcp@latest`.
+- Verify client startup and browser operations in the active session before reporting a successful check.
+  Browser computer-use tools do not establish a Playwright MCP connection or cross-browser coverage.
 
 ## Testing Profiles
 
@@ -368,12 +368,10 @@ invent commands, claim passing tests or install missing tools without authorizat
 ## Material Provenance And Updates
 
 - Source: [agent-projects-tools](https://github.com/GregoryGost/agent-projects-tools).
-- Imported revision: `6e8870b454b8cfcf8e23a5b54f910493a5c50cb8` (2026-11-12).
-- Selection and blob hashes: `.codex/agent-projects-tools.lock.json`.
-- Upstream MIT notice: `.codex/agent-projects-tools.LICENSE`; application licensing remains in `LICENSE`.
+- Imported revision: [`v1.22.0`](https://github.com/GregoryGost/agent-projects-tools/tree/v1.22.0),
+  commit `29bf0e1b0651a8f9cdc80fdd9faa853b176d2af1` (2026-11-25).
 - Imported bootstrap, rules, role definitions and complete skill packages are copied verbatim.
-  This profile is adapted from the same revision's `.codex/project.template.md`.
-- Local supplement: `eslint-typescript/references/review-checklist.md` supplies a reference missing upstream;
-  its provenance is recorded separately in the manifest. The upstream entrypoint remains unchanged.
+  This profile adapts the applicable parts of the upstream `.codex/project.template.md`.
+- Local supplement: `eslint-typescript/references/review-checklist.md` supplies a reference missing upstream.
 - Update bootstrap, routing, coordination, selected roles and dependent materials together.
   Revalidate exact names, activation signals, dependency closure, references and hashes after an authorized update.
